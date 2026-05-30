@@ -8,81 +8,39 @@ export type Wallpaper = {
   poster?: string;
 };
 
-// Wallpaper sources:
-// - Animated wallpapers use Pexels' public video CDN (referrer-friendly, CORS-open).
-//   motionbgs.com blocks hotlinking, so its files cannot be embedded directly.
-// - Posters/static frames come from Unsplash.
-const U = (id: string, w = 2400) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
+// Real motionbgs.com sources. Hotlinking works (no referrer check, CORS-open).
+const MB = "https://motionbgs.com";
+const wp = (id: number, slug: string, posterPath: string, accent: string, name: string): Wallpaper => ({
+  id: slug,
+  name,
+  type: "animated",
+  accent,
+  src: `${MB}/media/${id}/${slug}.960x540.mp4`,
+  poster: `${MB}${posterPath}`,
+});
 
 export const WALLPAPERS: Wallpaper[] = [
-  // Marshland — the animated "leafy" one the user wants to keep
-  {
-    id: "marshland",
-    name: "Marshland",
-    type: "animated",
-    accent: "230 175 110",
-    src: "https://videos.pexels.com/video-files/3214448/3214448-uhd_2560_1440_25fps.mp4",
-    poster: U("photo-1500964757637-c85e8a162699"),
-  },
-  { id: "pokemon-sakura", name: "Pokemon Near Pink Sakura Tree", type: "static", accent: "255 170 200",
-    src: U("photo-1490375905304-fa18cdc6daff") },
-  {
-    id: "rocks-autumn-fire",
-    name: "Rocks Glow With Autumn Fire",
-    type: "animated",
-    accent: "255 140 60",
-    src: "https://videos.pexels.com/video-files/4763824/4763824-uhd_2560_1440_24fps.mp4",
-    poster: U("photo-1507783548227-544c3b8fc065"),
-  },
-  { id: "gojo-manga", name: "Gojo Manga", type: "static", accent: "180 200 255",
-    src: U("photo-1419242902214-272b3f66ee7a") },
-  { id: "forest-sunset", name: "Forest Sunset", type: "static", accent: "255 160 80",
-    src: U("photo-1448375240586-882707db888b") },
-  { id: "mountain-autumn", name: "Mountain Landscape in Autumn", type: "static", accent: "230 150 70",
-    src: U("photo-1507041957456-9c397ce39c97") },
-  { id: "first-fall-day", name: "First Fall Day in Forest", type: "static", accent: "220 160 90",
-    src: U("photo-1476231682828-37e571bc172f") },
-  { id: "audi-frozen-lake", name: "Audi On Frozen Lake", type: "static", accent: "150 200 240",
-    src: U("photo-1542362567-b07e54358753") },
-  { id: "fish-tank", name: "Fish Tank", type: "static", accent: "120 200 220",
-    src: U("photo-1518675844761-c1d6e1d05f37") },
-  { id: "girl-beach-night", name: "Girl on the Beach at Night", type: "static", accent: "140 160 230",
-    src: U("photo-1505142468610-359e7d316be0") },
-  { id: "colorful-sunset-street", name: "Colorful Sunset on Street", type: "static", accent: "255 140 110",
-    src: U("photo-1502602898657-3e91760cbb34") },
-  { id: "golden-temple", name: "Golden Temple", type: "static", accent: "240 190 90",
-    src: U("photo-1545569310-3c732f5d4f78") },
-  {
-    id: "rainy-street-mirror",
-    name: "Rainy Street Mirror",
-    type: "animated",
-    accent: "180 160 220",
-    src: "https://videos.pexels.com/video-files/3015527/3015527-hd_1920_1080_24fps.mp4",
-    poster: U("photo-1519508234439-4f23643125c1"),
-  },
-  {
-    id: "sakura-smoke",
-    name: "Sakura and Smoke",
-    type: "animated",
-    accent: "240 170 200",
-    src: "https://videos.pexels.com/video-files/2491285/2491285-uhd_2732_1440_24fps.mp4",
-    poster: U("photo-1522383225653-ed111181a951"),
-  },
-  { id: "audi-r8-sakura", name: "Audi R8 Near Sakura", type: "static", accent: "230 160 190",
-    src: U("photo-1503376780353-7e6692767b70") },
-  { id: "minecraft-northern-light", name: "Minecraft Northern Light", type: "static", accent: "120 220 200",
-    src: U("photo-1483347756197-71ef80e95f73") },
-  { id: "portal-minecraft", name: "Portal in Minecraft", type: "static", accent: "200 130 240",
-    src: U("photo-1462331940025-496dfbfc7564") },
-  { id: "minecraft-snowy-campfire", name: "Minecraft Snowy Campfire", type: "static", accent: "255 170 90",
-    src: U("photo-1486916856361-2fd29852a5b3") },
-  { id: "minecraft-sunset-farm", name: "Minecraft Sunset Farm", type: "static", accent: "250 160 100",
-    src: U("photo-1500382017468-9049fed747ef") },
-  { id: "minecraft-panels", name: "Minecraft Panels", type: "static", accent: "150 200 130",
-    src: U("photo-1441974231531-c6227db76b6e") },
-  { id: "crimson-blind-faith", name: "Crimson Blind Faith", type: "static", accent: "230 80 90",
-    src: U("photo-1519681393784-d120267933ba") },
+  wp(5780, "marshland",                       "/i/c/960x540/media/5780/marshland.jpg",                                "180 210 130", "Marshland"),
+  wp(1554, "pink-sakura-tree",                "/i/c/960x540/media/1554/pink-sakura-tree.jpg",                         "255 170 200", "Pokemon Near Pink Sakura Tree"),
+  wp(7623, "rocks-glow-with-autumn-fire",     "/i/c/960x540/media/7623/rocks-glow-with-autumn-fire.3840x2160.jpg",    "255 140 60",  "Rocks Glow With Autumn Fire"),
+  wp(6267, "gojo-manga",                      "/i/c/960x540/media/6267/gojo-manga.jpg",                               "180 200 255", "Gojo Manga"),
+  wp(4295, "forest-sunset",                   "/i/c/960x540/media/4295/forest-sunset.jpg",                            "255 160 80",  "Forest Sunset"),
+  wp(758,  "mountain-landscape-in-autumn",    "/i/c/960x540/media/758/mountain-landscape-in-autumn.jpg",              "230 150 70",  "Mountain Landscape in Autumn"),
+  wp(1922, "first-fall-day-in-forest",        "/i/c/960x540/media/1922/first-fall-day-in-forest.jpg",                 "220 160 90",  "First Fall Day in Forest"),
+  wp(8677, "audi-on-frozen-lake",             "/i/c/960x540/media/8677/audi-on-frozen-lake.3840x2160.jpg",            "150 200 240", "Audi On Frozen Lake"),
+  wp(5991, "fish-tank",                       "/i/c/960x540/media/5991/fish-tank.jpg",                                "120 200 220", "Fish Tank"),
+  wp(2344, "girl-on-the-beach-at-night",      "/i/c/960x540/media/2344/girl-on-the-beach-at-night.jpg",               "140 160 230", "Girl on the Beach at Night"),
+  wp(3624, "colorful-sunset-on-street",       "/i/c/960x540/media/3624/colorful-sunset-on-street.jpg",                "255 140 110", "Colorful Sunset on Street"),
+  wp(5764, "golden-temple-ghost-of-tsushima", "/i/c/960x540/media/5764/golden-temple-ghost-of-tsushima.jpg",          "240 190 90",  "Golden Temple"),
+  wp(8470, "rainy-street-mirror",             "/i/c/960x540/media/8470/rainy-street-mirror.3840x2160.jpg",            "180 160 220", "Rainy Street Mirror"),
+  wp(91,   "sakura-and-smoke",                "/i/c/960x540/media/91/sakura-and-smoke.1920x1080.jpg",                 "240 170 200", "Sakura and Smoke"),
+  wp(1081, "audi-r8-near-sakura",             "/i/c/960x540/media/1081/audi-r8-near-sakura.jpg",                      "230 160 190", "Audi R8 Near Sakura"),
+  wp(9360, "minecraft-northern-light",        "/i/c/960x540/media/9360/minecraft-northern-light.3840x2160.jpg",       "120 220 200", "Minecraft Northern Light"),
+  wp(1054, "portal-in-minecraft",             "/i/c/960x540/media/1054/portal-in-minecraft.jpg",                      "200 130 240", "Portal in Minecraft"),
+  wp(9268, "minecraft-snowy-campfire",        "/i/c/960x540/media/9268/minecraft-snowy-campfire.3840x2160.jpg",       "255 170 90",  "Minecraft Snowy Campfire"),
+  wp(9266, "minecraft-sunset-farm",           "/i/c/960x540/media/9266/minecraft-sunset-farm.3840x2160.jpg",          "250 160 100", "Minecraft Sunset Farm"),
+  wp(4776, "minecraft-panels",                "/i/c/960x540/media/4776/minecraft-panels.jpg",                         "150 200 130", "Minecraft Panels"),
+  wp(9570, "crimson-blind-faith",             "/i/c/960x540/media/9570/crimson-blind-faith.3840x2160.jpg",            "230 80 90",   "Crimson Blind Faith"),
 ];
 
-export const DEFAULT_WALLPAPER_ID = "rocks-autumn-fire";
+export const DEFAULT_WALLPAPER_ID = "rocks-glow-with-autumn-fire";
