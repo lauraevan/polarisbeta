@@ -30,27 +30,22 @@ export function Home() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-5 py-8 md:px-10 md:py-10">
+    <div className="mx-auto w-full max-w-6xl px-5 py-10 md:px-12 md:py-14">
       {/* Header */}
-      <header className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">👋</span>
-          <div>
-            <div className="text-xs uppercase tracking-[0.18em] text-white/50">Welcome back</div>
-            <h1 className="text-2xl font-semibold text-white">
-              Player <span className="text-white/40">·</span>{" "}
-              <span
-                style={{ color: `rgb(var(--polaris-accent))` }}
-              >Polaris One</span>
-            </h1>
-          </div>
+      <header className="mb-10 flex items-center justify-between">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.22em] text-white/55">Welcome back</div>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white md:text-4xl">
+            Player <span className="text-white/35">·</span>{" "}
+            <span style={{ color: `rgb(var(--polaris-accent))` }}>Polaris One</span>
+          </h1>
         </div>
-        <img src={logo} alt="" className="h-8 w-8 opacity-90 md:h-10 md:w-10" />
+        <img src={logo} alt="" className="h-10 w-10 opacity-90 md:h-12 md:w-12" />
       </header>
 
       {/* Search bars */}
       <div className="space-y-3">
-        <div className="glass flex items-center gap-3 rounded-2xl px-5 py-4">
+        <div className="glass flex items-center gap-3 rounded-2xl px-5 py-4 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.5)]">
           <Search className="h-5 w-5 text-white/50" />
           <input
             placeholder="Search or type a URL…"
@@ -58,7 +53,7 @@ export function Home() {
           />
           <kbd className="hidden rounded-md border border-white/15 px-1.5 py-0.5 text-[10px] text-white/50 md:inline">↵</kbd>
         </div>
-        <div className="glass-soft flex items-center gap-3 rounded-2xl px-5 py-3">
+        <div className="glass-soft flex items-center gap-3 rounded-2xl px-5 py-3 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.4)]">
           <Command className="h-4 w-4 text-white/50" />
           <input
             placeholder="Quickly navigate…"
@@ -69,14 +64,14 @@ export function Home() {
       </div>
 
       {/* Categories */}
-      <div className="mt-7 flex flex-wrap gap-2">
+      <div className="mt-8 flex flex-wrap gap-2">
         {CATEGORIES.map((c) => {
           const isOn = c === active;
           return (
             <button
               key={c}
               onClick={() => setActive(c)}
-              className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
+              className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-200 ${
                 isOn ? "text-white" : "text-white/60 hover:text-white"
               }`}
               style={
@@ -95,28 +90,23 @@ export function Home() {
       </div>
 
       {/* Shortcuts grid */}
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+      <div className="mt-8 grid grid-cols-2 gap-5 sm:grid-cols-3 md:gap-6 lg:grid-cols-4">
         {visible.map((s) => (
           <a
             key={s.name}
             href={`https://${s.url}`}
             target="_blank"
             rel="noreferrer"
-            className="group glass relative flex aspect-[4/4.6] flex-col items-center justify-center gap-3 rounded-2xl p-4 text-center transition-transform hover:-translate-y-0.5"
-            style={{ transition: "all 200ms ease" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = `0 20px 40px -16px rgba(var(--polaris-accent)/0.55), inset 0 0 0 1px rgba(var(--polaris-accent)/0.45)`;
-            }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ""; }}
+            className="glass shortcut-card relative flex aspect-[5/6] flex-col items-center justify-center gap-4 rounded-3xl p-5 text-center"
           >
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[0.06] ring-1 ring-white/10">
               <img
                 src={`https://www.google.com/s2/favicons?domain=${s.url}&sz=128`}
                 alt={s.name}
-                className="h-9 w-9 rounded-md"
+                className="h-10 w-10 rounded-md"
               />
             </div>
-            <div className="text-sm font-medium text-white/90">{s.name}</div>
+            <div className="text-[15px] font-medium text-white/90">{s.name}</div>
           </a>
         ))}
       </div>
