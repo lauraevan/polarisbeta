@@ -13,7 +13,7 @@ export function PolarisBoot() {
     if (window.sessionStorage.getItem(KEY) === "1") return;
     setShow(true);
     const start = Date.now();
-    const dur = 2400;
+    const dur = 5200;
     const tick = setInterval(() => {
       const p = Math.min(1, (Date.now() - start) / dur);
       setProgress(p);
@@ -23,7 +23,7 @@ export function PolarisBoot() {
     const b = setTimeout(() => {
       setShow(false);
       window.sessionStorage.setItem(KEY, "1");
-    }, dur + 600);
+    }, dur + 700);
     return () => {
       clearInterval(tick);
       clearTimeout(a);
