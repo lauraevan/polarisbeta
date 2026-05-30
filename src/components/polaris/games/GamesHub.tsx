@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Gamepad2, Globe, Calculator, Cloud, Library, Play } from "lucide-react";
 import { PolarisCollection } from "./PolarisCollection";
 import { EmbedFrame } from "./EmbedFrame";
+import { GnMathCollection } from "./GnMathCollection";
+import { HydraCatalog } from "./HydraCatalog";
 
 type TabId = "home" | "polaris" | "cine" | "hydra" | "gnmath";
 
@@ -224,22 +226,8 @@ export function GamesHub() {
             cta="Launch Cine Cloud"
           />
         )}
-        {tab === "hydra" && (
-          <SimpleEmbedTab
-            title="Hydra"
-            desc="Open-source game launcher with a community-sourced catalog. Browse releases directly from inside Polaris."
-            href="https://hydralauncher.gg/catalogue"
-            cta="Open Hydra Catalog"
-          />
-        )}
-        {tab === "gnmath" && (
-          <SimpleEmbedTab
-            title="Gn-Math"
-            desc="The full Gn-Math unblocked games library, embedded directly into Polaris."
-            href="https://gn-math.github.io/"
-            cta="Open Gn-Math"
-          />
-        )}
+        {tab === "hydra" && <HydraCatalog />}
+        {tab === "gnmath" && <GnMathCollection />}
       </div>
     </div>
   );

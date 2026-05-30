@@ -1,7 +1,8 @@
 import { useDeferredValue, useMemo, useState } from "react";
-import { Search, Play, Gamepad2 } from "lucide-react";
+import { Search, Gamepad2 } from "lucide-react";
 import { POLARIS_GAMES } from "@/lib/polaris-games";
 import { EmbedFrame } from "./EmbedFrame";
+import { GameTile } from "./GameTile";
 
 const CDN = "https://cdn.jsdelivr.net/npm/ugs-singlefiles@1.0.6/";
 const PAGE = 60;
@@ -12,41 +13,6 @@ const TOP_PICKS = [
   "papasfreezeria","subwaysurfers","tombofthemask","tinyfishing","monkeymart",
   "bittlife","amongus","minecraftclassic","cookieclicker","2048","geometrydash",
 ];
-
-// Steam-style monochrome tile (a single accent color, no rainbow gradients)
-function GameTile({
-  title,
-  onPlay,
-  size = "md",
-}: {
-  title: string;
-  onPlay: () => void;
-  size?: "md" | "lg";
-}) {
-  const h = size === "lg" ? "h-40" : "h-28";
-  return (
-    <button
-      onClick={onPlay}
-      className={`group relative ${h} w-full overflow-hidden rounded-sm border border-white/5 bg-zinc-900/90 text-left transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgb(var(--polaris-accent))]/60`}
-    >
-      <div
-        className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
-        style={{
-          background:
-            "radial-gradient(ellipse at bottom, rgba(var(--polaris-accent)/0.35), transparent 70%)",
-        }}
-      />
-      <div className="relative flex h-full flex-col justify-end p-3">
-        <span className="line-clamp-2 text-sm font-semibold text-white">
-          {title}
-        </span>
-        <span className="mt-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/45 transition group-hover:text-[rgb(var(--polaris-accent))]">
-          <Play className="h-2.5 w-2.5 fill-current" /> Play
-        </span>
-      </div>
-    </button>
-  );
-}
 
 export function PolarisCollection() {
   const [q, setQ] = useState("");
