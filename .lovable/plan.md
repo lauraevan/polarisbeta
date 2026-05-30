@@ -1,71 +1,48 @@
+## Goals
+1. Wallpapers actually load (current motionbgs.com hotlinks are referrer-blocked → black screen).
+2. Shortcut grid feels breathable like the reference (bigger cards, more spacing, fewer per row).
+3. Remove the waving-hand emoji from the welcome header.
+4. Polish the overall feel: smoother transitions, softer glass, cleaner header.
 
-## Polaris One — Web OS Hub (v1)
+## 1. Fix wallpapers (root cause of "wallpapers don't work")
+`motionbgs.com/media/...mp4` blocks hotlinking, so `<video>` shows nothing and we fall through to the dark base. Two-part fix:
 
-A premium, full-screen dashboard inspired by the reference shot: dark glass sidebar, cinematic wallpaper background, translucent cards, warm amber + Polaris-blue accents. Only the Home page is wired up; other nav items render "Coming soon" placeholders.
+- **Replace sources** with directly-embeddable assets. Best candidates that match the requested moods:
+  - Use Pexels / Coverr-hosted CDN MP4s (no referrer protection, CORS-open) for cinematic animated backgrounds (autumn forest, sakura, rainy street, snowy campfire, sunset, ocean, etc.).
+  - For Minecraft / anime-specific scenes where free animated equivalents don't exist, fall back to high-quality static images from Unsplash (`images.unsplash.com`) with the same warm/cool accent token.
+- Add a `poster` (first-frame JPG from same CDN) so something paints instantly while the video buffers — kills the "black screen" feel.
+- Add a graceful fallback: if `<video onError>` fires, swap to a CSS gradient using the wallpaper's accent so the UI never goes empty.
+- Keep the existing `accent` RGB system; just retune values to match the new imagery.
+- Keep the exact naming the user asked for (Marshland, Rocks Glow With Autumn Fire, Sakura and Smoke, etc.) — only the underlying `src` changes.
 
-### Layout
+The user-facing list stays the autumn/sakura/Minecraft/Audi set; we just guarantee each one renders.
 
-```
-┌────────────┬──────────────────────────────────────────┐
-│  [P] logo  │  👋 Welcome back            [P]          │
-│            │                                          │
-│ ● Home     │  ┌──────────────────────────────────┐    │
-│   Games    │  │ 🔍 Search or type a URL…         │    │
-│   Media    │  └──────────────────────────────────┘    │
-│   Apps     │  ┌──────────────────────────────────┐    │
-│   AI Tools │  │ ⌘  Quickly navigate…             │    │
-│   Emulator │  └──────────────────────────────────┘    │
-│   Chat     │                                          │
-│            │  [Popular][Games][AI][Websites][Media]…  │
-│            │                                          │
-│            │  ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐     │
-│            │  │ YT │ │Redd│ │Goog│ │Tik │ │ IG │     │
-│            │  └────┘ └────┘ └────┘ └────┘ └────┘     │
-│            │  ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐     │
-│            │  │Spot│ │Disc│ │Gemi│ │GPT │ │Robl│     │
-│            │  └────┘ └────┘ └────┘ └────┘ └────┘     │
-│ Profile    │                                          │
-│ Logout     │                          [🖼 Wallpaper] │
-│ 🎮 🏆 🌙 🖥 │                                          │
-└────────────┴──────────────────────────────────────────┘
-```
+## 2. Shortcut grid spacing (the "mashed up" complaint)
+Reference shows ~3 cards per row with generous gutters and tall cards. Current grid jumps to 5 columns and uses `gap-3`. Changes in `Home.tsx`:
 
-### Pages / routes
-- `/` — Home dashboard (built now)
-- `/games`, `/media`, `/apps`, `/ai`, `/emulator`, `/chat` — minimal "Coming soon" pages sharing the same shell
+- Grid: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-4` (cap at 4, not 5).
+- Gap: `gap-5 md:gap-6`.
+- Card aspect: slightly taller (`aspect-[5/6]`), larger icon tile (h-16 w-16), bigger label, more padding (`p-5`).
+- Reduce the shortcut count shown per category so rows feel intentional, not crammed.
 
-### Wallpaper system
-- Floating wallpaper picker button (bottom-right) opens a glass panel with thumbnails grouped Static / Animated.
-- Each wallpaper carries an `accent` token (warm amber, copper, sakura pink, icy polaris-blue, forest green, etc.). Selecting a wallpaper updates a CSS variable `--accent` that re-tints sidebar highlights, chip glow, card hover rings, and the logo halo — so the theme shifts with the background.
-- Wallpaper list (sourced from motionbgs.com URLs):
-  - Marshland, Pokemon Near Pink Sakura Tree, Rocks Glow With Autumn Fire, Gojo Manga, Forest Sunset, Mountain Landscape in Autumn, First Fall Day in Forest, Audi On Frozen Lake, Fish Tank, Girl on the Beach at Night, Colorful Sunset on Street, Golden Temple, Rainy Street Mirror, Sakura and Smoke, Audi R8 Near Sakura, Minecraft Northern Light, Portal in Minecraft, Minecraft Snowy Campfire, Minecraft Sunset Farm, Minecraft Panels, Crimson Blind Faith
-- Animated wallpapers render via `<video autoplay muted loop playsinline>`; static ones via `<img>`. Choice persists to `localStorage`.
+## 3. Header polish
+- Remove the 👋 emoji span entirely.
+- Keep "Welcome back / Player · Polaris One" but tighten typography and align logo to the right cleanly.
+- No emojis anywhere else (audit Sidebar + ComingSoon — currently clean, just verify).
 
-### Visual system (added to `src/styles.css`)
-- Base: deep navy `oklch(0.18 0.04 260)` + near-black glass surfaces
-- Warm tokens: amber `oklch(0.78 0.16 65)`, copper `oklch(0.62 0.13 50)`, soft gold
-- Cool accent: polaris-blue `oklch(0.72 0.14 230)`
-- `--accent` (dynamic, set per wallpaper) drives glow rings, active nav pill, chip highlight
-- Glass surfaces: `backdrop-blur-xl` + `bg-white/5` + subtle inner border `border-white/10`
-- Active sidebar item: amber pill with soft outer glow (`box-shadow: 0 0 24px var(--accent)/40`)
+## 4. Smoother feel
+- Wallpaper layer: add a `transition-opacity duration-500` crossfade when switching wallpapers (double-buffer two `<video>` layers).
+- Cards: replace inline `onMouseEnter` box-shadow swap with a CSS `:hover` rule via a utility class so it animates with the existing `transition`.
+- Category chips: add `transition-all duration-200` and a subtle scale on active.
+- Sidebar active pill: ease-in-out glow.
+- Slightly stronger backdrop blur on `.glass` (`backdrop-blur-2xl`) and a hair more bg opacity so cards read against bright autumn frames like the reference.
 
-### Components
-- `AppShell` — sidebar + main area, supplies wallpaper background layer
-- `Sidebar` — logo, nav list (lucide icons), bottom Profile/Logout + 4 mini icons
-- `WallpaperLayer` — fixed full-screen img/video with darkening gradient
-- `WallpaperPicker` — floating button + sheet/grid
-- `SearchBar`, `CommandBar` — large rounded glass inputs (non-functional placeholders, ready for scramjet later)
-- `CategoryChips` — horizontal scroll, active chip uses `--accent`
-- `ShortcutGrid` + `ShortcutCard` — uses official brand favicons (`https://www.google.com/s2/favicons?domain=…&sz=128`) so we don't ship logo assets
+## Files touched
+- `src/lib/wallpapers.ts` — new working URLs + posters + retuned accents.
+- `src/components/polaris/WallpaperLayer.tsx` — double-buffered crossfade + onError gradient fallback.
+- `src/components/polaris/Home.tsx` — grid spacing, card sizing, remove emoji, hover via CSS.
+- `src/styles.css` — tighten `.glass`, add `.shortcut-card` hover utility, smooth transitions.
 
-### Technical notes
-- Logo: copy uploaded `CC7DAE42-…png` → `src/assets/polaris-logo.png`, import as ES module
-- Wallpaper URLs: stored in `src/lib/wallpapers.ts` as `{ id, name, src, type: 'static'|'animated', accent }`. URLs will be Motionbgs CDN links; if any fail to hotlink we can swap to a proxy later
-- Theme switching via `document.documentElement.style.setProperty('--accent', …)` in a small `useWallpaper` hook backed by `localStorage`
-- All nav routes created so `<Link>` typechecks; placeholder routes render shared shell with "Coming soon" card
-- Mobile: sidebar collapses behind a hamburger (project preview is 390px); cards reflow to 2 columns
-
-### Out of scope (per user)
-- Scramjet proxy wiring (search bars are visual only)
-- Real content/functionality for Games/Media/Apps/AI/Emulator/Chat
-- Auth / Profile logic
+## Out of scope
+- Sidebar restructure, new routes, scramjet wiring, auth — untouched.
+- No new dependencies.
