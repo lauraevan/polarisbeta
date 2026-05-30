@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Film, Tv2, Sparkles, X } from "lucide-react";
+import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info } from "lucide-react";
 import { tmdbApi, IMG, type TmdbItem, type MediaKind } from "@/lib/tmdb";
 import { Row } from "./Row";
 import { MovieModal } from "./MovieModal";
@@ -8,7 +8,7 @@ import { Player } from "./Player";
 import { PolarisFlixSplash } from "./Splash";
 import { MyListProvider, useMyList } from "@/lib/mylist-context";
 
-type Tab = "movies" | "shows" | "anime";
+type Tab = "home" | "movies" | "shows" | "anime";
 
 // TMDB genre IDs. Movie and TV share many but not all.
 const MOVIE_GENRES = [
@@ -31,9 +31,25 @@ const TV_GENRES = [
   { id: 10751, label: "Family" },
 ] as const;
 
+// International language filters
+const LANGUAGES = [
+  { code: "", label: "All Languages" },
+  { code: "en", label: "English" },
+  { code: "ko", label: "Korean" },
+  { code: "ja", label: "Japanese" },
+  { code: "es", label: "Spanish" },
+  { code: "fr", label: "French" },
+  { code: "hi", label: "Hindi" },
+  { code: "zh", label: "Chinese" },
+  { code: "de", label: "German" },
+  { code: "it", label: "Italian" },
+  { code: "pt", label: "Portuguese" },
+  { code: "tr", label: "Turkish" },
+] as const;
+
 function Hero({ item, onPlay, onInfo }: { item: TmdbItem; onPlay: () => void; onInfo: () => void }) {
   return (
-    <div className="relative mb-6 h-[42vh] min-h-[280px] overflow-hidden rounded-2xl mx-4 sm:mx-6">
+    <div className="relative mb-6 h-[46vh] min-h-[300px] overflow-hidden rounded-2xl mx-4 sm:mx-6">
       {item.backdrop_path && (
         <img
           src={IMG(item.backdrop_path, "original")}
@@ -48,18 +64,18 @@ function Hero({ item, onPlay, onInfo }: { item: TmdbItem; onPlay: () => void; on
           {item.title || item.name}
         </h1>
         <p className="mt-2 line-clamp-2 text-sm text-white/80 md:text-base">{item.overview}</p>
-        <div className="mt-4 flex gap-2">
+        <div className="mt-5 flex gap-2.5">
           <button
             onClick={onPlay}
-            className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90"
+            className="flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-base font-bold text-black shadow-lg hover:bg-white/90"
           >
-            ▶ Play
+            <Play className="h-5 w-5 fill-black" /> Play
           </button>
           <button
             onClick={onInfo}
-            className="liquid-glass rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
+            className="liquid-glass flex items-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-white"
           >
-            More info
+            <Info className="h-5 w-5" /> More info
           </button>
         </div>
       </div>
@@ -69,27 +85,53 @@ function Hero({ item, onPlay, onInfo }: { item: TmdbItem; onPlay: () => void; on
 
 function FlixInner() {
   const [splash, setSplash] = useState(true);
-  const [tab, setTab] = useState<Tab>("movies");
+  const [tab, setTab] = useState<Tab>("home");
   const [selected, setSelected] = useState<{ item: TmdbItem; kind: MediaKind } | null>(null);
   const [playing, setPlaying] = useState<{ item: TmdbItem; kind: MediaKind } | null>(null);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchType, setSearchType] = useState<"all" | "movie" | "tv">("all");
+  const [searchLang, setSearchLang] = useState<string>("");
   const { list } = useMyList();
 
   const kind: MediaKind = tab === "movies" ? "movie" : "tv";
+  const inferKind = (item: TmdbItem): MediaKind =>
+    item.media_type === "movie" || item.media_type === "tv"
+      ? item.media_type
+      : item.title
+        ? "movie"
+        : "tv";
+
+  const trendingAll = useQuery({
+    queryKey: ["trending-all"],
+    queryFn: () => tmdbApi.trendingAll(),
+    enabled: tab === "home",
+  });
+  const homeMovies = useQuery({
+    queryKey: ["home-movies"], queryFn: () => tmdbApi.popular("movie"), enabled: tab === "home",
+  });
+  const homeShows = useQuery({
+    queryKey: ["home-shows"], queryFn: () => tmdbApi.popular("tv"), enabled: tab === "home",
+  });
+  const homeAnime = useQuery({
+    queryKey: ["home-anime"], queryFn: () => tmdbApi.animeTrending(), enabled: tab === "home",
+  });
 
   const trending = useQuery({
     queryKey: ["trending", tab],
     queryFn: () =>
       tab === "anime" ? tmdbApi.animeTrending() : tmdbApi.trending(kind),
+    enabled: tab !== "home",
   });
   const popular = useQuery({
     queryKey: ["popular", tab],
     queryFn: () => (tab === "anime" ? tmdbApi.animeTrending() : tmdbApi.popular(kind)),
+    enabled: tab !== "home",
   });
   const topRated = useQuery({
     queryKey: ["top", tab],
     queryFn: () => (tab === "anime" ? tmdbApi.animeTop() : tmdbApi.topRated(kind)),
+    enabled: tab !== "home",
   });
   const extra = useQuery({
     queryKey: ["extra", tab],
@@ -99,20 +141,39 @@ function FlixInner() {
         : tab === "shows"
           ? tmdbApi.airing()
           : tmdbApi.animeMovies(),
+    enabled: tab !== "home",
   });
 
   const genres = tab === "shows" ? TV_GENRES : tab === "movies" ? MOVIE_GENRES : [];
 
+  // Netflix-style multi-search with type & language filters
   const search = useQuery({
-    queryKey: ["search", tab, query],
-    queryFn: () => tmdbApi.search(kind, query),
+    queryKey: ["search", searchType, searchLang, query],
+    queryFn: async () => {
+      const q = query.trim();
+      if (searchType === "all") {
+        const r = await tmdbApi.multiSearch(q);
+        return r.filter((i) => i.media_type === "movie" || i.media_type === "tv");
+      }
+      return tmdbApi.search(searchType, q);
+    },
     enabled: searchOpen && query.trim().length > 1,
   });
 
-  const hero = useMemo(() => trending.data?.[0], [trending.data]);
+  const intlMovies = useQuery({
+    queryKey: ["intl-movies", searchLang],
+    queryFn: () => tmdbApi.international("movie", searchLang || "ko"),
+    enabled: searchOpen && query.trim().length < 2,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const heroSource = tab === "home" ? trendingAll.data : trending.data;
+  const hero = useMemo(() => heroSource?.[0], [heroSource]);
+  const heroKind: MediaKind = hero ? inferKind(hero) : "movie";
   const myListForTab = list.filter((i) => i.kind === kind);
 
   const tabs: { id: Tab; label: string; icon: typeof Film }[] = [
+    { id: "home", label: "Home", icon: HomeIcon },
     { id: "movies", label: "Movies", icon: Film },
     { id: "shows", label: "Shows", icon: Tv2 },
     { id: "anime", label: "Anime", icon: Sparkles },
@@ -125,7 +186,7 @@ function FlixInner() {
       <div className="min-h-screen pb-32">
         {/* Top bar */}
         <header className="sticky top-0 z-30 flex items-center gap-3 px-4 pt-4 pb-3 sm:px-6">
-          <div className="liquid-glass-strong flex w-full items-center gap-2 rounded-2xl px-3 py-2">
+          <div className="liquid-glass-themed flex w-full items-center gap-2 rounded-2xl px-3 py-2">
             <div className="flex items-center gap-2 pr-2">
               <span
                 className="text-lg font-black tracking-tight"
@@ -172,40 +233,87 @@ function FlixInner() {
             </nav>
             <button
               onClick={() => setSearchOpen((o) => !o)}
-              className="rounded-xl p-2 text-white/85 hover:bg-white/10"
+              className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20"
               aria-label="Search"
             >
               {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+              <span className="hidden sm:inline font-medium">{searchOpen ? "Close" : "Search"}</span>
             </button>
           </div>
         </header>
 
+        {/* Netflix-style fullscreen search overlay */}
         {searchOpen && (
-          <div className="px-4 sm:px-6">
-            <input
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={`Search ${tab}...`}
-              className="liquid-glass w-full rounded-xl bg-transparent px-4 py-3 text-white placeholder:text-white/40 focus:outline-none"
-            />
-            {search.data && (
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                {search.data.slice(0, 20).map((item) => (
+          <div className="fixed inset-0 z-40 overflow-y-auto bg-black/80 backdrop-blur-2xl animate-[fadeIn_180ms_ease]">
+            <div className="mx-auto max-w-6xl px-4 pt-20 pb-32 sm:px-6">
+              <button
+                onClick={() => { setSearchOpen(false); setQuery(""); }}
+                className="absolute right-5 top-5 liquid-glass rounded-full p-2 text-white"
+                aria-label="Close search"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="liquid-glass-themed flex items-center gap-3 rounded-2xl px-5 py-4">
+                <Search className="h-6 w-6 text-white/80" />
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Titles, genres, actors…"
+                  className="flex-1 bg-transparent text-lg text-white placeholder:text-white/40 focus:outline-none"
+                />
+              </div>
+
+              {/* Filters */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(["all", "movie", "tv"] as const).map((t) => (
                   <button
-                    key={item.id}
-                    onClick={() => setSelected({ item, kind })}
-                    className="liquid-glass overflow-hidden rounded-xl transition hover:scale-[1.03]"
+                    key={t}
+                    onClick={() => setSearchType(t)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${
+                      searchType === t
+                        ? "bg-white text-black"
+                        : "liquid-glass text-white/85"
+                    }`}
                   >
-                    {item.poster_path ? (
-                      <img src={IMG(item.poster_path, "w300")} alt="" className="aspect-[2/3] w-full object-cover" />
-                    ) : (
-                      <div className="aspect-[2/3] w-full p-2 text-xs text-white/60">{item.title || item.name}</div>
-                    )}
+                    {t === "all" ? "All" : t === "movie" ? "Movies" : "Shows"}
                   </button>
                 ))}
+                <span className="mx-1 h-6 w-px self-center bg-white/15" />
+                <select
+                  value={searchLang}
+                  onChange={(e) => setSearchLang(e.target.value)}
+                  className="liquid-glass rounded-full bg-transparent px-3 py-1 text-xs text-white"
+                >
+                  {LANGUAGES.map((l) => (
+                    <option key={l.code} value={l.code} className="bg-black">{l.label}</option>
+                  ))}
+                </select>
               </div>
-            )}
+
+              {/* Results / International discovery when empty */}
+              <div className="mt-6">
+                {query.trim().length < 2 ? (
+                  <>
+                    <h3 className="mb-3 text-sm font-semibold text-white/80">
+                      Popular {LANGUAGES.find((l) => l.code === (searchLang || "ko"))?.label} cinema
+                    </h3>
+                    <Grid items={intlMovies.data ?? []} onSelect={(item) => setSelected({ item, kind: "movie" })} />
+                  </>
+                ) : search.data?.length ? (
+                  <Grid
+                    items={search.data}
+                    onSelect={(item) =>
+                      setSelected({ item, kind: searchType === "all" ? inferKind(item) : searchType })
+                    }
+                  />
+                ) : (
+                  <div className="py-12 text-center text-sm text-white/50">
+                    {search.isFetching ? "Searching…" : "No results"}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -214,11 +322,48 @@ function FlixInner() {
             {hero && (
               <Hero
                 item={hero}
-                onPlay={() => setPlaying({ item: hero, kind })}
-                onInfo={() => setSelected({ item: hero, kind })}
+                onPlay={() => setPlaying({ item: hero, kind: heroKind })}
+                onInfo={() => setSelected({ item: hero, kind: heroKind })}
               />
             )}
 
+            {tab === "home" ? (
+              <>
+                <Row
+                  title="Top 10 This Week"
+                  items={trendingAll.data ?? []}
+                  ranked
+                  loading={trendingAll.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: inferKind(item) })}
+                />
+                {myListForTab.length > 0 && (
+                  <Row
+                    title="My List"
+                    items={list}
+                    onSelect={(item) => setSelected({ item, kind: (item as any).kind || inferKind(item) })}
+                  />
+                )}
+                <Row
+                  title="Popular Movies"
+                  items={homeMovies.data ?? []}
+                  loading={homeMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Popular Shows"
+                  items={homeShows.data ?? []}
+                  loading={homeShows.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "tv" })}
+                />
+                <Row
+                  title="Trending Anime"
+                  items={homeAnime.data ?? []}
+                  loading={homeAnime.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "tv" })}
+                />
+              </>
+            ) : (
+            <>
             <Row
               title={`Top 10 ${tab === "movies" ? "Movies" : tab === "shows" ? "Shows" : "Anime"} Today`}
               items={trending.data ?? []}
@@ -262,6 +407,8 @@ function FlixInner() {
                 onSelect={(item) => setSelected({ item, kind })}
               />
             ))}
+            </>
+            )}
           </>
         )}
       </div>
@@ -295,6 +442,27 @@ export function PolarisFlix() {
     <MyListProvider>
       <FlixInner />
     </MyListProvider>
+  );
+}
+
+function Grid({ items, onSelect }: { items: TmdbItem[]; onSelect: (item: TmdbItem) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      {items.slice(0, 30).map((item) => (
+        <button
+          key={`${item.media_type ?? ""}-${item.id}`}
+          onClick={() => onSelect(item)}
+          className="liquid-glass overflow-hidden rounded-xl text-left transition hover:scale-[1.04]"
+        >
+          {item.poster_path ? (
+            <img src={IMG(item.poster_path, "w300")} alt="" className="aspect-[2/3] w-full object-cover" loading="lazy" />
+          ) : (
+            <div className="aspect-[2/3] w-full p-2 text-xs text-white/60">{item.title || item.name}</div>
+          )}
+          <div className="truncate px-2 py-1.5 text-[11px] font-medium text-white/90">{item.title || item.name}</div>
+        </button>
+      ))}
+    </div>
   );
 }
 
