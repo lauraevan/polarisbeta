@@ -25,7 +25,7 @@ export function Dock() {
     <>
       <Launchpad open={launchpadOpen} onClose={() => setLaunchpadOpen(false)} />
       <div className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
-        <div className="liquid-glass-strong pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-3 overflow-x-auto rounded-2xl px-3 py-2 sm:gap-4 sm:px-4">
+        <div className="liquid-glass-themed pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-3 overflow-x-auto rounded-2xl px-3 py-2 sm:gap-4 sm:px-4">
         {/* Brand */}
         <div className="flex items-center gap-2 pr-1 sm:pr-2">
           <img src={logo} alt="Polaris One" className="h-7 w-7 rounded-lg object-contain" />
