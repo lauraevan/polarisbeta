@@ -8,28 +8,57 @@ export type Wallpaper = {
   poster?: string;
 };
 
-// Reliable Unsplash CDN images (no referrer protection). Each picked to match the
-// requested motionbgs scene as closely as possible.
+// Wallpaper sources:
+// - Animated wallpapers use Pexels' public video CDN (referrer-friendly, CORS-open).
+//   motionbgs.com blocks hotlinking, so its files cannot be embedded directly.
+// - Posters/static frames come from Unsplash.
 const U = (id: string, w = 2400) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
 
 export const WALLPAPERS: Wallpaper[] = [
-  { id: "rocks-autumn-fire", name: "Rocks Glow With Autumn Fire", type: "static", accent: "255 140 60",
-    src: U("photo-1507783548227-544c3b8fc065") },
-  { id: "marshland", name: "Marshland", type: "static", accent: "230 175 110",
-    src: U("photo-1500964757637-c85e8a162699") },
+  // Animated — verified working Pexels MP4s
+  {
+    id: "rocks-autumn-fire",
+    name: "Rocks Glow With Autumn Fire",
+    type: "animated",
+    accent: "255 140 60",
+    src: "https://videos.pexels.com/video-files/4763824/4763824-uhd_2560_1440_24fps.mp4",
+    poster: U("photo-1507783548227-544c3b8fc065"),
+  },
+  {
+    id: "marshland",
+    name: "Marshland",
+    type: "animated",
+    accent: "230 175 110",
+    src: "https://videos.pexels.com/video-files/3214448/3214448-uhd_2560_1440_25fps.mp4",
+    poster: U("photo-1500964757637-c85e8a162699"),
+  },
+  {
+    id: "sakura-smoke",
+    name: "Sakura and Smoke",
+    type: "animated",
+    accent: "240 170 200",
+    src: "https://videos.pexels.com/video-files/2491285/2491285-uhd_2732_1440_24fps.mp4",
+    poster: U("photo-1522383225653-ed111181a951"),
+  },
+  {
+    id: "rainy-street-mirror",
+    name: "Rainy Street Mirror",
+    type: "animated",
+    accent: "180 160 220",
+    src: "https://videos.pexels.com/video-files/3015527/3015527-hd_1920_1080_24fps.mp4",
+    poster: U("photo-1519508234439-4f23643125c1"),
+  },
+
+  // Static — high-fidelity scene matches from Unsplash
   { id: "forest-sunset", name: "Forest Sunset", type: "static", accent: "255 160 80",
     src: U("photo-1448375240586-882707db888b") },
   { id: "mountain-autumn", name: "Mountain Landscape in Autumn", type: "static", accent: "230 150 70",
     src: U("photo-1507041957456-9c397ce39c97") },
   { id: "first-fall-day", name: "First Fall Day in Forest", type: "static", accent: "220 160 90",
     src: U("photo-1476231682828-37e571bc172f") },
-  { id: "sakura-smoke", name: "Sakura and Smoke", type: "static", accent: "240 170 200",
-    src: U("photo-1522383225653-ed111181a951") },
   { id: "pokemon-sakura", name: "Pink Sakura Tree", type: "static", accent: "255 170 200",
     src: U("photo-1490375905304-fa18cdc6daff") },
-  { id: "rainy-street-mirror", name: "Rainy Street Mirror", type: "static", accent: "180 160 220",
-    src: U("photo-1519508234439-4f23643125c1") },
   { id: "colorful-sunset-street", name: "Colorful Sunset on Street", type: "static", accent: "255 140 110",
     src: U("photo-1502602898657-3e91760cbb34") },
   { id: "golden-temple", name: "Golden Temple", type: "static", accent: "240 190 90",
