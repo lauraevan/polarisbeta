@@ -105,16 +105,31 @@
 html, body, #root { height: 100%; }
 
 .glass {
-  background: linear-gradient(180deg, rgba(18,16,24,0.55), rgba(8,7,12,0.6));
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(18,16,24,0.62), rgba(8,7,12,0.68));
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.09);
 }
 .glass-soft {
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.09);
+}
+
+.shortcut-card {
+  transition: transform 250ms ease, box-shadow 300ms ease, border-color 300ms ease;
+}
+.shortcut-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 24px 48px -18px rgba(var(--polaris-accent) / 0.55),
+    inset 0 0 0 1px rgba(var(--polaris-accent) / 0.55);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .dark {
