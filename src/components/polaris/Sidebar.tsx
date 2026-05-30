@@ -9,12 +9,11 @@ import {
   MessageCircle,
   User,
   LogOut,
-  Trophy,
-  Moon,
-  Monitor,
-  Disc,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
+import { useSidebarState } from "@/lib/sidebar-context";
 
 const nav = [
   { to: "/", label: "Home", icon: Home },
@@ -28,24 +27,45 @@ const nav = [
 
 export function Sidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const { collapsed, toggle } = useSidebarState();
+  const width = collapsed ? "w-[68px]" : "w-60";
 
   return (
-    <aside className="liquid-glass-strong relative z-20 hidden h-screen w-60 shrink-0 flex-col rounded-none md:flex">
-      <div className="flex items-center gap-3 px-5 pb-2 pt-6">
-        <div className="relative">
-          <img src={logo} alt="Polaris One" className="h-9 w-9 rounded-lg object-contain" />
+    <aside
+      className={`liquid-glass-strong relative z-20 hidden h-screen ${width} shrink-0 flex-col rounded-none transition-[width] duration-300 ease-out md:flex`}
+    >
+      {/* Brand */}
+      <div className={`flex items-center pt-6 pb-2 ${collapsed ? "justify-center px-2" : "gap-3 px-5"}`}>
+        <div className="relative shrink-0">
+          <img
+            src={logo}
+            alt="Polaris One"
+            className="h-9 w-9 object-contain"
+            style={{ mixBlendMode: "plus-lighter" }}
+          />
           <div
             className="absolute inset-0 -z-10 rounded-lg blur-xl opacity-70"
             style={{ background: `rgba(var(--polaris-accent)/0.55)` }}
           />
         </div>
-        <div className="leading-tight">
-          <div className="text-[15px] font-semibold tracking-wide text-white">Polaris One</div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-white/40">Web OS</div>
-        </div>
+        {!collapsed && (
+          <div className="overflow-hidden leading-tight">
+            <div className="truncate text-[15px] font-semibold tracking-wide text-white">Polaris One</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-white/40">Web OS</div>
+          </div>
+        )}
       </div>
 
-      <nav className="mt-6 flex-1 space-y-1 px-3">
+      {/* Collapse toggle */}
+      <button
+        onClick={toggle}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        className="liquid-glass absolute -right-3 top-7 z-30 hidden h-6 w-6 items-center justify-center rounded-full text-white/85 hover:text-white md:flex"
+      >
+        {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+      </button>
+
+      <nav className={`mt-5 flex-1 space-y-1 ${collapsed ? "px-2" : "px-3"}`}>
         {nav.map((item) => {
           const active = path === item.to;
           const Icon = item.icon;
@@ -53,11 +73,10 @@ export function Sidebar() {
             <Link
               key={item.to}
               to={item.to}
-              className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
-                active
-                  ? "text-white"
-                  : "text-white/65 hover:bg-white/5 hover:text-white"
-              }`}
+              title={collapsed ? item.label : undefined}
+              className={`group relative flex items-center rounded-xl text-sm transition-all ${
+                collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
+              } ${active ? "text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
             >
               {active && (
                 <span
@@ -68,26 +87,30 @@ export function Sidebar() {
                   }}
                 />
               )}
-              <Icon className="relative h-[18px] w-[18px]" />
-              <span className="relative font-medium">{item.label}</span>
+              <Icon className="relative h-[18px] w-[18px] shrink-0" />
+              {!collapsed && <span className="relative font-medium">{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-white/5 p-3">
-        <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white">
-          <User className="h-[18px] w-[18px]" /> Profile
+      <div className={`border-t border-white/5 ${collapsed ? "px-2 py-3" : "p-3"}`}>
+        <button
+          title={collapsed ? "Profile" : undefined}
+          className={`flex w-full items-center rounded-xl text-sm text-white/70 hover:bg-white/5 hover:text-white ${
+            collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"
+          }`}
+        >
+          <User className="h-[18px] w-[18px] shrink-0" /> {!collapsed && "Profile"}
         </button>
-        <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-white/50 hover:bg-white/5 hover:text-white">
-          <LogOut className="h-[18px] w-[18px]" /> Logout
+        <button
+          title={collapsed ? "Logout" : undefined}
+          className={`flex w-full items-center rounded-xl text-sm text-white/50 hover:bg-white/5 hover:text-white ${
+            collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"
+          }`}
+        >
+          <LogOut className="h-[18px] w-[18px] shrink-0" /> {!collapsed && "Logout"}
         </button>
-        <div className="mt-3 flex items-center gap-2 px-2 text-white/40">
-          <Disc className="h-4 w-4 hover:text-white" />
-          <Trophy className="h-4 w-4 hover:text-white" />
-          <Moon className="h-4 w-4 hover:text-white" />
-          <Monitor className="h-4 w-4 hover:text-white" />
-        </div>
       </div>
     </aside>
   );
