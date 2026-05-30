@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, ArrowUpRight } from "lucide-react";
+import { Search } from "lucide-react";
 
 type Shortcut = { name: string; url: string; category: Category };
 type Category = "Popular" | "Games" | "AI Tools" | "Websites" | "Media" | "Apps";
@@ -18,20 +18,16 @@ const SHORTCUTS: Shortcut[] = [
   { name: "Now.gg", url: "now.gg", category: "Games" },
 ];
 
-const POPULAR_NAMES = new Set(["YouTube", "Reddit", "Google", "TikTok", "Instagram"]);
+const POPULAR_NAMES = new Set([
+  "YouTube", "Reddit", "Google", "TikTok", "Instagram", "Spotify", "Discord",
+]);
 const CATEGORIES: (Category | "Popular")[] = ["Popular", "Games", "AI Tools", "Websites", "Media", "Apps"];
-const FEATURED = [
-  { name: "Spotify", url: "spotify.com", tag: "Proxy" },
-  { name: "Discord", url: "discord.com", tag: "Proxy" },
-] as const;
 
 export function Home() {
   const [active, setActive] = useState<(typeof CATEGORIES)[number]>("Popular");
 
   const visible = SHORTCUTS.filter((s) =>
-    active === "Popular"
-      ? POPULAR_NAMES.has(s.name)
-      : s.category === active && !FEATURED.some((f) => f.name === s.name)
+    active === "Popular" ? POPULAR_NAMES.has(s.name) : s.category === active
   );
 
   return (
@@ -40,30 +36,6 @@ export function Home() {
       <div className="mb-6 text-center">
         <div className="text-[10px] uppercase tracking-[0.32em] text-white/70">Polaris One</div>
         <div className="mt-1 text-[11px] text-white/45">Your warm cinematic web hub</div>
-      </div>
-
-      {/* Featured proxy shortcuts — centered hero pair */}
-      <div className="mb-5 grid w-full max-w-md grid-cols-2 gap-3">
-        {FEATURED.map((f) => (
-          <a
-            key={f.name}
-            href={`https://${f.url}`}
-            target="_blank"
-            rel="noreferrer"
-            className="liquid-glass shortcut-card group relative flex items-center gap-3 rounded-2xl p-3"
-          >
-            <img
-              src={`https://www.google.com/s2/favicons?domain=${f.url}&sz=128`}
-              alt=""
-              className="h-8 w-8 rounded-lg"
-            />
-            <div className="flex-1 leading-tight">
-              <div className="text-sm font-semibold text-white">{f.name}</div>
-              <div className="text-[10px] uppercase tracking-wider text-white/55">{f.tag}</div>
-            </div>
-            <ArrowUpRight className="h-4 w-4 text-white/60 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-          </a>
-        ))}
       </div>
 
       {/* Single centered search */}
@@ -102,24 +74,32 @@ export function Home() {
         })}
       </div>
 
-      {/* Compact see-through shortcuts */}
-      <div className="mt-5 grid w-full max-w-xl grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6">
-        {visible.map((s) => (
-          <a
-            key={s.name}
-            href={`https://${s.url}`}
-            target="_blank"
-            rel="noreferrer"
-            className="liquid-glass shortcut-card group flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl p-2 text-center"
-          >
-            <img
-              src={`https://www.google.com/s2/favicons?domain=${s.url}&sz=128`}
-              alt={s.name}
-              className="h-6 w-6 rounded"
-            />
-            <div className="text-[10px] font-medium text-white/85 leading-tight">{s.name}</div>
-          </a>
-        ))}
+      {/* Shortcuts — auto-centering responsive grid */}
+      <div className="mt-5 flex w-full justify-center">
+        <div
+          className="grid w-full justify-center gap-3"
+          style={{
+            gridTemplateColumns: "repeat(auto-fit, minmax(76px, 88px))",
+            justifyContent: "center",
+          }}
+        >
+          {visible.map((s) => (
+            <a
+              key={s.name}
+              href={`https://${s.url}`}
+              target="_blank"
+              rel="noreferrer"
+              className="liquid-glass shortcut-card group flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl p-2 text-center"
+            >
+              <img
+                src={`https://www.google.com/s2/favicons?domain=${s.url}&sz=128`}
+                alt={s.name}
+                className="h-6 w-6 rounded"
+              />
+              <div className="text-[10px] font-medium leading-tight text-white/85">{s.name}</div>
+            </a>
+          ))}
+        </div>
       </div>
     </div>
   );
