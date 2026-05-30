@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/polaris/AppShell";
-import { ComingSoon } from "@/components/polaris/ComingSoon";
+import { PolarisFlix } from "@/components/polaris/streaming/PolarisFlix";
 
 export const Route = createFileRoute("/media")({
-  head: () => ({ meta: [{ title: "Media — Polaris One" }] }),
-  component: () => <AppShell><ComingSoon title="Media" /></AppShell>,
+  head: () => ({ meta: [{ title: "PolarisFlix — Polaris One" }] }),
+  component: () => <AppShell><PolarisFlix /></AppShell>,
 });
