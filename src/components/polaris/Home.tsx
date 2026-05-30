@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Search, ArrowUpRight } from "lucide-react";
 
 type Shortcut = { name: string; url: string; category: Category };
 type Category = "Popular" | "Games" | "AI Tools" | "Websites" | "Media" | "Apps";
@@ -18,21 +18,52 @@ const SHORTCUTS: Shortcut[] = [
   { name: "Now.gg", url: "now.gg", category: "Games" },
 ];
 
-const POPULAR_NAMES = new Set(["YouTube", "Reddit", "Google", "TikTok", "Instagram", "Spotify", "Discord"]);
+const POPULAR_NAMES = new Set(["YouTube", "Reddit", "Google", "TikTok", "Instagram"]);
 const CATEGORIES: (Category | "Popular")[] = ["Popular", "Games", "AI Tools", "Websites", "Media", "Apps"];
+const FEATURED = [
+  { name: "Spotify", url: "spotify.com", tag: "Proxy" },
+  { name: "Discord", url: "discord.com", tag: "Proxy" },
+] as const;
 
 export function Home() {
   const [active, setActive] = useState<(typeof CATEGORIES)[number]>("Popular");
 
   const visible = SHORTCUTS.filter((s) =>
-    active === "Popular" ? POPULAR_NAMES.has(s.name) : s.category === active
+    active === "Popular"
+      ? POPULAR_NAMES.has(s.name)
+      : s.category === active && !FEATURED.some((f) => f.name === s.name)
   );
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-2xl flex-col items-center justify-center px-5 py-10">
       {/* Compact title */}
       <div className="mb-6 text-center">
-        <div className="text-[10px] uppercase tracking-[0.32em] text-white/60">Polaris One</div>
+        <div className="text-[10px] uppercase tracking-[0.32em] text-white/70">Polaris One</div>
+        <div className="mt-1 text-[11px] text-white/45">Your warm cinematic web hub</div>
+      </div>
+
+      {/* Featured proxy shortcuts — centered hero pair */}
+      <div className="mb-5 grid w-full max-w-md grid-cols-2 gap-3">
+        {FEATURED.map((f) => (
+          <a
+            key={f.name}
+            href={`https://${f.url}`}
+            target="_blank"
+            rel="noreferrer"
+            className="liquid-glass shortcut-card group relative flex items-center gap-3 rounded-2xl p-3"
+          >
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${f.url}&sz=128`}
+              alt=""
+              className="h-8 w-8 rounded-lg"
+            />
+            <div className="flex-1 leading-tight">
+              <div className="text-sm font-semibold text-white">{f.name}</div>
+              <div className="text-[10px] uppercase tracking-wider text-white/55">{f.tag}</div>
+            </div>
+            <ArrowUpRight className="h-4 w-4 text-white/60 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </a>
+        ))}
       </div>
 
       {/* Single centered search */}
