@@ -10,6 +10,27 @@ import { MyListProvider, useMyList } from "@/lib/mylist-context";
 
 type Tab = "movies" | "shows" | "anime";
 
+// TMDB genre IDs. Movie and TV share many but not all.
+const MOVIE_GENRES = [
+  { id: 28, label: "Action" },
+  { id: 35, label: "Comedy" },
+  { id: 878, label: "Sci-Fi" },
+  { id: 27, label: "Horror" },
+  { id: 10749, label: "Romance" },
+  { id: 53, label: "Thriller" },
+  { id: 16, label: "Animation" },
+  { id: 12, label: "Adventure" },
+] as const;
+const TV_GENRES = [
+  { id: 10759, label: "Action & Adventure" },
+  { id: 35, label: "Comedy" },
+  { id: 10765, label: "Sci-Fi & Fantasy" },
+  { id: 18, label: "Drama" },
+  { id: 9648, label: "Mystery" },
+  { id: 80, label: "Crime" },
+  { id: 10751, label: "Family" },
+] as const;
+
 function Hero({ item, onPlay, onInfo }: { item: TmdbItem; onPlay: () => void; onInfo: () => void }) {
   return (
     <div className="relative mb-6 h-[42vh] min-h-[280px] overflow-hidden rounded-2xl mx-4 sm:mx-6">
@@ -79,6 +100,8 @@ function FlixInner() {
           ? tmdbApi.airing()
           : tmdbApi.animeMovies(),
   });
+
+  const genres = tab === "shows" ? TV_GENRES : tab === "movies" ? MOVIE_GENRES : [];
 
   const search = useQuery({
     queryKey: ["search", tab, query],
@@ -200,6 +223,7 @@ function FlixInner() {
               title={`Top 10 ${tab === "movies" ? "Movies" : tab === "shows" ? "Shows" : "Anime"} Today`}
               items={trending.data ?? []}
               ranked
+              loading={trending.isLoading}
               onSelect={(item) => setSelected({ item, kind })}
             />
 
@@ -214,18 +238,30 @@ function FlixInner() {
             <Row
               title="Most Popular"
               items={popular.data ?? []}
+              loading={popular.isLoading}
               onSelect={(item) => setSelected({ item, kind })}
             />
             <Row
               title={tab === "movies" ? "Now Playing" : tab === "shows" ? "On The Air" : "Anime Movies"}
               items={extra.data ?? []}
+              loading={extra.isLoading}
               onSelect={(item) => setSelected({ item, kind })}
             />
             <Row
               title="Top Rated"
               items={topRated.data ?? []}
+              loading={topRated.isLoading}
               onSelect={(item) => setSelected({ item, kind })}
             />
+            {genres.map((g) => (
+              <GenreRow
+                key={g.id}
+                kind={kind}
+                genreId={g.id}
+                label={g.label}
+                onSelect={(item) => setSelected({ item, kind })}
+              />
+            ))}
           </>
         )}
       </div>
@@ -260,4 +296,23 @@ export function PolarisFlix() {
       <FlixInner />
     </MyListProvider>
   );
+}
+
+function GenreRow({
+  kind,
+  genreId,
+  label,
+  onSelect,
+}: {
+  kind: MediaKind;
+  genreId: number;
+  label: string;
+  onSelect: (item: TmdbItem) => void;
+}) {
+  const q = useQuery({
+    queryKey: ["genre", kind, genreId],
+    queryFn: () => tmdbApi.byGenre(kind, genreId),
+    staleTime: 1000 * 60 * 10,
+  });
+  return <Row title={label} items={q.data ?? []} loading={q.isLoading} onSelect={onSelect} />;
 }
