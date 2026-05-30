@@ -38,6 +38,12 @@ export const tmdbApi = {
   topRated: (kind: MediaKind) => tmdb<ListResp>(`/${kind}/top_rated`).then((r) => r.results),
   nowPlaying: () => tmdb<ListResp>(`/movie/now_playing`).then((r) => r.results),
   airing: () => tmdb<ListResp>(`/tv/on_the_air`).then((r) => r.results),
+  byGenre: (kind: MediaKind, genreId: number) =>
+    tmdb<ListResp>(`/discover/${kind}`, {
+      with_genres: genreId,
+      sort_by: "popularity.desc",
+      "vote_count.gte": 50,
+    }).then((r) => r.results),
   // Anime via discover (genre 16 + Japanese)
   animeTrending: () =>
     tmdb<ListResp>(`/discover/tv`, {

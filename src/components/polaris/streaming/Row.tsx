@@ -7,15 +7,18 @@ type Props = {
   items: TmdbItem[];
   onSelect: (item: TmdbItem) => void;
   ranked?: boolean;
+  loading?: boolean;
 };
 
-export function Row({ title, items, onSelect, ranked }: Props) {
+export function Row({ title, items, onSelect, ranked, loading }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const scroll = (dir: 1 | -1) =>
     ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.9, behavior: "smooth" });
 
-  if (!items.length) return null;
+  if (!items.length && !loading) return null;
   const list = ranked ? items.slice(0, 10) : items;
+  const w = ranked ? 220 : 150;
+  const h = w * 1.5;
 
   return (
     <section className="group/row relative mb-8">
@@ -32,14 +35,22 @@ export function Row({ title, items, onSelect, ranked }: Props) {
           ref={ref}
           className="flex gap-3 overflow-x-auto scroll-smooth px-4 pb-2 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {list.map((item, idx) => (
+          {loading && !items.length
+            ? Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="shrink-0 animate-pulse rounded-xl bg-white/5"
+                  style={{ width: w, height: h }}
+                />
+              ))
+            : list.map((item, idx) => (
             <button
               key={item.id}
               onClick={() => onSelect(item)}
               className={`relative shrink-0 overflow-hidden rounded-xl liquid-glass transition hover:scale-[1.04] hover:z-10 ${
                 ranked ? "flex items-end" : ""
               }`}
-              style={{ width: ranked ? 220 : 160, height: ranked ? 220 * 1.5 : 160 * 1.5 }}
+              style={{ width: w, height: h }}
             >
               {ranked && (
                 <span
@@ -60,7 +71,9 @@ export function Row({ title, items, onSelect, ranked }: Props) {
                     src={IMG(item.poster_path, "w300")}
                     alt={item.title || item.name}
                     loading="lazy"
-                    className="h-full w-full object-cover"
+                    decoding="async"
+                    className="h-full w-full object-cover opacity-0 transition-opacity duration-500"
+                    onLoad={(e) => e.currentTarget.classList.remove("opacity-0")}
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-white/5 p-2 text-center text-xs text-white/60">
