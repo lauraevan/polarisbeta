@@ -109,8 +109,8 @@ export function MovieChat({ room, title, onClose }: { room: string; title: strin
   };
 
   return (
-    <div className="liquid-glass-strong flex h-full w-full flex-col overflow-hidden md:rounded-l-2xl">
-      <header className="flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2">
+    <div className="liquid-glass-themed flex h-full w-full flex-col overflow-hidden md:rounded-l-2xl">
+      <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-white/5 px-3 py-2 backdrop-blur-xl">
         <div className="min-w-0">
           <div className="truncate text-xs font-semibold text-white">Watch Party Chat</div>
           <div className="truncate text-[10px] text-white/55">{title}</div>
@@ -150,9 +150,19 @@ export function MovieChat({ room, title, onClose }: { room: string; title: strin
           return (
             <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[85%] rounded-2xl px-3 py-2 text-[13px] ${
-                  mine ? "bg-[rgb(var(--polaris-accent))]/85 text-black" : "bg-white/10 text-white"
+                className={`max-w-[85%] rounded-2xl px-3 py-2 text-[13px] backdrop-blur-xl ${
+                  mine
+                    ? "text-black shadow-[0_8px_24px_-10px_rgba(var(--polaris-accent)/0.6)] ring-1 ring-white/30"
+                    : "liquid-glass text-white"
                 }`}
+                style={
+                  mine
+                    ? {
+                        background:
+                          "linear-gradient(180deg, rgba(var(--polaris-accent)/0.95), rgba(var(--polaris-accent)/0.75))",
+                      }
+                    : undefined
+                }
               >
                 {!mine && <div className="mb-0.5 text-[10px] font-semibold opacity-70">{m.author}</div>}
                 {m.attachments?.map((a, i) => (
@@ -214,7 +224,7 @@ export function MovieChat({ room, title, onClose }: { room: string; title: strin
         </div>
       )}
 
-      <div className="flex items-center gap-1 border-t border-white/10 p-2">
+      <div className="flex items-center gap-1 border-t border-white/10 bg-white/5 p-2 backdrop-blur-xl">
         <input ref={imgInput} type="file" accept="image/*" multiple hidden onChange={(e) => handleFiles(e, "image")} />
         <input ref={vidInput} type="file" accept="video/*" multiple hidden onChange={(e) => handleFiles(e, "video")} />
         <button onClick={() => imgInput.current?.click()} className="rounded-md p-1.5 text-white/75 hover:bg-white/10" aria-label="Photo">

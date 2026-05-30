@@ -8,17 +8,22 @@ type Props = {
   onSelect: (item: TmdbItem) => void;
   ranked?: boolean;
   loading?: boolean;
+  size?: "sm" | "md" | "lg";
 };
 
-export function Row({ title, items, onSelect, ranked, loading }: Props) {
+export function Row({ title, items, onSelect, ranked, loading, size = "md" }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const scroll = (dir: 1 | -1) =>
     ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.9, behavior: "smooth" });
 
   if (!items.length && !loading) return null;
   const list = ranked ? items.slice(0, 10) : items;
-  const w = ranked ? 220 : 150;
+  // Smaller Top 10 per user request
+  const base = size === "sm" ? 120 : size === "lg" ? 180 : 150;
+  const w = ranked ? 160 : base;
   const h = w * 1.5;
+  const numberSize = ranked ? 140 : 200;
+  const innerLeft = ranked ? "ml-10 w-[110px]" : "w-full";
 
   return (
     <section className="group/row relative mb-8">
@@ -56,15 +61,15 @@ export function Row({ title, items, onSelect, ranked, loading }: Props) {
                 <span
                   className="absolute -left-2 bottom-0 z-0 font-black leading-[0.8] text-transparent select-none"
                   style={{
-                    fontSize: 200,
-                    WebkitTextStroke: "4px rgba(255,255,255,0.85)",
+                    fontSize: numberSize,
+                    WebkitTextStroke: "3px rgba(255,255,255,0.85)",
                   }}
                 >
                   {idx + 1}
                 </span>
               )}
               <div
-                className={`relative h-full ${ranked ? "ml-16 w-[140px]" : "w-full"} overflow-hidden rounded-xl`}
+                className={`relative h-full ${innerLeft} overflow-hidden rounded-xl`}
               >
                 {item.poster_path ? (
                   <img

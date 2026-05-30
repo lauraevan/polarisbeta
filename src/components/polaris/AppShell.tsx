@@ -5,6 +5,7 @@ import { WallpaperPicker } from "./WallpaperPicker";
 import { Dock } from "./Dock";
 import { WallpaperProvider } from "@/lib/wallpaper-context";
 import { SidebarProvider } from "@/lib/sidebar-context";
+import { PolarisCursor } from "./Cursor";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -17,6 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <Dock />
         <WallpaperPicker />
+        <PolarisCursor />
       </SidebarProvider>
     </WallpaperProvider>
   );
