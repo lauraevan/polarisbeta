@@ -72,8 +72,13 @@ export function WallpaperPicker() {
               </div>
             </div>
 
-            {/* Grid */}
-            <div className="grid flex-1 grid-cols-2 gap-3 overflow-y-auto p-4 sm:grid-cols-3 md:grid-cols-4">
+            {/* Grid — auto-fit so tiles never overlap on any device */}
+            <div
+              className="grid flex-1 gap-4 overflow-y-auto overflow-x-hidden p-4"
+              style={{
+                gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+              }}
+            >
               {visible.map((w) => {
                 const active = w.id === wallpaper.id;
                 return (
@@ -83,66 +88,67 @@ export function WallpaperPicker() {
                       setWallpaperId(w.id);
                       setOpen(false);
                     }}
-                    className="group relative aspect-video overflow-hidden rounded-xl border border-white/10 text-left transition-transform hover:-translate-y-0.5"
-                    style={
-                      active
-                        ? {
-                            boxShadow: `0 0 0 2px rgba(${w.accent}/0.95), 0 18px 50px -12px rgba(${w.accent}/0.6)`,
-                          }
-                        : undefined
-                    }
+                    className="group flex flex-col gap-2 text-left"
                   >
-                    {w.type === "animated" ? (
-                      <video
-                        src={w.src}
-                        poster={w.poster}
-                        muted
-                        loop
-                        playsInline
-                        preload="metadata"
-                        onMouseEnter={(e) => e.currentTarget.play().catch(() => {})}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.pause();
-                          e.currentTarget.currentTime = 0;
-                        }}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <img
-                        src={w.src}
-                        alt={w.name}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    )}
-
-                    {/* Bottom gradient */}
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
-
-                    {/* Top-right badge */}
-                    <div className="absolute right-2 top-2 flex items-center gap-1">
-                      {w.type === "animated" && (
-                        <span className="flex items-center gap-1 rounded-full bg-black/55 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-white/90 backdrop-blur">
-                          <Play className="h-2.5 w-2.5 fill-white" /> Live
-                        </span>
+                    <div
+                      className="relative aspect-video w-full overflow-hidden rounded-xl border border-white/10 transition-transform group-hover:-translate-y-0.5"
+                      style={
+                        active
+                          ? {
+                              boxShadow: `0 0 0 2px rgba(${w.accent}/0.95), 0 18px 50px -12px rgba(${w.accent}/0.6)`,
+                            }
+                          : undefined
+                      }
+                    >
+                      {w.type === "animated" ? (
+                        <video
+                          src={w.src}
+                          poster={w.poster}
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                          onMouseEnter={(e) => e.currentTarget.play().catch(() => {})}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.pause();
+                            e.currentTarget.currentTime = 0;
+                          }}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <img
+                          src={w.src}
+                          alt={w.name}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
                       )}
-                      {active && (
-                        <span
-                          className="flex h-5 w-5 items-center justify-center rounded-full text-black"
-                          style={{ background: `rgba(${w.accent}/0.95)` }}
-                        >
-                          <Check className="h-3 w-3" />
-                        </span>
-                      )}
+
+                      {/* Top badges */}
+                      <div className="absolute right-2 top-2 flex items-center gap-1">
+                        {w.type === "animated" && (
+                          <span className="flex items-center gap-1 rounded-full bg-black/55 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-white/90 backdrop-blur">
+                            <Play className="h-2.5 w-2.5 fill-white" /> Live
+                          </span>
+                        )}
+                        {active && (
+                          <span
+                            className="flex h-5 w-5 items-center justify-center rounded-full text-black"
+                            style={{ background: `rgba(${w.accent}/0.95)` }}
+                          >
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Label */}
-                    <div className="absolute bottom-2 left-2 right-2">
-                      <div className="line-clamp-1 text-[11px] font-semibold text-white">{w.name}</div>
-                      <div
-                        className="mt-0.5 h-0.5 w-6 rounded-full"
-                        style={{ background: `rgba(${w.accent}/0.9)` }}
+                    {/* Label sits below tile — no overlap */}
+                    <div className="flex items-center gap-2 px-0.5">
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ background: `rgba(${w.accent}/0.95)` }}
                       />
+                      <span className="line-clamp-1 text-[11px] font-medium text-white/90">{w.name}</span>
                     </div>
                   </button>
                 );
@@ -150,8 +156,7 @@ export function WallpaperPicker() {
             </div>
 
             <div className="border-t border-white/10 px-5 py-2.5 text-[10px] text-white/45">
-              {visible.length} wallpapers · Animated scenes hosted on the Pexels video CDN ·
-              Motionbgs originals coming once a proxy worker is wired
+              {visible.length} wallpapers · Streamed live from motionbgs.com
             </div>
           </div>
         </div>
