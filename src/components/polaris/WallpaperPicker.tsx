@@ -1,11 +1,16 @@
 import { useMemo, useState } from "react";
 import { ImageIcon, X, Play, Check } from "lucide-react";
 import { useWallpaper } from "@/lib/wallpaper-context";
+import { useRouterState } from "@tanstack/react-router";
 
 export function WallpaperPicker() {
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Hide the floating launcher on routes with their own top-right controls
+  // (e.g. PolarisFlix has a search button in that exact spot).
+  const hideLauncher = pathname.startsWith("/media");
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -15,6 +20,7 @@ export function WallpaperPicker() {
 
   return (
     <>
+      {!hideLauncher && (
       <button
         onClick={() => setOpen((o) => !o)}
         className="liquid-glass fixed right-5 top-5 z-30 flex items-center gap-2 rounded-full px-3.5 py-2 text-xs text-white/90 hover:text-white"
@@ -25,6 +31,7 @@ export function WallpaperPicker() {
         <ImageIcon className="h-4 w-4" />
         Wallpaper
       </button>
+      )}
 
       {open && (
         <div

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertCircle, MessageSquare } from "lucide-react";
 import { PROVIDERS } from "@/lib/streaming-providers";
 import { tmdbApi, type MediaKind } from "@/lib/tmdb";
 import { useQuery } from "@tanstack/react-query";
+import { MovieChat } from "./MovieChat";
 
 type Props = {
   kind: MediaKind;
@@ -15,6 +16,7 @@ export function Player({ kind, id, title, onClose }: Props) {
   const [providerIdx, setProviderIdx] = useState(0);
   const [season, setSeason] = useState(1);
   const [episode, setEpisode] = useState(1);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const { data: details } = useQuery({
     queryKey: ["details", kind, id],
@@ -106,20 +108,42 @@ export function Player({ kind, id, title, onClose }: Props) {
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
+
+        <button
+          onClick={() => setChatOpen((o) => !o)}
+          className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs transition ${
+            chatOpen ? "bg-[rgb(var(--polaris-accent))]/30 text-white" : "text-white/85 hover:bg-white/10"
+          }`}
+          aria-label="Toggle chat"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span className="hidden sm:inline">Chat</span>
+        </button>
       </div>
 
-      <div className="relative flex-1 bg-black">
-        <iframe
-          key={src}
-          src={src}
-          className="absolute inset-0 h-full w-full"
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          allowFullScreen
-          referrerPolicy="no-referrer"
-        />
-        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-[10px] text-white/60 backdrop-blur">
-          <AlertCircle className="mr-1 inline h-3 w-3" /> Source blocked? Try the next one →
+      <div className="relative flex flex-1 overflow-hidden bg-black">
+        <div className="relative flex-1 bg-black">
+          <iframe
+            key={src}
+            src={src}
+            className="absolute inset-0 h-full w-full"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allowFullScreen
+            referrerPolicy="no-referrer"
+          />
+          <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-[10px] text-white/60 backdrop-blur">
+            <AlertCircle className="mr-1 inline h-3 w-3" /> Source blocked? Try the next one →
+          </div>
         </div>
+        {chatOpen && (
+          <aside className="absolute inset-y-0 right-0 z-10 w-full max-w-sm border-l border-white/10 bg-black/80 backdrop-blur-xl md:static md:w-[340px] md:max-w-none md:bg-transparent md:backdrop-blur-0">
+            <MovieChat
+              room={`${kind}-${id}${kind === "tv" ? `-s${season}e${episode}` : ""}`}
+              title={title}
+              onClose={() => setChatOpen(false)}
+            />
+          </aside>
+        )}
       </div>
     </div>
   );
