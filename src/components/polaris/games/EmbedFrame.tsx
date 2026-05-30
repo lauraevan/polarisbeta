@@ -1,60 +1,146 @@
-import { X, ExternalLink, RotateCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { X, ExternalLink, RotateCw, Maximize2, Minimize2, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 export function EmbedFrame({
   src,
   title,
   onClose,
+  mode = "src",
 }: {
   src: string;
   title: string;
   onClose: () => void;
+  /** "src" loads the URL directly; "srcdoc" fetches the HTML and injects it
+   *  (fixes CDNs that serve .html as text/plain — e.g. jsdelivr for the
+   *  Polaris game collection). */
+  mode?: "src" | "srcdoc";
 }) {
   const [key, setKey] = useState(0);
+  const [html, setHtml] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [fs, setFs] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !document.fullscreenElement && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  useEffect(() => {
+    const onFs = () => setFs(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
+
+  useEffect(() => {
+    if (mode !== "srcdoc") return;
+    let cancelled = false;
+    setHtml(null);
+    setErr(null);
+    fetch(src)
+      .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((t) => {
+        if (cancelled) return;
+        // Ensure a <base> exists so relative asset paths resolve against the source URL.
+        const hasBase = /<base\s/i.test(t);
+        const baseHref = src.replace(/[^/]+$/, "");
+        const out = hasBase
+          ? t
+          : t.replace(/<head(\s[^>]*)?>/i, (m) => `${m}\n<base href="${baseHref}">`);
+        setHtml(out);
+      })
+      .catch((e) => !cancelled && setErr(String(e?.message ?? e)));
+    return () => {
+      cancelled = true;
+    };
+  }, [src, mode, key]);
+
+  const toggleFs = async () => {
+    const el = wrapRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await el.requestFullscreen?.();
+  };
+
   return (
-    <div className="fixed inset-0 z-[80] flex flex-col bg-black">
-      <div className="liquid-glass-themed flex items-center justify-between px-4 py-2">
+    <div
+      ref={wrapRef}
+      className="fixed inset-0 z-[80] flex flex-col bg-black"
+    >
+      <div className="flex items-center justify-between border-b border-white/10 bg-zinc-950/90 px-4 py-2 backdrop-blur">
         <div className="truncate text-sm font-medium text-white">{title}</div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setKey((k) => k + 1)}
-            className="rounded-lg p-2 text-white/80 transition hover:bg-white/10 hover:text-white"
+            className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
             aria-label="Reload"
           >
             <RotateCw className="h-4 w-4" />
+          </button>
+          <button
+            onClick={toggleFs}
+            className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
+            aria-label="Fullscreen"
+          >
+            {fs ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </button>
           <a
             href={src}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg p-2 text-white/80 transition hover:bg-white/10 hover:text-white"
+            className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
             aria-label="Open in new tab"
           >
             <ExternalLink className="h-4 w-4" />
           </a>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-white/80 transition hover:bg-white/10 hover:text-white"
+            className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
       </div>
-      <iframe
-        key={key}
-        src={src}
-        title={title}
-        className="flex-1 w-full border-0 bg-black"
-        allow="autoplay; fullscreen; gamepad; cross-origin-isolated"
-        allowFullScreen
-        referrerPolicy="no-referrer"
-      />
+      {mode === "srcdoc" ? (
+        err ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 text-sm text-white/70">
+            <div>Couldn't load this game.</div>
+            <div className="text-xs text-white/50">{err}</div>
+            <button
+              onClick={() => setKey((k) => k + 1)}
+              className="mt-2 rounded-full border border-white/20 px-4 py-1 text-xs hover:bg-white/10"
+            >
+              Retry
+            </button>
+          </div>
+        ) : html == null ? (
+          <div className="flex flex-1 items-center justify-center text-white/60">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : (
+          <iframe
+            key={key}
+            srcDoc={html}
+            title={title}
+            className="flex-1 w-full border-0 bg-black"
+            allow="autoplay; fullscreen; gamepad; cross-origin-isolated; clipboard-write"
+            allowFullScreen
+            referrerPolicy="no-referrer"
+          />
+        )
+      ) : (
+        <iframe
+          key={key}
+          src={src}
+          title={title}
+          className="flex-1 w-full border-0 bg-black"
+          allow="autoplay; fullscreen; gamepad; cross-origin-isolated; clipboard-write"
+          allowFullScreen
+          referrerPolicy="no-referrer"
+        />
+      )}
     </div>
   );
 }
