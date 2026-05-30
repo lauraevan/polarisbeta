@@ -2,18 +2,16 @@ import { useMemo, useState } from "react";
 import { ImageIcon, X, Play, Check } from "lucide-react";
 import { useWallpaper } from "@/lib/wallpaper-context";
 
-type Filter = "All" | "Animated" | "Static";
-
 export function WallpaperPicker() {
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState<Filter>("All");
+  const [query, setQuery] = useState("");
 
   const visible = useMemo(() => {
-    if (filter === "Animated") return all.filter((w) => w.type === "animated");
-    if (filter === "Static") return all.filter((w) => w.type === "static");
-    return all;
-  }, [all, filter]);
+    const q = query.trim().toLowerCase();
+    if (!q) return all;
+    return all.filter((w) => w.name.toLowerCase().includes(q));
+  }, [all, query]);
 
   return (
     <>
@@ -46,22 +44,12 @@ export function WallpaperPicker() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="liquid-glass hidden items-center gap-0.5 rounded-full p-0.5 sm:flex">
-                  {(["All", "Animated", "Static"] as Filter[]).map((f) => {
-                    const on = filter === f;
-                    return (
-                      <button
-                        key={f}
-                        onClick={() => setFilter(f)}
-                        className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
-                          on ? "bg-white/15 text-white" : "text-white/65 hover:text-white"
-                        }`}
-                      >
-                        {f}
-                      </button>
-                    );
-                  })}
-                </div>
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search wallpapers…"
+                  className="liquid-glass hidden w-48 rounded-full px-3 py-1.5 text-[11px] text-white placeholder:text-white/50 focus:outline-none sm:block"
+                />
                 <button
                   onClick={() => setOpen(false)}
                   className="rounded-full p-1.5 text-white/70 hover:bg-white/10 hover:text-white"
