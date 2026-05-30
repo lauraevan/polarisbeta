@@ -12,7 +12,7 @@ import {
   Trophy,
   Moon,
   Monitor,
-  DiscIcon,
+  Disc,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 
@@ -83,7 +83,7 @@ export function Sidebar() {
           <LogOut className="h-[18px] w-[18px]" /> Logout
         </button>
         <div className="mt-3 flex items-center gap-2 px-2 text-white/40">
-          <DiscIcon className="h-4 w-4 hover:text-white" />
+          <Disc className="h-4 w-4 hover:text-white" />
           <Trophy className="h-4 w-4 hover:text-white" />
           <Moon className="h-4 w-4 hover:text-white" />
           <Monitor className="h-4 w-4 hover:text-white" />
