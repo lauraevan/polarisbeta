@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Search, Command } from "lucide-react";
-import logo from "@/assets/polaris-logo.png";
+import { Search } from "lucide-react";
 
 type Shortcut = { name: string; url: string; category: Category };
 type Category = "Popular" | "Games" | "AI Tools" | "Websites" | "Media" | "Apps";
@@ -30,57 +29,40 @@ export function Home() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-5 py-10 md:px-12 md:py-14">
-      {/* Header */}
-      <header className="mb-10 flex items-center justify-between">
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.22em] text-white/55">Welcome back</div>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-            Player <span className="text-white/35">·</span>{" "}
-            <span style={{ color: `rgb(var(--polaris-accent))` }}>Polaris One</span>
-          </h1>
-        </div>
-        <img src={logo} alt="" className="h-10 w-10 opacity-90 md:h-12 md:w-12" />
-      </header>
+    <div className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-2xl flex-col items-center justify-center px-5 py-10">
+      {/* Compact title */}
+      <div className="mb-6 text-center">
+        <div className="text-[10px] uppercase tracking-[0.32em] text-white/60">Polaris One</div>
+      </div>
 
-      {/* Search bars */}
-      <div className="space-y-3">
-        <div className="glass flex items-center gap-3 rounded-2xl px-5 py-4 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.5)]">
-          <Search className="h-5 w-5 text-white/50" />
-          <input
-            placeholder="Search or type a URL…"
-            className="flex-1 bg-transparent text-base text-white placeholder:text-white/40 focus:outline-none"
-          />
-          <kbd className="hidden rounded-md border border-white/15 px-1.5 py-0.5 text-[10px] text-white/50 md:inline">↵</kbd>
-        </div>
-        <div className="glass-soft flex items-center gap-3 rounded-2xl px-5 py-3 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.4)]">
-          <Command className="h-4 w-4 text-white/50" />
-          <input
-            placeholder="Quickly navigate…"
-            className="flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
-          />
-          <kbd className="hidden rounded-md border border-white/15 px-1.5 py-0.5 text-[10px] text-white/50 md:inline">⌘ K</kbd>
-        </div>
+      {/* Single centered search */}
+      <div className="liquid-glass flex w-full max-w-xl items-center gap-3 rounded-2xl px-4 py-3 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.6),0_20px_50px_-20px_rgba(var(--polaris-accent)/0.45)]">
+        <Search className="h-4 w-4 text-white/60" />
+        <input
+          placeholder="Search the web or enter a URL"
+          className="flex-1 bg-transparent text-sm text-white placeholder:text-white/50 focus:outline-none"
+        />
+        <kbd className="hidden rounded-md border border-white/15 px-1.5 py-0.5 text-[10px] text-white/55 md:inline">↵</kbd>
       </div>
 
       {/* Categories */}
-      <div className="mt-8 flex flex-wrap gap-2">
+      <div className="mt-5 flex flex-wrap justify-center gap-1.5">
         {CATEGORIES.map((c) => {
           const isOn = c === active;
           return (
             <button
               key={c}
               onClick={() => setActive(c)}
-              className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-200 ${
-                isOn ? "text-white" : "text-white/60 hover:text-white"
+              className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all duration-200 ${
+                isOn ? "text-white" : "text-white/65 hover:text-white"
               }`}
               style={
                 isOn
                   ? {
                       background: `rgba(var(--polaris-accent)/0.22)`,
-                      boxShadow: `inset 0 0 0 1px rgba(var(--polaris-accent)/0.55), 0 8px 24px -8px rgba(var(--polaris-accent)/0.55)`,
+                      boxShadow: `inset 0 0 0 1px rgba(var(--polaris-accent)/0.55)`,
                     }
-                  : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }
+                  : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)" }
               }
             >
               {c}
@@ -89,24 +71,22 @@ export function Home() {
         })}
       </div>
 
-      {/* Shortcuts grid */}
-      <div className="mt-8 grid grid-cols-2 gap-5 sm:grid-cols-3 md:gap-6 lg:grid-cols-4">
+      {/* Compact see-through shortcuts */}
+      <div className="mt-5 grid w-full max-w-xl grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6">
         {visible.map((s) => (
           <a
             key={s.name}
             href={`https://${s.url}`}
             target="_blank"
             rel="noreferrer"
-            className="glass shortcut-card relative flex aspect-[5/6] flex-col items-center justify-center gap-4 rounded-3xl p-5 text-center"
+            className="liquid-glass shortcut-card group flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl p-2 text-center"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[0.06] ring-1 ring-white/10">
-              <img
-                src={`https://www.google.com/s2/favicons?domain=${s.url}&sz=128`}
-                alt={s.name}
-                className="h-10 w-10 rounded-md"
-              />
-            </div>
-            <div className="text-[15px] font-medium text-white/90">{s.name}</div>
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${s.url}&sz=128`}
+              alt={s.name}
+              className="h-6 w-6 rounded"
+            />
+            <div className="text-[10px] font-medium text-white/85 leading-tight">{s.name}</div>
           </a>
         ))}
       </div>

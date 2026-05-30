@@ -33,7 +33,7 @@ export function WallpaperLayer() {
         />
       )}
       {/* Cinematic darken + vignette */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,rgba(0,0,0,0.1)_0%,rgba(0,0,0,0.55)_70%,rgba(0,0,0,0.85)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,rgba(0,0,0,0.05)_0%,rgba(0,0,0,0.25)_70%,rgba(0,0,0,0.55)_100%)]" />
       <div
         className="pointer-events-none absolute inset-0 mix-blend-soft-light opacity-60"
         style={{
