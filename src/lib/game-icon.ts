@@ -2,19 +2,12 @@
  * Deterministic monogram + color generator for game tiles.
  * Same title → same colors every render.
  */
+// Monochrome zinc palette — keeps the games hub one-color when no icon is found.
 const PALETTE: [string, string, string][] = [
-  ["#ff6b6b", "#c44569", "#fff5f5"],
-  ["#ffa45c", "#c9560c", "#fff8ec"],
-  ["#ffd166", "#c08a00", "#fffaeb"],
-  ["#9be15d", "#3a8a1f", "#f3ffeb"],
-  ["#4ade80", "#0e6b3a", "#ecfff3"],
-  ["#48cae4", "#015064", "#eafaff"],
-  ["#6c8eff", "#22319a", "#eef0ff"],
-  ["#a78bfa", "#4c1d95", "#f4f0ff"],
-  ["#f472b6", "#831843", "#fff0f7"],
-  ["#fb7185", "#881337", "#fff0f3"],
-  ["#5eead4", "#0f5b53", "#eafff9"],
-  ["#fde047", "#a17400", "#fffce5"],
+  ["#27272a", "#18181b", "#e4e4e7"],
+  ["#2d2d33", "#1c1c20", "#e4e4e7"],
+  ["#323237", "#1f1f23", "#e4e4e7"],
+  ["#3a3a40", "#222226", "#e4e4e7"],
 ];
 
 function hash(s: string) {
