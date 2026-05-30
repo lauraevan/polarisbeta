@@ -30,7 +30,7 @@ export function Sidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <aside className="glass relative z-20 hidden h-screen w-64 shrink-0 flex-col rounded-none border-r border-white/5 md:flex">
+    <aside className="liquid-glass-strong relative z-20 hidden h-screen w-60 shrink-0 flex-col rounded-none md:flex">
       <div className="flex items-center gap-3 px-5 pb-2 pt-6">
         <div className="relative">
           <img src={logo} alt="Polaris One" className="h-9 w-9 rounded-lg object-contain" />
