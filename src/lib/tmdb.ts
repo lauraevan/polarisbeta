@@ -44,6 +44,16 @@ export const tmdbApi = {
       sort_by: "popularity.desc",
       "vote_count.gte": 50,
     }).then((r) => r.results),
+  // International (filter by spoken language). Pass ISO 639-1 codes (ko, ja, fr, es, hi, …).
+  international: (kind: MediaKind, lang: string) =>
+    tmdb<ListResp>(`/discover/${kind}`, {
+      with_original_language: lang,
+      sort_by: "popularity.desc",
+      "vote_count.gte": 30,
+    }).then((r) => r.results),
+  trendingAll: () => tmdb<ListResp>(`/trending/all/week`).then((r) => r.results),
+  multiSearch: (query: string) =>
+    tmdb<ListResp>(`/search/multi`, { query, include_adult: "false" }).then((r) => r.results),
   // Anime via discover (genre 16 + Japanese)
   animeTrending: () =>
     tmdb<ListResp>(`/discover/tv`, {
@@ -67,7 +77,22 @@ export const tmdbApi = {
   search: (kind: MediaKind, query: string) =>
     tmdb<ListResp>(`/search/${kind}`, { query }).then((r) => r.results),
   details: (kind: MediaKind, id: number) =>
-    tmdb<TmdbItem & { number_of_seasons?: number; seasons?: { season_number: number; episode_count: number; name: string }[] }>(
-      `/${kind}/${id}`
+    tmdb<TmdbItem & {
+      runtime?: number;
+      episode_run_time?: number[];
+      genres?: { id: number; name: string }[];
+      tagline?: string;
+      status?: string;
+      number_of_seasons?: number;
+      number_of_episodes?: number;
+      seasons?: { season_number: number; episode_count: number; name: string; poster_path: string | null }[];
+    }>(`/${kind}/${id}`),
+  credits: (kind: MediaKind, id: number) =>
+    tmdb<{ cast: { id: number; name: string; character: string; profile_path: string | null }[] }>(
+      `/${kind}/${id}/credits`
+    ),
+  season: (showId: number, seasonNumber: number) =>
+    tmdb<{ episodes: { id: number; episode_number: number; name: string; overview: string; still_path: string | null; runtime: number | null; air_date: string | null; vote_average: number }[] }>(
+      `/tv/${showId}/season/${seasonNumber}`
     ),
 };
