@@ -2,7 +2,26 @@
  * Thin client for the open Hydra Launcher catalogue API.
  * No auth required, CORS open.
  */
-const BASE = "https://hydra-api-us-east-1.losbroxas.org";
+// Multiple Hydra mirrors — we race-fallback so one bad region doesn't kill the network tab.
+const BASES = [
+  "https://hydra-api-us-east-1.losbroxas.org",
+  "https://hydra-api-eu-east-1.losbroxas.org",
+];
+
+async function fetchAny(path: string, init: RequestInit, signal?: AbortSignal) {
+  let lastErr: unknown = null;
+  for (const base of BASES) {
+    try {
+      const r = await fetch(`${base}${path}`, { ...init, signal });
+      if (r.ok) return r;
+      lastErr = new Error(`Hydra ${r.status}`);
+    } catch (e) {
+      if ((e as { name?: string })?.name === "AbortError") throw e;
+      lastErr = e;
+    }
+  }
+  throw lastErr ?? new Error("Hydra unreachable");
+}
 
 export type HydraEdge = {
   objectId: string;
@@ -46,19 +65,16 @@ export async function hydraSearch(opts: {
     developers: [],
     downloadSourceFingerprints: [],
   };
-  const r = await fetch(`${BASE}/catalogue/search`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal: opts.signal,
-  });
-  if (!r.ok) throw new Error(`Hydra ${r.status}`);
+  const r = await fetchAny(
+    `/catalogue/search`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+    opts.signal,
+  );
   return r.json();
 }
 
 export async function hydraFeatured(signal?: AbortSignal): Promise<HydraFeatured[]> {
-  const r = await fetch(`${BASE}/games/featured`, { signal });
-  if (!r.ok) throw new Error(`Hydra ${r.status}`);
+  const r = await fetchAny(`/games/featured`, {}, signal);
   return r.json();
 }
 
