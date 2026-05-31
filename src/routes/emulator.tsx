@@ -5,7 +5,7 @@ import { Emulator } from "@/components/polaris/emulator/Emulator";
 export const Route = createFileRoute("/emulator")({
   head: () => ({ meta: [{ title: "Emulator — Polaris One" }] }),
   component: () => (
-    <AppShell hideDock>
+    <AppShell>
       <Emulator />
     </AppShell>
   ),

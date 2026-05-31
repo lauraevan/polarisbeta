@@ -14,9 +14,9 @@ export function Emulator() {
   const [tab, setTab] = useState<Tab>("retro");
 
   return (
-    <div className="flex h-screen flex-col text-white">
+    <div className="mx-auto flex h-[calc(100vh-110px)] max-w-6xl flex-col px-3 pt-4 pb-2 text-white sm:px-4">
       {/* Tab bar */}
-      <header className="px-3 pt-3 sm:px-4">
+      <header>
         <div className="liquid-glass-themed flex items-center gap-1 overflow-x-auto rounded-2xl p-1.5">
           {TABS.map((t) => {
             const Icon = t.icon;
