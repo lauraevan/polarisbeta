@@ -1,11 +1,58 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Send, Image as ImageIcon, Smile, Paintbrush, Sparkles, Loader2, Hash, Plus, X, Search, MessageCircle, Palette, AtSign, Bold, Italic, Code, Mic, BarChart3, Heart } from "lucide-react";
+import {
+  Send, Image as ImageIcon, Smile, Paintbrush, Sparkles, Loader2, Hash, Plus, X, Search,
+  MessageCircle, Palette, AtSign, Bold, Italic, Code, Mic, BarChart3, Heart, Users, Bell,
+  Megaphone, Bug, RefreshCcw, Crown, Link2, ChevronDown,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { tenorSearch, type TenorGif } from "@/lib/tenor";
 import { DrawingCanvas } from "./DrawingCanvas";
 import { AuthDialog } from "../AuthDialog";
 import { ProfileSheet } from "../ProfileSheet";
+import logo from "@/assets/polaris-logo.png";
+
+type Tab = "global" | "dms" | "notifs";
+
+type DM = {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  sender_username: string;
+  sender_avatar_emoji: string | null;
+  sender_avatar_url: string | null;
+  sender_accent_color: string | null;
+  content: string | null;
+  attachments: Attachment[];
+  created_at: string;
+};
+
+type DMPartner = {
+  user_id: string;
+  username: string;
+  avatar_emoji: string | null;
+  avatar_url: string | null;
+  accent_color: string | null;
+  last: string;
+  last_at: string;
+};
+
+// Channel grouping (matches the IMPORTANT / MAIN / LINKS layout)
+const IMPORTANT_SLUGS = new Set(["updates", "bug-fixes", "announcements", "premium", "news"]);
+const LINK_KEYWORDS = ["link", "links"];
+function categorize(slug: string): "important" | "main" | "links" {
+  if (IMPORTANT_SLUGS.has(slug)) return "important";
+  if (LINK_KEYWORDS.some((k) => slug.includes(k))) return "links";
+  return "main";
+}
+function iconForChannel(slug: string) {
+  if (slug === "updates") return RefreshCcw;
+  if (slug === "bug-fixes" || slug.includes("bug")) return Bug;
+  if (slug === "announcements" || slug === "news") return Megaphone;
+  if (slug === "premium") return Crown;
+  if (LINK_KEYWORDS.some((k) => slug.includes(k))) return Link2;
+  return Hash;
+}
 
 type Channel = { id: string; slug: string; name: string; description: string | null; emoji: string | null };
 type Attachment = { kind: "image" | "gif" | "drawing" | "link"; url: string };
@@ -28,6 +75,7 @@ export function ChatRoom() {
   const { user, profile } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signup");
+  const [tab, setTab] = useState<Tab>("global");
   const [channels, setChannels] = useState<Channel[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -39,10 +87,19 @@ export function ChatRoom() {
   const [newChannelOpen, setNewChannelOpen] = useState(false);
   const [viewProfileId, setViewProfileId] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
+  // DMs
+  const [dmPartners, setDmPartners] = useState<DMPartner[]>([]);
+  const [dmActiveUserId, setDmActiveUserId] = useState<string | null>(null);
+  const [dmMessages, setDmMessages] = useState<DM[]>([]);
+  const [dmText, setDmText] = useState("");
+  const [dmStartOpen, setDmStartOpen] = useState(false);
+  // Notifs (mentions of current user across global channels)
+  const [notifs, setNotifs] = useState<Message[]>([]);
   const recRef = useRef<MediaRecorder | null>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const dmScrollRef = useRef<HTMLDivElement>(null);
 
   // Load channels
   useEffect(() => {
