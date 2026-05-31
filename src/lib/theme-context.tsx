@@ -16,10 +16,18 @@ type Ctx = {
   setCustomAccent: (rgb: string | null) => void;
   outlineColor: string; // hex
   setOutlineColor: (hex: string) => void;
+  dockSize: number; // 0.75 - 1.4
+  setDockSize: (n: number) => void;
+  shortcutSize: number; // 0.75 - 1.4
+  setShortcutSize: (n: number) => void;
+  dockPins: string[]; // app names pinned to dock
+  setDockPins: (a: string[]) => void;
+  defaultEngine: "uv" | "scramjet";
+  setDefaultEngine: (e: "uv" | "scramjet") => void;
 };
 
 const ThemeCtx = createContext<Ctx | null>(null);
-const KEY = "polaris-theme-v1";
+const KEY = "polaris-theme-v2";
 
 function hexToRgbTriplet(hex: string): string {
   const m = hex.replace("#", "");
@@ -34,6 +42,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<Mode>("wallpaper");
   const [customAccent, setCustomAccent] = useState<string | null>(null);
   const [outlineColor, setOutlineColor] = useState<string>("#ff9e55");
+  const [dockSize, setDockSize] = useState<number>(1);
+  const [shortcutSize, setShortcutSize] = useState<number>(1);
+  const [dockPins, setDockPins] = useState<string[]>(["YouTube", "Spotify", "Discord"]);
+  const [defaultEngine, setDefaultEngine] = useState<"uv" | "scramjet">("uv");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -44,6 +56,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (v.mode) setMode(v.mode);
         if (v.customAccent !== undefined) setCustomAccent(v.customAccent);
         if (v.outlineColor) setOutlineColor(v.outlineColor);
+        if (typeof v.dockSize === "number") setDockSize(v.dockSize);
+        if (typeof v.shortcutSize === "number") setShortcutSize(v.shortcutSize);
+        if (Array.isArray(v.dockPins)) setDockPins(v.dockPins);
+        if (v.defaultEngine === "uv" || v.defaultEngine === "scramjet") setDefaultEngine(v.defaultEngine);
       }
     } catch {}
   }, []);
@@ -52,7 +68,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
       KEY,
-      JSON.stringify({ mode, customAccent, outlineColor }),
+      JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine }),
     );
     // Apply custom accent if set
     if (customAccent && typeof document !== "undefined") {
@@ -64,12 +80,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         "--polaris-outline",
         hexToRgbTriplet(outlineColor),
       );
+      document.documentElement.style.setProperty("--polaris-dock-scale", String(dockSize));
+      document.documentElement.style.setProperty("--polaris-shortcut-scale", String(shortcutSize));
     }
-  }, [mode, customAccent, outlineColor]);
+  }, [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine]);
 
   const value = useMemo<Ctx>(
-    () => ({ mode, setMode, customAccent, setCustomAccent, outlineColor, setOutlineColor }),
-    [mode, customAccent, outlineColor],
+    () => ({
+      mode, setMode, customAccent, setCustomAccent, outlineColor, setOutlineColor,
+      dockSize, setDockSize, shortcutSize, setShortcutSize, dockPins, setDockPins,
+      defaultEngine, setDefaultEngine,
+    }),
+    [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine],
   );
 
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
