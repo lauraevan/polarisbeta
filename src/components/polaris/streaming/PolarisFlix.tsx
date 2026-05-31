@@ -412,7 +412,7 @@ function FlixInner() {
                 {query.trim().length < 2 ? (
                   <>
                     <h3 className="mb-3 text-sm font-semibold text-white/80">
-                      Popular {LANGUAGES.find((l) => l.code === (searchLang || "ko"))?.label} cinema
+                      Popular {LANGUAGES.find((l) => l.code === (searchLang || "en"))?.label} cinema
                     </h3>
                     <Grid items={intlMovies.data ?? []} onSelect={(item) => setSelected({ item, kind: "movie" })} />
                   </>
