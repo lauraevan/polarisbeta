@@ -225,9 +225,9 @@ html[data-polaris-theme="light"] .liquid-glass-ghost {
 }
 /* Re-color the common white-on-dark utilities for light mode */
 html[data-polaris-theme="light"] :where(.text-white) { color: #0f172a; }
-html[data-polaris-theme="light"] :where(
-  [class*="text-white\\/"]
-) { color: rgba(15, 23, 42, 0.72); }
+html[data-polaris-theme="light"] [class*="text-white/"] {
+  color: rgba(15, 23, 42, 0.72);
+}
 html[data-polaris-theme="light"] :where(
   .bg-white\/5, .bg-white\/10, .bg-white\/15, .bg-white\/20
 ) { background-color: rgba(15, 23, 42, 0.06); }
