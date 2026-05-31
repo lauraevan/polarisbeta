@@ -228,40 +228,6 @@ export function ChatRoom() {
           <Plus className="h-3.5 w-3.5" /> New channel
         </button>
       </aside>
-          </div>
-          <h2 className="mt-3 text-xl font-bold text-white">Sign in to chat</h2>
-          <p className="mt-1 text-sm text-white/60">
-            Polaris Chat needs a profile so others can see your name and color.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex h-[calc(100vh-1px)] overflow-hidden">
-      {/* Channels sidebar */}
-      <aside className="liquid-glass hidden h-full w-56 flex-col gap-1 rounded-none border-r border-white/5 p-3 sm:flex">
-        <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.2em] text-white/45">Channels</div>
-        {channels.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setActiveId(c.id)}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition ${
-              activeId === c.id ? "bg-white/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            <span>{c.emoji || "#"}</span>
-            <span className="truncate">{c.name}</span>
-          </button>
-        ))}
-        <button
-          onClick={() => setNewChannelOpen(true)}
-          className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-white/50 hover:bg-white/5 hover:text-white"
-        >
-          <Plus className="h-3.5 w-3.5" /> New channel
-        </button>
-      </aside>
 
       {/* Main */}
       <main className="flex h-full min-w-0 flex-1 flex-col">
