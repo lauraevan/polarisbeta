@@ -15,6 +15,7 @@ type Message = {
   user_id: string;
   username: string;
   avatar_emoji: string | null;
+  avatar_url?: string | null;
   accent_color: string | null;
   content: string | null;
   attachments: Attachment[];
@@ -103,6 +104,7 @@ export function ChatRoom() {
         user_id: user.id,
         username: profile.username,
         avatar_emoji: profile.avatar_emoji,
+        avatar_url: profile.avatar_url ?? null,
         accent_color: profile.accent_color,
         content: content?.trim() || null,
         attachments: attachments as unknown as Attachment[],
@@ -249,7 +251,7 @@ export function ChatRoom() {
   return (
     <div
       className="flex h-[calc(100vh-1px)] overflow-hidden"
-      style={{ background: "linear-gradient(180deg, rgba(20,12,10,0.55), rgba(15,10,8,0.7))" }}
+      style={{ background: "linear-gradient(180deg, rgba(38,22,16,0.55), rgba(22,14,10,0.75))" }}
     >
       {/* Channels sidebar */}
       <aside
