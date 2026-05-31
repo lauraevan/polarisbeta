@@ -485,24 +485,95 @@ export function PolarisAI() {
         {/* Messages */}
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-6 sm:px-8">
           {!active || active.messages.length === 0 ? (
-            <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/10">
-                <img src={logo} alt="" className="h-9 w-9 object-contain" />
+            <div className="relative mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
+              {/* Ambient aura behind the hero */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 -z-10 opacity-70 blur-3xl"
+                style={{
+                  background:
+                    "radial-gradient(420px circle at 50% 30%, rgba(var(--polaris-accent)/0.28), transparent 60%), radial-gradient(360px circle at 30% 80%, rgba(255,255,255,0.06), transparent 70%)",
+                }}
+              />
+              <div
+                className="relative grid h-16 w-16 place-items-center rounded-[22px]"
+                style={{
+                  background:
+                    "linear-gradient(140deg, rgba(var(--polaris-accent)/0.45), rgba(255,255,255,0.06))",
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(255,255,255,0.12), 0 18px 50px -20px rgba(var(--polaris-accent)/0.55)",
+                }}
+              >
+                <img src={logo} alt="" className="h-9 w-9 object-contain drop-shadow" />
               </div>
-              <h1 className="mt-4 text-2xl font-black tracking-tight">Polaris AI</h1>
-              <p className="mt-1 text-sm text-white/55">
-                Multi-model assistant · {model.label} · {mode.label} mode
-              </p>
-              <div className="mt-8 grid w-full max-w-md gap-2">
-                {STARTERS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => send(s)}
-                    className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-left text-sm text-white/80 hover:bg-black/45 hover:text-white"
-                  >
-                    {s}
-                  </button>
-                ))}
+              <h1
+                className="mt-5 text-4xl font-black tracking-tight md:text-5xl"
+                style={{
+                  background:
+                    "linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.55) 110%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
+                How can I help today?
+              </h1>
+              <div className="mt-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.28em] text-white/45">
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ background: "rgb(var(--polaris-accent))", boxShadow: "0 0 10px rgb(var(--polaris-accent))" }}
+                />
+                {model.label} · {mode.label}
+              </div>
+
+              {/* Inline mode chips */}
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-1.5">
+                {MODES.map((m) => {
+                  const on = m.id === mode.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setMode(m)}
+                      className="rounded-full border px-3 py-1 text-[11px] font-medium transition"
+                      style={
+                        on
+                          ? {
+                              borderColor: "rgba(var(--polaris-accent)/0.55)",
+                              background: "rgba(var(--polaris-accent)/0.18)",
+                              color: "#fff",
+                            }
+                          : { borderColor: "rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.7)" }
+                      }
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Iconic starter cards */}
+              <div className="mt-7 grid w-full max-w-xl grid-cols-2 gap-2.5">
+                {STARTERS.map((s) => {
+                  const Icon = s.icon;
+                  return (
+                    <button
+                      key={s.title}
+                      onClick={() => send(s.prompt)}
+                      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 text-left transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06]"
+                    >
+                      <div
+                        className={`pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gradient-to-br ${s.tint} opacity-60 blur-2xl transition group-hover:opacity-100`}
+                      />
+                      <div className="relative flex items-center gap-2.5">
+                        <span className="grid h-8 w-8 place-items-center rounded-xl border border-white/10 bg-white/[0.05] text-white/85">
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <div className="text-[13px] font-semibold text-white">{s.title}</div>
+                      </div>
+                      <div className="relative mt-2 text-[12px] leading-snug text-white/55">{s.prompt}</div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : (
