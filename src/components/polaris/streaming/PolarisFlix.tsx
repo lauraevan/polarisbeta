@@ -184,6 +184,8 @@ function FlixInner() {
     queryKey: ["trending-all"],
     queryFn: () => tmdbApi.trendingAll(),
     enabled: tab === "home",
+    refetchInterval: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 10,
   });
   const homeMovies = useQuery({
     queryKey: ["home-movies"], queryFn: () => tmdbApi.popular("movie"), enabled: tab === "home",
@@ -221,11 +223,15 @@ function FlixInner() {
     queryFn: () =>
       tab === "anime" ? tmdbApi.animeTrending() : tmdbApi.trending(kind),
     enabled: tab !== "home",
+    refetchInterval: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 10,
   });
   const popular = useQuery({
     queryKey: ["popular", tab],
     queryFn: () => (tab === "anime" ? tmdbApi.animeTrending() : tmdbApi.popular(kind)),
     enabled: tab !== "home",
+    refetchInterval: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 10,
   });
   const topRated = useQuery({
     queryKey: ["top", tab],
@@ -241,6 +247,21 @@ function FlixInner() {
           ? tmdbApi.airing()
           : tmdbApi.animeMovies(),
     enabled: tab !== "home",
+  });
+
+  const latestMovies = useQuery({
+    queryKey: ["latest-movies"],
+    queryFn: () => tmdbApi.latestReleases("movie"),
+    enabled: tab === "home" || tab === "movies",
+    refetchInterval: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 10,
+  });
+  const latestShows = useQuery({
+    queryKey: ["latest-shows"],
+    queryFn: () => tmdbApi.latestReleases("tv"),
+    enabled: tab === "shows",
+    refetchInterval: 1000 * 60 * 30,
+    staleTime: 1000 * 60 * 10,
   });
 
   const genres = tab === "shows" ? TV_GENRES : tab === "movies" ? MOVIE_GENRES : [];
