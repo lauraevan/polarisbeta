@@ -14,6 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
+import { useAuth } from "@/lib/auth-context";
 
 type Role = "user" | "assistant";
 type ChatMessage = { id: string; role: Role; content: string };
@@ -69,7 +70,9 @@ const STARTERS = [
 
 const STORAGE_KEY = "polaris-ai-chats-v1";
 const LIMIT_KEY = "polaris-ai-limits-v1";
-const DAILY_LIMITS: Record<ModelTier, number> = { free: 120, premium: 40 };
+// Guests get a tight cap to protect credits; signed-in users get the full allowance.
+const DAILY_LIMITS_GUEST: Record<ModelTier, number> = { free: 15, premium: 0 };
+const DAILY_LIMITS_USER: Record<ModelTier, number> = { free: 150, premium: 50 };
 const COOLDOWN_MS = 1200;
 
 type LimitState = { day: string; free: number; premium: number; lastAt: number };
@@ -117,6 +120,9 @@ function saveChats(chats: Chat[]) {
 }
 
 export function PolarisAI() {
+  const { profile } = useAuth();
+  const isSignedIn = !!profile;
+  const DAILY_LIMITS = isSignedIn ? DAILY_LIMITS_USER : DAILY_LIMITS_GUEST;
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [model, setModel] = useState<Model>(MODELS[0]);
@@ -177,8 +183,16 @@ export function PolarisAI() {
     }
     const used = model.tier === "premium" ? limits.premium : limits.free;
     const cap = DAILY_LIMITS[model.tier];
+    if (cap === 0) {
+      setError("Premium models are for signed-in users — sign in to unlock.");
+      return;
+    }
     if (used >= cap) {
-      setError(`Daily ${model.tier} limit reached (${cap}/day). Switch model or try again tomorrow.`);
+      setError(
+        isSignedIn
+          ? `Daily ${model.tier} limit reached (${cap}/day). Try again tomorrow.`
+          : `Guest limit reached (${cap}/day). Sign in for ${DAILY_LIMITS_USER.free}/day + premium models.`,
+      );
       return;
     }
     saveLimits({
