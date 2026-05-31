@@ -18,6 +18,7 @@ import { Route as BrowserRouteImport } from './routes/browser'
 import { Route as AppsRouteImport } from './routes/apps'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -64,6 +65,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAiChatRoute = ApiAiChatRouteImport.update({
+  id: '/api/ai-chat',
+  path: '/api/ai-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/settings': typeof SettingsRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/settings': typeof SettingsRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/settings': typeof SettingsRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/settings'
+    | '/api/ai-chat'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/settings'
+    | '/api/ai-chat'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/settings'
+    | '/api/ai-chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   GamesRoute: typeof GamesRoute
   MediaRoute: typeof MediaRoute
   SettingsRoute: typeof SettingsRoute
+  ApiAiChatRoute: typeof ApiAiChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ai-chat': {
+      id: '/api/ai-chat'
+      path: '/api/ai-chat'
+      fullPath: '/api/ai-chat'
+      preLoaderRoute: typeof ApiAiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -225,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   GamesRoute: GamesRoute,
   MediaRoute: MediaRoute,
   SettingsRoute: SettingsRoute,
+  ApiAiChatRoute: ApiAiChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
