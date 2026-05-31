@@ -165,8 +165,12 @@ export function HydraCatalog() {
       </div>
 
       {err && (
-        <div className="rounded-md border border-white/10 bg-zinc-900/80 p-4 text-sm text-white/70">
-          Couldn't reach Hydra: {err}
+        <div className="flex items-center justify-between gap-3 rounded-md border border-white/10 bg-zinc-900/80 p-4 text-sm text-white/70">
+          <span>Couldn't reach Hydra Network: {err}</span>
+          <button
+            onClick={() => { setPage(0); setData([]); setErr(null); }}
+            className="rounded-md bg-[rgb(var(--polaris-accent))] px-3 py-1.5 text-xs font-bold text-black"
+          >Retry</button>
         </div>
       )}
 

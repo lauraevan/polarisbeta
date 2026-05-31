@@ -26,6 +26,8 @@ export type Profile = {
   accent_color: string;
   banner_color: string;
   avatar_emoji: string | null;
+  avatar_url: string | null;
+  custom_role: string | null;
   roles: string[];
   fav_genres: number[];
   fav_game_tags: string[];
@@ -61,7 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("*")
       .eq("id", uid)
       .maybeSingle();
-    if (data) setProfile(data as unknown as Profile);
+    if (data) {
+      const p = data as unknown as Profile;
+      setProfile(p);
+      if (typeof document !== "undefined" && p.accent_color) {
+        document.documentElement.style.setProperty("--polaris-accent", p.accent_color);
+      }
+    }
   }, []);
 
   useEffect(() => {

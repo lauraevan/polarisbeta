@@ -15,6 +15,7 @@ type Message = {
   user_id: string;
   username: string;
   avatar_emoji: string | null;
+  avatar_url?: string | null;
   accent_color: string | null;
   content: string | null;
   attachments: Attachment[];
@@ -103,6 +104,7 @@ export function ChatRoom() {
         user_id: user.id,
         username: profile.username,
         avatar_emoji: profile.avatar_emoji,
+        avatar_url: profile.avatar_url ?? null,
         accent_color: profile.accent_color,
         content: content?.trim() || null,
         attachments: attachments as unknown as Attachment[],
@@ -249,7 +251,7 @@ export function ChatRoom() {
   return (
     <div
       className="flex h-[calc(100vh-1px)] overflow-hidden"
-      style={{ background: "linear-gradient(180deg, rgba(20,12,10,0.55), rgba(15,10,8,0.7))" }}
+      style={{ background: "linear-gradient(180deg, rgba(38,22,16,0.55), rgba(22,14,10,0.75))" }}
     >
       {/* Channels sidebar */}
       <aside
@@ -427,16 +429,20 @@ function ToolbarBtn({ children, label, onClick }: { children: React.ReactNode; l
 function MessageBubble({ m, prevSame, onAvatarClick, onMention }: { m: Message; prevSame: boolean; onAvatarClick: () => void; onMention: () => void }) {
   const time = new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   return (
-    <div className={`group flex gap-3 ${prevSame ? "pt-0.5" : "pt-2"}`}>
+    <div className={`group flex gap-3 rounded-xl px-2 py-1 transition hover:bg-white/[0.03] ${prevSame ? "pt-0.5" : "pt-3"}`}>
       <div className="w-9 shrink-0">
         {!prevSame && (
           <button
             onClick={onAvatarClick}
-            className="grid h-9 w-9 place-items-center rounded-full text-base transition hover:scale-110"
+            className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-full text-base transition hover:scale-110"
             style={{ background: `rgb(${m.accent_color || "120 120 130"}/0.35)`, boxShadow: `inset 0 0 0 1px rgb(${m.accent_color || "120 120 130"}/0.55)` }}
             title={`View ${m.username}'s profile`}
           >
-            {m.avatar_emoji || "✨"}
+            {m.avatar_url ? (
+              <img src={m.avatar_url} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+            ) : (
+              <span>{m.avatar_emoji || "✨"}</span>
+            )}
           </button>
         )}
       </div>
