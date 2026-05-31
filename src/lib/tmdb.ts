@@ -95,4 +95,23 @@ export const tmdbApi = {
     tmdb<{ episodes: { id: number; episode_number: number; name: string; overview: string; still_path: string | null; runtime: number | null; air_date: string | null; vote_average: number }[] }>(
       `/tv/${showId}/season/${seasonNumber}`
     ),
+  hiddenGems: (kind: MediaKind) =>
+    tmdb<ListResp>(`/discover/${kind}`, {
+      sort_by: "vote_average.desc",
+      "vote_count.gte": 80,
+      "vote_count.lte": 1200,
+      "vote_average.gte": 7,
+    }).then((r) => r.results),
+  indieCult: (kind: MediaKind) =>
+    tmdb<ListResp>(`/discover/${kind}`, {
+      with_genres: kind === "movie" ? 18 : 18,
+      sort_by: "vote_average.desc",
+      "vote_count.gte": 200,
+      "vote_count.lte": 5000,
+    }).then((r) => r.results),
+  a24Style: () =>
+    tmdb<ListResp>(`/discover/movie`, {
+      with_companies: "41077", // A24
+      sort_by: "popularity.desc",
+    }).then((r) => r.results),
 };
