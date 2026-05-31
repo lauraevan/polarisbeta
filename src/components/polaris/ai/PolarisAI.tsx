@@ -407,13 +407,10 @@ export function PolarisAI() {
         </div>
       </aside>
 
-      {/* Main — solid background (no glass) for a calmer reading surface */}
-      <div
-        className="relative m-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)] md:m-3"
-        style={{ background: "#0c0b10" }}
-      >
+      {/* Main — fully transparent so the wallpaper shows through */}
+      <div className="relative m-2 flex min-h-0 flex-1 flex-col overflow-hidden md:m-3">
         {/* Top bar */}
-        <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-black/30 px-3 py-2 sm:px-5">
+        <header className="flex items-center justify-between gap-2 px-3 py-2 sm:px-5">
           <button
             onClick={() => setSidebarOpen(true)}
             className="rounded-full p-1.5 text-white/70 hover:bg-white/10 hover:text-white md:hidden"
