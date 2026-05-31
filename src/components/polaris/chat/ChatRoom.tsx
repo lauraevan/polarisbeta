@@ -894,7 +894,7 @@ function DMThread({
   onChange: (v: string) => void;
   onSend: () => void;
   onAvatar: (uid: string) => void;
-  scrollRef: React.RefObject<HTMLDivElement>;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
     <>
