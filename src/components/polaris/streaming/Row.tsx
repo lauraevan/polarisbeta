@@ -26,7 +26,10 @@ export function Row({ title, items, onSelect, ranked, loading, size = "md" }: Pr
   const innerLeft = ranked ? "ml-10 w-[110px]" : "w-full";
 
   return (
-    <section className="group/row relative mb-8">
+    <section
+      className="group/row relative mb-8"
+      style={{ contentVisibility: "auto", containIntrinsicSize: "380px" } as React.CSSProperties}
+    >
       <h2 className="mb-3 px-4 text-lg font-bold text-white sm:px-6 md:text-xl">{title}</h2>
       <div className="relative">
         <button
