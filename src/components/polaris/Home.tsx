@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, Shield, Zap } from "lucide-react";
 import { getPolarisBrowserUrl, normalizeUrl, type ProxyEngine } from "@/lib/proxy-utils";
 import { useTheme } from "@/lib/theme-context";
+import { HomeAI } from "./HomeAI";
 
 type Shortcut = { name: string; url: string; category: Category };
 type Category = "Popular" | "Games" | "AI Tools" | "Websites" | "Media" | "Apps";
@@ -26,6 +27,61 @@ const POPULAR_NAMES = new Set([
 const CATEGORIES: (Category | "Popular")[] = ["Popular", "Games", "AI Tools", "Websites", "Media", "Apps"];
 
 export function Home() {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState<0 | 1>(0);
+
+  // Track which page is centered after a swipe/scroll
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const idx = Math.round(el.scrollLeft / el.clientWidth);
+      setPage(idx === 1 ? 1 : 0);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  function goTo(p: 0 | 1) {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ left: p * el.clientWidth, behavior: "smooth" });
+  }
+
+  return (
+    <div className="relative">
+      {/* Horizontal snap-scroller: page 0 = web hub, page 1 = AI hub */}
+      <div
+        ref={scrollerRef}
+        className="flex h-[calc(100vh-32px)] snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth"
+        style={{ scrollbarWidth: "none" }}
+      >
+        <section className="min-w-full shrink-0 snap-center overflow-y-auto">
+          <HomeWeb />
+        </section>
+        <section className="min-w-full shrink-0 snap-center overflow-y-auto">
+          <HomeAI />
+        </section>
+      </div>
+
+      {/* Page indicator / quick toggle */}
+      <div className="pointer-events-none fixed left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2 py-1 backdrop-blur">
+        {([0, 1] as const).map((i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            aria-label={i === 0 ? "Web hub" : "AI hub"}
+            className={`pointer-events-auto h-1.5 rounded-full transition-all ${
+              page === i ? "w-6 bg-white" : "w-1.5 bg-white/35 hover:bg-white/55"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HomeWeb() {
   const [active, setActive] = useState<(typeof CATEGORIES)[number]>("Popular");
   const { defaultEngine, setDefaultEngine, shortcutSize } = useTheme();
   const engine = defaultEngine;
