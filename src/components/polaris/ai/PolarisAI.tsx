@@ -164,6 +164,26 @@ export function PolarisAI() {
   async function send(text: string) {
     if (!text.trim() || streaming) return;
     setError(null);
+    // Rate limit guard — protect credits
+    const limits = loadLimits();
+    const now = Date.now();
+    if (now - limits.lastAt < COOLDOWN_MS) {
+      const wait = Math.ceil((COOLDOWN_MS - (now - limits.lastAt)) / 1000);
+      setError(`Slow down — wait ${wait}s before sending another message.`);
+      return;
+    }
+    const used = model.tier === "premium" ? limits.premium : limits.free;
+    const cap = DAILY_LIMITS[model.tier];
+    if (used >= cap) {
+      setError(`Daily ${model.tier} limit reached (${cap}/day). Switch model or try again tomorrow.`);
+      return;
+    }
+    saveLimits({
+      day: todayKey(),
+      free: model.tier === "free" ? limits.free + 1 : limits.free,
+      premium: model.tier === "premium" ? limits.premium + 1 : limits.premium,
+      lastAt: now,
+    });
     let chat = active;
     if (!chat) {
       chat = { id: uid(), title: text.slice(0, 40), messages: [], updatedAt: Date.now() };
