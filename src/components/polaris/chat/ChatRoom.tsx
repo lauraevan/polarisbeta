@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Send, Image as ImageIcon, Smile, Paintbrush, Sparkles, Loader2, Hash, Plus, X, Search } from "lucide-react";
+import { Send, Image as ImageIcon, Smile, Paintbrush, Sparkles, Loader2, Hash, Plus, X, Search, MessageCircle, Palette } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { tenorSearch, type TenorGif } from "@/lib/tenor";
@@ -151,8 +151,10 @@ export function ChatRoom() {
   if (!user || !profile) {
     return (
       <div className="flex h-full items-center justify-center px-6">
-        <div className="liquid-glass-themed max-w-md rounded-2xl p-8 text-center">
-          <div className="text-4xl">💬</div>
+        <div className="liquid-glass-themed max-w-md rounded-3xl p-8 text-center">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/12">
+            <MessageCircle className="h-8 w-8 text-white" />
+          </div>
           <h2 className="mt-3 text-xl font-bold text-white">Sign in to chat</h2>
           <p className="mt-1 text-sm text-white/60">
             Polaris Chat needs a profile so others can see your name and color.
@@ -237,7 +239,7 @@ export function ChatRoom() {
               <Paintbrush className="h-4 w-4" />
             </button>
             <button onClick={sendGartic} className="rounded-lg p-2 text-white/65 hover:bg-white/5 hover:text-white" title="Gartic Phone">
-              🎨
+              <Palette className="h-4 w-4" />
             </button>
             <div className="relative flex-1">
               <textarea

@@ -46,7 +46,7 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
         </button>
 
         {/* Quick controls */}
-        <Link to="/" className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Browse">
+        <Link to="/browser" className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Polaris Browser">
           <Compass className="h-4 w-4" />
         </Link>
         <button onClick={onOpenWallpaper} className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Change wallpaper">

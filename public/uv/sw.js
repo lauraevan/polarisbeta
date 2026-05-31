@@ -11,6 +11,14 @@ importScripts(__uv$config.sw || 'uv.sw.js');
 
 const uv = new UVServiceWorker();
 
+self.addEventListener('install', (event) => {
+    event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(self.clients.claim());
+});
+
 async function handleRequest(event) {
     if (uv.route(event)) {
         return await uv.fetch(event);

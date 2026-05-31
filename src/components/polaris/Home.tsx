@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, Shield, Zap } from "lucide-react";
+import { getPolarisBrowserUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
 
 type Shortcut = { name: string; url: string; category: Category };
 type Category = "Popular" | "Games" | "AI Tools" | "Websites" | "Media" | "Apps";
@@ -25,6 +26,12 @@ const CATEGORIES: (Category | "Popular")[] = ["Popular", "Games", "AI Tools", "W
 
 export function Home() {
   const [active, setActive] = useState<(typeof CATEGORIES)[number]>("Popular");
+  const [engine, setEngine] = useState<ProxyEngine>("uv");
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    registerStaticProxies().catch(() => undefined);
+  }, []);
 
   const visible = SHORTCUTS.filter((s) =>
     active === "Popular" ? POPULAR_NAMES.has(s.name) : s.category === active
@@ -39,13 +46,36 @@ export function Home() {
       </div>
 
       {/* Single centered search */}
-      <div className="liquid-glass flex w-full max-w-xl items-center gap-3 rounded-2xl px-4 py-3 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.6),0_20px_50px_-20px_rgba(var(--polaris-accent)/0.45)]">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          window.open(getPolarisBrowserUrl(engine, normalizeUrl(query)), "_blank", "noopener,noreferrer");
+        }}
+        className="liquid-glass flex w-full max-w-xl items-center gap-3 rounded-2xl px-4 py-3 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.6),0_20px_50px_-20px_rgba(var(--polaris-accent)/0.45)]"
+      >
         <Search className="h-4 w-4 text-white/60" />
         <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
           placeholder="Search the web or enter a URL"
           className="flex-1 bg-transparent text-sm text-white placeholder:text-white/50 focus:outline-none"
         />
         <kbd className="hidden rounded-md border border-white/15 px-1.5 py-0.5 text-[10px] text-white/55 md:inline">↵</kbd>
+      </form>
+
+      <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/20 p-1 text-xs font-bold">
+        {(["uv", "scramjet"] as const).map((next) => (
+          <button
+            key={next}
+            onClick={() => setEngine(next)}
+            className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2 ${
+              engine === next ? "bg-white text-black" : "text-white/65 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            {next === "uv" ? <Shield className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}
+            {next === "uv" ? "Ultraviolet" : "Scramjet"}
+          </button>
+        ))}
       </div>
 
       {/* Categories */}
@@ -86,7 +116,7 @@ export function Home() {
           {visible.map((s) => (
             <a
               key={s.name}
-              href={`https://${s.url}`}
+              href={getPolarisBrowserUrl(engine, s.url)}
               target="_blank"
               rel="noreferrer"
               className="liquid-glass shortcut-card group flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl p-2 text-center"

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { X, User as UserIcon, Lock, Sparkles, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
@@ -10,7 +11,7 @@ export function AuthDialog({ open, onClose }: { open: boolean; onClose: () => vo
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,17 +27,17 @@ export function AuthDialog({ open, onClose }: { open: boolean; onClose: () => vo
     onClose();
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-black/75 p-4 backdrop-blur-xl animate-[fadeIn_180ms_ease]"
+      className="fixed inset-0 z-[500] grid place-items-center overflow-y-auto bg-black/72 p-4 backdrop-blur-2xl animate-[fadeIn_180ms_ease]"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="liquid-glass-themed relative my-auto w-full max-w-[420px] overflow-hidden rounded-2xl border border-white/15 p-5 text-white shadow-2xl sm:p-7"
+        className="liquid-glass-themed relative my-auto w-full max-w-[440px] overflow-hidden rounded-3xl border border-white/15 p-5 text-white shadow-2xl sm:p-7"
         style={{
           background:
-            "linear-gradient(160deg, rgba(var(--polaris-accent)/0.18), rgba(20,15,12,0.92))",
+            "linear-gradient(160deg, rgba(var(--polaris-accent)/0.22), rgba(12,10,9,0.9))",
         }}
       >
         <button
@@ -64,6 +65,24 @@ export function AuthDialog({ open, onClose }: { open: boolean; onClose: () => vo
                 : "Create your Polaris profile — just a username and password."}
             </p>
           </div>
+        </div>
+
+        <div className="mb-4 grid grid-cols-2 rounded-2xl border border-white/10 bg-black/20 p-1">
+          {(["signup", "signin"] as const).map((next) => (
+            <button
+              key={next}
+              type="button"
+              onClick={() => {
+                setErr(null);
+                setMode(next);
+              }}
+              className={`rounded-xl px-3 py-2 text-xs font-bold ${
+                mode === next ? "bg-white text-black" : "text-white/65 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              {next === "signup" ? "Create" : "Sign in"}
+            </button>
+          ))}
         </div>
 
         <form onSubmit={submit} className="space-y-3">
@@ -114,7 +133,7 @@ export function AuthDialog({ open, onClose }: { open: boolean; onClose: () => vo
           <button
             type="submit"
             disabled={busy}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition hover:bg-white/90 disabled:opacity-60"
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-black transition hover:bg-white/90 disabled:opacity-60"
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
             {mode === "signin" ? "Sign In" : "Create Account"}
@@ -138,6 +157,7 @@ export function AuthDialog({ open, onClose }: { open: boolean; onClose: () => vo
           No email required. Your Polaris username is private to this OS.
         </p>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
