@@ -407,13 +407,10 @@ export function PolarisAI() {
         </div>
       </aside>
 
-      {/* Main — solid background (no glass) for a calmer reading surface */}
-      <div
-        className="relative m-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)] md:m-3"
-        style={{ background: "#0c0b10" }}
-      >
+      {/* Main — fully transparent so the wallpaper shows through */}
+      <div className="relative m-2 flex min-h-0 flex-1 flex-col overflow-hidden md:m-3">
         {/* Top bar */}
-        <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-black/30 px-3 py-2 sm:px-5">
+        <header className="flex items-center justify-between gap-2 px-3 py-2 sm:px-5">
           <button
             onClick={() => setSidebarOpen(true)}
             className="rounded-full p-1.5 text-white/70 hover:bg-white/10 hover:text-white md:hidden"
@@ -592,10 +589,10 @@ export function PolarisAI() {
           )}
         </div>
 
-        {/* Composer */}
-        <div className="relative border-t border-white/10 bg-black/40 px-3 py-2 sm:px-6">
+        {/* Composer — floating, transparent wrap so wallpaper shows */}
+        <div className="relative px-3 pb-3 pt-1 sm:px-6">
           {error && (
-            <div className="mx-auto mb-2 max-w-3xl rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+            <div className="mx-auto mb-2 max-w-xl rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200 backdrop-blur-xl">
               {error}
             </div>
           )}
@@ -604,7 +601,7 @@ export function PolarisAI() {
               e.preventDefault();
               send(input);
             }}
-            className="mx-auto flex max-w-2xl flex-col gap-1 rounded-2xl border border-white/12 bg-black/55 p-1.5 transition-all focus-within:border-[rgba(var(--polaris-accent)/0.7)] focus-within:shadow-[0_0_0_2px_rgba(var(--polaris-accent)/0.18)]"
+            className="mx-auto flex max-w-xl flex-col gap-1 rounded-2xl border border-white/15 bg-black/35 p-1 backdrop-blur-2xl transition-all focus-within:border-[rgba(var(--polaris-accent)/0.7)] focus-within:shadow-[0_8px_28px_-12px_rgba(0,0,0,0.6),0_0_0_2px_rgba(var(--polaris-accent)/0.18)]"
           >
             <textarea
               value={input}
@@ -617,7 +614,7 @@ export function PolarisAI() {
               }}
               rows={1}
               placeholder={`Message ${model.label}…`}
-              className="min-h-[34px] max-h-[160px] w-full resize-none bg-transparent px-2.5 py-1.5 text-sm text-white placeholder:text-white/35 focus:outline-none"
+              className="min-h-[28px] max-h-[140px] w-full resize-none bg-transparent px-2.5 py-1 text-[13px] text-white placeholder:text-white/40 focus:outline-none"
             />
             <div className="flex items-center justify-between gap-2 px-1">
               <div className="flex items-center gap-1.5 text-[10px] text-white/45">
