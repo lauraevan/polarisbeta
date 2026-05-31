@@ -1,16 +1,21 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { X, User as UserIcon, Lock, Sparkles, Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { X, User as UserIcon, Lock, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import logo from "@/assets/polaris-logo.png";
 
-export function AuthDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AuthDialog({ open, onClose, defaultMode = "signup" }: { open: boolean; onClose: () => void; defaultMode?: "signin" | "signup" }) {
   const { signIn, signUp } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signup");
+  const [mode, setMode] = useState<"signin" | "signup">(defaultMode);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (open) setMode(defaultMode);
+  }, [defaultMode, open]);
 
   if (!open || typeof document === "undefined") return null;
 
