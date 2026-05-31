@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Gamepad2, Cloud } from "lucide-react";
+import { Gamepad2, Cloud, Zap } from "lucide-react";
 import { RetroPane } from "./RetroPane";
 import { SwitchCloudPane } from "./SwitchCloudPane";
+import { StratusCloudPane } from "./StratusCloudPane";
 
-type Tab = "retro" | "cloud";
+type Tab = "retro" | "cloud" | "stratus";
 const TABS: { id: Tab; label: string; icon: typeof Gamepad2; sub: string }[] = [
   { id: "retro", label: "Retro", icon: Gamepad2, sub: "NES · SNES · GBA · N64 · PS1" },
   { id: "cloud", label: "Switch · Cloud", icon: Cloud, sub: "Streamed via Afterplay" },
+  { id: "stratus", label: "Stratus Cloud", icon: Zap, sub: "Cherri's backend · modern titles" },
 ];
 
 export function Emulator() {
@@ -50,6 +52,7 @@ export function Emulator() {
       <div className="min-h-0 flex-1">
         {tab === "retro" && <RetroPane />}
         {tab === "cloud" && <SwitchCloudPane />}
+        {tab === "stratus" && <StratusCloudPane />}
       </div>
     </div>
   );

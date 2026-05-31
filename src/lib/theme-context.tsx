@@ -9,6 +9,7 @@ import {
 } from "react";
 
 type Mode = "wallpaper" | "outline";
+type UITheme = "dark" | "light";
 export type DockPosition = "left" | "center" | "right";
 type Ctx = {
   mode: Mode;
@@ -29,6 +30,8 @@ type Ctx = {
   setDockPosition: (p: DockPosition) => void;
   homeAISwipe: boolean;
   setHomeAISwipe: (b: boolean) => void;
+  uiTheme: UITheme;
+  setUITheme: (t: UITheme) => void;
 };
 
 const ThemeCtx = createContext<Ctx | null>(null);
@@ -53,6 +56,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [defaultEngine, setDefaultEngine] = useState<"uv" | "scramjet">("uv");
   const [dockPosition, setDockPosition] = useState<DockPosition>("center");
   const [homeAISwipe, setHomeAISwipe] = useState<boolean>(true);
+  const [uiTheme, setUITheme] = useState<UITheme>("dark");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -69,6 +73,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (v.defaultEngine === "uv" || v.defaultEngine === "scramjet") setDefaultEngine(v.defaultEngine);
         if (v.dockPosition === "left" || v.dockPosition === "center" || v.dockPosition === "right") setDockPosition(v.dockPosition);
         if (typeof v.homeAISwipe === "boolean") setHomeAISwipe(v.homeAISwipe);
+        if (v.uiTheme === "light" || v.uiTheme === "dark") setUITheme(v.uiTheme);
       }
     } catch {}
   }, []);
@@ -77,7 +82,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
       KEY,
-      JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe }),
+      JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme }),
     );
     // Apply custom accent if set
     if (customAccent && typeof document !== "undefined") {
@@ -91,17 +96,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       );
       document.documentElement.style.setProperty("--polaris-dock-scale", String(dockSize));
       document.documentElement.style.setProperty("--polaris-shortcut-scale", String(shortcutSize));
+      document.documentElement.classList.toggle("dark", uiTheme === "dark");
+      document.documentElement.classList.toggle("light", uiTheme === "light");
+      document.documentElement.dataset.polarisTheme = uiTheme;
     }
-  }, [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe]);
+  }, [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme]);
 
   const value = useMemo<Ctx>(
     () => ({
       mode, setMode, customAccent, setCustomAccent, outlineColor, setOutlineColor,
       dockSize, setDockSize, shortcutSize, setShortcutSize, dockPins, setDockPins,
       defaultEngine, setDefaultEngine, dockPosition, setDockPosition,
-      homeAISwipe, setHomeAISwipe,
+      homeAISwipe, setHomeAISwipe, uiTheme, setUITheme,
     }),
-    [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe],
+    [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme],
   );
 
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
