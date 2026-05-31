@@ -28,12 +28,12 @@ export function AuthDialog({ open, onClose }: { open: boolean; onClose: () => vo
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-2xl animate-[fadeIn_180ms_ease]"
+      className="fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-black/75 p-4 backdrop-blur-xl animate-[fadeIn_180ms_ease]"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="liquid-glass-themed relative w-full max-w-md overflow-hidden rounded-3xl border border-white/15 p-8 text-white"
+        className="liquid-glass-themed relative my-auto w-full max-w-[420px] overflow-hidden rounded-2xl border border-white/15 p-5 text-white shadow-2xl sm:p-7"
         style={{
           background:
             "linear-gradient(160deg, rgba(var(--polaris-accent)/0.18), rgba(20,15,12,0.92))",
@@ -41,13 +41,13 @@ export function AuthDialog({ open, onClose }: { open: boolean; onClose: () => vo
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white/70 hover:bg-white/20 hover:text-white"
+          className="absolute right-3 top-3 rounded-full bg-white/10 p-2 text-white/70 hover:bg-white/20 hover:text-white"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <div className="mb-6 flex items-center gap-3">
+        <div className="mb-5 flex items-center gap-3 pr-8">
           <div
             className="grid h-12 w-12 place-items-center rounded-2xl text-2xl"
             style={{ background: "rgba(var(--polaris-accent)/0.3)" }}
@@ -55,10 +55,10 @@ export function AuthDialog({ open, onClose }: { open: boolean; onClose: () => vo
             <Sparkles className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">
+            <h2 className="text-lg font-bold sm:text-xl">
               {mode === "signin" ? "Sign in to Polaris" : "Sign up to Polaris"}
             </h2>
-            <p className="text-xs text-white/55">
+            <p className="text-xs leading-relaxed text-white/55">
               {mode === "signin"
                 ? "Welcome back, traveler."
                 : "Create your Polaris profile — just a username and password."}
@@ -114,7 +114,7 @@ export function AuthDialog({ open, onClose }: { open: boolean; onClose: () => vo
           <button
             type="submit"
             disabled={busy}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition hover:bg-white/90 disabled:opacity-60"
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-black transition hover:bg-white/90 disabled:opacity-60"
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
             {mode === "signin" ? "Sign In" : "Create Account"}
