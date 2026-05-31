@@ -556,6 +556,52 @@ function FlixInner() {
               loading={topRated.isLoading}
               onSelect={(item) => setSelected({ item, kind })}
             />
+            {tab === "movies" && (
+              <>
+                <Row
+                  title="Blockbuster Hits"
+                  items={blockbustersMovies.data ?? []}
+                  loading={blockbustersMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Critically Acclaimed"
+                  items={acclaimedMovies.data ?? []}
+                  loading={acclaimedMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Family Night"
+                  items={familyMovies.data ?? []}
+                  loading={familyMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title={`New in ${new Date().getFullYear()}`}
+                  items={thisYearMovies.data ?? []}
+                  loading={thisYearMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Hidden Gems"
+                  items={hiddenGemsMovies.data ?? []}
+                  loading={hiddenGemsMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Indie & Cult"
+                  items={indieCult.data ?? []}
+                  loading={indieCult.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="A24 Picks"
+                  items={a24.data ?? []}
+                  loading={a24.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+              </>
+            )}
             {genres.map((g) => (
               <GenreRow
                 key={g.id}
