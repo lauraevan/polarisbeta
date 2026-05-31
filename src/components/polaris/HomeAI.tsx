@@ -21,8 +21,8 @@ const STARTERS: Record<ModeId, string[]> = {
   tutor: ["Explain like I'm 12:", "Quiz me on…"],
   precise: ["Plan my week to…", "List the steps to…"],
   creative: ["Write a short story about…", "Brainstorm names for…"],
-  default2: [] as string[],
-} as never;
+  planner: ["Plan my week to…", "Outline steps for…"],
+};
 
 export function HomeAI() {
   const navigate = useNavigate();
