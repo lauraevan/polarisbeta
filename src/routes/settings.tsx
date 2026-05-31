@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
@@ -37,6 +37,7 @@ function SettingsPage() {
     mode, setMode, customAccent, setCustomAccent, outlineColor, setOutlineColor,
     dockSize, setDockSize, shortcutSize, setShortcutSize, dockPins, setDockPins,
     defaultEngine, setDefaultEngine, homeAISwipe, setHomeAISwipe,
+    uiTheme, setUITheme,
   } = useTheme();
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const { cloak, setCloakId, cloaks } = useTabCloak();
@@ -57,6 +58,25 @@ function SettingsPage() {
 
         {/* Background Mode */}
         <section className="liquid-glass-themed rounded-2xl p-5">
+          <div className="mb-4">
+            <SectionTitle icon={uiTheme === "dark" ? Moon : Sun} title="Appearance" subtitle="Light or dark UI chrome" />
+            <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/20 p-1 text-xs font-bold">
+              {(["dark", "light"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setUITheme(t)}
+                  className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2 ${
+                    uiTheme === t
+                      ? "bg-white text-black"
+                      : "text-white/65 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {t === "dark" ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
+                  {t === "dark" ? "Dark" : "Light"}
+                </button>
+              ))}
+            </div>
+          </div>
           <SectionTitle icon={ImageIcon} title="Background mode" subtitle="Wallpaper or clean outline" />
           <div className="mt-3 grid grid-cols-2 gap-3">
             <ModeCard
