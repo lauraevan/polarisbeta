@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Search, Shield, Zap } from "lucide-react";
-import { getPolarisBrowserUrl, normalizeUrl, type ProxyEngine } from "@/lib/proxy-utils";
+import { Search } from "lucide-react";
+import { getPolarisBrowserUrl, normalizeUrl } from "@/lib/proxy-utils";
 import { useTheme } from "@/lib/theme-context";
-import { HomeAI } from "./HomeAI";
+import { PolarisAI } from "./ai/PolarisAI";
 
 type Shortcut = { name: string; url: string; category: Category };
 type Category = "Popular" | "Games" | "AI Tools" | "Websites" | "Media" | "Apps";
@@ -68,8 +68,8 @@ export function Home() {
         <section className="min-w-full shrink-0 snap-center overflow-y-auto">
           <HomeWeb />
         </section>
-        <section className="min-w-full shrink-0 snap-center overflow-y-auto">
-          <HomeAI />
+        <section className="min-w-full shrink-0 snap-center overflow-hidden">
+          <PolarisAI />
         </section>
       </div>
 
@@ -92,9 +92,8 @@ export function Home() {
 
 function HomeWeb() {
   const [active, setActive] = useState<(typeof CATEGORIES)[number]>("Popular");
-  const { defaultEngine, setDefaultEngine, shortcutSize } = useTheme();
+  const { defaultEngine, shortcutSize } = useTheme();
   const engine = defaultEngine;
-  const setEngine = (e: ProxyEngine) => setDefaultEngine(e);
   const [query, setQuery] = useState("");
 
   const visible = SHORTCUTS.filter((s) =>
@@ -127,21 +126,6 @@ function HomeWeb() {
         <kbd className="hidden rounded-md border border-white/15 px-1.5 py-0.5 text-[10px] text-white/55 md:inline">↵</kbd>
       </form>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/8 bg-black/15 p-1 text-xs font-bold">
-        {(["uv", "scramjet"] as const).map((next) => (
-          <button
-            key={next}
-            onClick={() => setEngine(next)}
-            className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2 ${
-              engine === next ? "bg-white text-black" : "text-white/65 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            {next === "uv" ? <Shield className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}
-            {next === "uv" ? "Ultraviolet" : "Scramjet"}
-          </button>
-        ))}
-      </div>
-
       {/* Categories */}
       <div className="mt-5 flex flex-wrap justify-center gap-1.5">
         {CATEGORIES.map((c) => {
@@ -173,7 +157,7 @@ function HomeWeb() {
         <div
           className="grid w-full justify-center gap-3"
           style={{
-            gridTemplateColumns: `repeat(auto-fit, minmax(${Math.round(76 * shortcutSize)}px, ${Math.round(88 * shortcutSize)}px))`,
+            gridTemplateColumns: `repeat(auto-fit, minmax(${Math.round(60 * shortcutSize)}px, ${Math.round(70 * shortcutSize)}px))`,
             justifyContent: "center",
           }}
         >
@@ -183,14 +167,14 @@ function HomeWeb() {
               href={getPolarisBrowserUrl(engine, s.url)}
               target="_blank"
               rel="noreferrer"
-              className="liquid-glass-ghost shortcut-card group flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl p-2 text-center"
+              className="liquid-glass-ghost shortcut-card group flex aspect-square flex-col items-center justify-center gap-1 rounded-xl p-1.5 text-center"
             >
               <img
                 src={`https://www.google.com/s2/favicons?domain=${s.url}&sz=128`}
                 alt={s.name}
-                className="h-6 w-6 rounded"
+                className="h-5 w-5 rounded"
               />
-              <div className="text-[10px] font-medium leading-tight text-white/85">{s.name}</div>
+              <div className="text-[9px] font-medium leading-tight text-white/85">{s.name}</div>
             </a>
           ))}
         </div>

@@ -13,7 +13,6 @@ import {
   Search,
   Send,
   Settings2,
-  Sparkles,
   Trash2,
   X,
   Zap,
@@ -408,19 +407,13 @@ export function PolarisAI() {
         </div>
       </aside>
 
-      {/* Main — translucent so the wallpaper shows through */}
-      <div className="liquid-glass-strong relative m-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)] md:m-3">
-        {/* Ambient accent aura that lives behind the panel content */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-0 opacity-80"
-          style={{
-            background:
-              "radial-gradient(800px 360px at 50% -10%, rgba(var(--polaris-accent)/0.18), transparent 60%), radial-gradient(600px 320px at 100% 100%, rgba(var(--polaris-accent)/0.10), transparent 70%)",
-          }}
-        />
+      {/* Main — solid background (no glass) for a calmer reading surface */}
+      <div
+        className="relative m-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)] md:m-3"
+        style={{ background: "#0c0b10" }}
+      >
         {/* Top bar */}
-        <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-white/[0.04] px-3 py-3 backdrop-blur-xl sm:px-5">
+        <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-black/30 px-3 py-2 sm:px-5">
           <button
             onClick={() => setSidebarOpen(true)}
             className="rounded-full p-1.5 text-white/70 hover:bg-white/10 hover:text-white md:hidden"
@@ -600,7 +593,7 @@ export function PolarisAI() {
         </div>
 
         {/* Composer */}
-        <div className="relative border-t border-white/10 bg-gradient-to-b from-white/[0.03] to-black/30 px-3 py-3 backdrop-blur-xl sm:px-6">
+        <div className="relative border-t border-white/10 bg-black/40 px-3 py-2 sm:px-6">
           {error && (
             <div className="mx-auto mb-2 max-w-3xl rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
               {error}
@@ -611,7 +604,7 @@ export function PolarisAI() {
               e.preventDefault();
               send(input);
             }}
-            className="mx-auto flex max-w-3xl flex-col gap-1.5 rounded-3xl border border-white/12 bg-black/55 p-2 shadow-[0_20px_60px_-30px_rgba(var(--polaris-accent)/0.55)] transition-all focus-within:border-[rgba(var(--polaris-accent)/0.7)] focus-within:shadow-[0_0_0_3px_rgba(var(--polaris-accent)/0.20),0_30px_80px_-30px_rgba(var(--polaris-accent)/0.65)]"
+            className="mx-auto flex max-w-2xl flex-col gap-1 rounded-2xl border border-white/12 bg-black/55 p-1.5 transition-all focus-within:border-[rgba(var(--polaris-accent)/0.7)] focus-within:shadow-[0_0_0_2px_rgba(var(--polaris-accent)/0.18)]"
           >
             <textarea
               value={input}
@@ -624,7 +617,7 @@ export function PolarisAI() {
               }}
               rows={1}
               placeholder={`Message ${model.label}…`}
-              className="min-h-[44px] max-h-[200px] w-full resize-none bg-transparent px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
+              className="min-h-[34px] max-h-[160px] w-full resize-none bg-transparent px-2.5 py-1.5 text-sm text-white placeholder:text-white/35 focus:outline-none"
             />
             <div className="flex items-center justify-between gap-2 px-1">
               <div className="flex items-center gap-1.5 text-[10px] text-white/45">
@@ -650,7 +643,7 @@ export function PolarisAI() {
               <button
                 type="submit"
                 disabled={streaming || !input.trim()}
-                className="group/btn relative grid h-9 w-9 place-items-center rounded-2xl text-white transition disabled:opacity-40"
+                className="group/btn relative grid h-7 w-7 place-items-center rounded-xl text-white transition disabled:opacity-40"
                 style={{
                   background:
                     "linear-gradient(135deg, rgb(var(--polaris-accent)) 0%, rgba(var(--polaris-accent)/0.7) 100%)",
@@ -659,13 +652,10 @@ export function PolarisAI() {
                 }}
                 aria-label="Send"
               >
-                <Send className="h-4 w-4 transition group-hover/btn:translate-x-0.5" />
+                <Send className="h-3.5 w-3.5 transition group-hover/btn:translate-x-0.5" />
               </button>
             </div>
           </form>
-          <div className="mx-auto mt-2 flex max-w-3xl items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-white/35">
-            <Sparkles className="h-3 w-3" /> Polaris AI · multi-model assistant
-          </div>
         </div>
       </div>
     </div>
