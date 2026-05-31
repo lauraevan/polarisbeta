@@ -151,6 +151,118 @@ export function ChatRoom() {
 
   const active = useMemo(() => channels.find((c) => c.id === activeId) ?? null, [channels, activeId]);
 
+  // ===== DMs: load partner list & subscribe =====
+  useEffect(() => {
+    if (!user || tab !== "dms") return;
+    let cancelled = false;
+    async function loadPartners() {
+      const { data } = await supabase
+        .from("direct_messages")
+        .select("*")
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (cancelled) return;
+      const list = (data || []) as unknown as DM[];
+      const byPartner = new Map<string, DMPartner>();
+      for (const m of list) {
+        const otherId = m.sender_id === user.id ? m.recipient_id : m.sender_id;
+        if (byPartner.has(otherId)) continue;
+        // Best-effort partner info: if they sent the latest msg we have it, otherwise placeholder
+        const fromSender = m.sender_id === otherId;
+        byPartner.set(otherId, {
+          user_id: otherId,
+          username: fromSender ? m.sender_username : "Friend",
+          avatar_emoji: fromSender ? m.sender_avatar_emoji : null,
+          avatar_url: fromSender ? m.sender_avatar_url : null,
+          accent_color: fromSender ? m.sender_accent_color : null,
+          last: m.content || (m.attachments?.length ? "📎 attachment" : ""),
+          last_at: m.created_at,
+        });
+      }
+      setDmPartners(Array.from(byPartner.values()));
+    }
+    loadPartners();
+    const sub = supabase
+      .channel(`dm_inbox_${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${user.id}` },
+        () => loadPartners(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "direct_messages", filter: `sender_id=eq.${user.id}` },
+        () => loadPartners(),
+      )
+      .subscribe();
+    return () => { cancelled = true; sub.unsubscribe(); };
+  }, [user, tab]);
+
+  // Load active DM thread
+  useEffect(() => {
+    if (!user || !dmActiveUserId) { setDmMessages([]); return; }
+    let cancelled = false;
+    supabase
+      .from("direct_messages")
+      .select("*")
+      .or(
+        `and(sender_id.eq.${user.id},recipient_id.eq.${dmActiveUserId}),and(sender_id.eq.${dmActiveUserId},recipient_id.eq.${user.id})`,
+      )
+      .order("created_at", { ascending: true })
+      .limit(200)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setDmMessages((data || []) as unknown as DM[]);
+        setTimeout(() => dmScrollRef.current?.scrollTo({ top: dmScrollRef.current.scrollHeight }), 40);
+      });
+    const sub = supabase
+      .channel(`dm_thread_${user.id}_${dmActiveUserId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages" }, (payload) => {
+        const row = payload.new as unknown as DM;
+        const involvesPair =
+          (row.sender_id === user.id && row.recipient_id === dmActiveUserId) ||
+          (row.sender_id === dmActiveUserId && row.recipient_id === user.id);
+        if (!involvesPair) return;
+        setDmMessages((m) => [...m, row]);
+        setTimeout(() => dmScrollRef.current?.scrollTo({ top: dmScrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
+      })
+      .subscribe();
+    return () => { cancelled = true; sub.unsubscribe(); };
+  }, [user, dmActiveUserId]);
+
+  const sendDM = useCallback(async () => {
+    if (!user || !profile || !dmActiveUserId || !dmText.trim()) return;
+    const body = dmText.trim();
+    setDmText("");
+    await supabase.from("direct_messages").insert({
+      sender_id: user.id,
+      recipient_id: dmActiveUserId,
+      sender_username: profile.username,
+      sender_avatar_emoji: profile.avatar_emoji,
+      sender_avatar_url: profile.avatar_url ?? null,
+      sender_accent_color: profile.accent_color,
+      content: body,
+    });
+  }, [user, profile, dmActiveUserId, dmText]);
+
+  // Notifs: load @mentions of this user across global channels
+  useEffect(() => {
+    if (!user || !profile || tab !== "notifs") return;
+    let cancelled = false;
+    supabase
+      .from("chat_messages")
+      .select("*")
+      .ilike("content", `%@${profile.username}%`)
+      .order("created_at", { ascending: false })
+      .limit(50)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setNotifs(((data || []) as unknown as Message[]));
+      });
+    return () => { cancelled = true; };
+  }, [user, profile, tab]);
+
   const send = useCallback(
     async (content: string | null, attachments: Attachment[] = []) => {
       if (!user || !profile || !activeId) return;
