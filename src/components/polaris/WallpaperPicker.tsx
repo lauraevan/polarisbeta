@@ -3,10 +3,18 @@ import { ImageIcon, X, Play, Check } from "lucide-react";
 import { useWallpaper } from "@/lib/wallpaper-context";
 import { useRouterState } from "@tanstack/react-router";
 
-export function WallpaperPicker() {
+export function WallpaperPicker({
+  open: controlledOpen,
+  onOpenChange,
+}: {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const { wallpaper, setWallpaperId, all } = useWallpaper();
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const open = controlledOpen ?? localOpen;
+  const setOpen = onOpenChange ?? setLocalOpen;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // Hide the floating launcher on routes with their own top-right controls
   // (e.g. PolarisFlix has a search button in that exact spot).
@@ -95,19 +103,11 @@ export function WallpaperPicker() {
                           : undefined
                       }
                     >
-                      {w.type === "animated" ? (
-                        <video
-                          src={w.src}
-                          poster={w.poster}
-                          muted
-                          loop
-                          playsInline
-                          preload="metadata"
-                          onMouseEnter={(e) => e.currentTarget.play().catch(() => {})}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.pause();
-                            e.currentTarget.currentTime = 0;
-                          }}
+                      {w.poster ? (
+                        <img
+                          src={w.poster}
+                          alt={w.name}
+                          loading="lazy"
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
