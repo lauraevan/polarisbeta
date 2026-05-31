@@ -45,7 +45,7 @@ export function ChatRoom() {
     const sub = supabase
       .channel("chat_channels_rt")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_channels" }, (payload) => {
-        setChannels((c) => [...c, payload.new as Channel]);
+        setChannels((c) => [...c, payload.new as unknown as Channel]);
       })
       .subscribe();
     return () => { sub.unsubscribe(); };
@@ -65,7 +65,7 @@ export function ChatRoom() {
       .limit(80)
       .then(({ data }) => {
         if (cancelled) return;
-        setMessages(((data || []) as Message[]).reverse());
+        setMessages(((data || []) as unknown as Message[]).reverse());
         setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }), 50);
       });
     const sub = supabase
@@ -74,7 +74,7 @@ export function ChatRoom() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages", filter: `channel_id=eq.${activeId}` },
         (payload) => {
-          setMessages((m) => [...m, payload.new as Message]);
+          setMessages((m) => [...m, payload.new as unknown as Message]);
           setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
         },
       )
