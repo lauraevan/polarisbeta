@@ -678,11 +678,19 @@ export function ChatRoom() {
           </div>
         </div>
       </main>
+      )}
 
       {gifOpen && <GifPicker onPick={(g) => { setGifOpen(false); send(null, [{ kind: "gif", url: g.full }]); }} onClose={() => setGifOpen(false)} />}
       {drawOpen && <DrawingCanvas onSend={sendDrawing} onClose={() => setDrawOpen(false)} />}
       {newChannelOpen && (
         <NewChannelDialog onCreate={createChannel} onClose={() => setNewChannelOpen(false)} />
+      )}
+      {dmStartOpen && (
+        <StartDmDialog
+          meId={user.id}
+          onPick={(uid) => { setDmActiveUserId(uid); setDmStartOpen(false); }}
+          onClose={() => setDmStartOpen(false)}
+        />
       )}
       <ProfileSheet open={!!viewProfileId} onClose={() => setViewProfileId(null)} viewUserId={viewProfileId} />
     </div>
