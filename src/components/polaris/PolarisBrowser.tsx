@@ -21,7 +21,7 @@ export function PolarisBrowser() {
     registerStaticProxies().finally(() => setReady(true));
   }, []);
 
-  const src = useMemo(() => getProxyUrl(engine, target), [engine, target]);
+  const src = useMemo(() => (ready ? getProxyUrl(engine, target) : "about:blank"), [engine, ready, target]);
 
   function go(input = query) {
     const next = normalizeUrl(input);
@@ -90,7 +90,22 @@ export function PolarisBrowser() {
           ))}
         </div>
 
-        <iframe key={`${engine}-${target}`} title="Polaris Browser" src={src} className="min-h-0 flex-1 border-0 bg-black/40" />
+        {ready ? (
+          <iframe
+            key={`${engine}-${target}-${ready}`}
+            title="Polaris Browser"
+            src={src}
+            className="min-h-0 flex-1 border-0 bg-black/40"
+          />
+        ) : (
+          <div className="grid min-h-0 flex-1 place-items-center bg-black/35 text-center">
+            <div className="space-y-2 px-6">
+              <Zap className="mx-auto h-8 w-8 animate-pulse text-white" />
+              <div className="text-sm font-bold text-white">Starting Polaris Browser</div>
+              <div className="text-xs text-white/50">Registering static Ultraviolet and Scramjet workers…</div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
