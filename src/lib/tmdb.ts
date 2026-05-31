@@ -137,4 +137,14 @@ export const tmdbApi = {
       sort_by: "popularity.desc",
     }).then((r) => r.results);
   },
+  // Newest releases — sorted by release date so new movies surface automatically
+  latestReleases: (kind: MediaKind) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const dateKey = kind === "movie" ? "primary_release_date.lte" : "first_air_date.lte";
+    return tmdb<ListResp>(`/discover/${kind}`, {
+      [dateKey]: today,
+      sort_by: kind === "movie" ? "primary_release_date.desc" : "first_air_date.desc",
+      "vote_count.gte": 25,
+    }).then((r) => r.results);
+  },
 };
