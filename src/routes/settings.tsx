@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
@@ -36,7 +36,7 @@ function SettingsPage() {
   const {
     mode, setMode, customAccent, setCustomAccent, outlineColor, setOutlineColor,
     dockSize, setDockSize, shortcutSize, setShortcutSize, dockPins, setDockPins,
-    defaultEngine, setDefaultEngine,
+    defaultEngine, setDefaultEngine, homeAISwipe, setHomeAISwipe,
   } = useTheme();
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const { cloak, setCloakId, cloaks } = useTabCloak();
@@ -287,6 +287,39 @@ function SettingsPage() {
                 {e === "uv" ? "Ultraviolet" : "Scramjet"}
               </button>
             ))}
+          </div>
+        </section>
+
+        {/* Home experience */}
+        <section className="liquid-glass-themed rounded-2xl p-5">
+          <SectionTitle
+            icon={Sparkles}
+            title="Home experience"
+            subtitle="Customize the home page swipe pages"
+          />
+          <div className="mt-4 flex items-start justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-white">AI swipe page</div>
+              <p className="mt-0.5 text-[11px] text-white/55">
+                Adds a second home page you can swipe to — quick AI chat with
+                modes for Coding, Learning, Planning, and more.
+              </p>
+            </div>
+            <button
+              onClick={() => setHomeAISwipe(!homeAISwipe)}
+              aria-pressed={homeAISwipe}
+              className={`relative h-7 w-12 shrink-0 rounded-full border transition ${
+                homeAISwipe
+                  ? "border-white/20 bg-white"
+                  : "border-white/15 bg-white/10"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-6 w-6 rounded-full transition-all ${
+                  homeAISwipe ? "left-5 bg-black" : "left-0.5 bg-white"
+                }`}
+              />
+            </button>
           </div>
         </section>
       </div>

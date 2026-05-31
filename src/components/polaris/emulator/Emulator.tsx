@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Gamepad2, Cloud, FlaskConical } from "lucide-react";
 import { RetroPane } from "./RetroPane";
 import { IframePane } from "./IframePane";
+import { SwitchCloudPane } from "./SwitchCloudPane";
 
 type Tab = "retro" | "cloud" | "vela";
 const TABS: { id: Tab; label: string; icon: typeof Gamepad2; sub: string }[] = [
@@ -14,9 +15,9 @@ export function Emulator() {
   const [tab, setTab] = useState<Tab>("retro");
 
   return (
-    <div className="flex h-screen flex-col text-white">
+    <div className="mx-auto flex h-[calc(100vh-110px)] max-w-6xl flex-col px-3 pt-4 pb-2 text-white sm:px-4">
       {/* Tab bar */}
-      <header className="px-3 pt-3 sm:px-4">
+      <header>
         <div className="liquid-glass-themed flex items-center gap-1 overflow-x-auto rounded-2xl p-1.5">
           {TABS.map((t) => {
             const Icon = t.icon;
@@ -50,13 +51,7 @@ export function Emulator() {
 
       <div className="min-h-0 flex-1">
         {tab === "retro" && <RetroPane />}
-        {tab === "cloud" && (
-          <IframePane
-            url="https://afterplay.io"
-            label="Afterplay.io"
-            banner="Cloud-streamed Switch emulation. Sign in to Afterplay; the Switch tier may require a paid plan."
-          />
-        )}
+        {tab === "cloud" && <SwitchCloudPane />}
         {tab === "vela" && (
           <IframePane
             url="https://proxy-alt.github.io/Vela/"
