@@ -114,4 +114,27 @@ export const tmdbApi = {
       with_companies: "41077", // A24
       sort_by: "popularity.desc",
     }).then((r) => r.results),
+  blockbusters: (kind: MediaKind) =>
+    tmdb<ListResp>(`/discover/${kind}`, {
+      sort_by: "revenue.desc",
+      "vote_count.gte": 500,
+    }).then((r) => r.results),
+  criticallyAcclaimed: (kind: MediaKind) =>
+    tmdb<ListResp>(`/discover/${kind}`, {
+      sort_by: "vote_average.desc",
+      "vote_count.gte": 2000,
+    }).then((r) => r.results),
+  familyNight: () =>
+    tmdb<ListResp>(`/discover/movie`, {
+      with_genres: "10751",
+      sort_by: "popularity.desc",
+    }).then((r) => r.results),
+  thisYear: (kind: MediaKind) => {
+    const y = new Date().getFullYear();
+    const dateKey = kind === "movie" ? "primary_release_year" : "first_air_date_year";
+    return tmdb<ListResp>(`/discover/${kind}`, {
+      [dateKey]: y,
+      sort_by: "popularity.desc",
+    }).then((r) => r.results);
+  },
 };
