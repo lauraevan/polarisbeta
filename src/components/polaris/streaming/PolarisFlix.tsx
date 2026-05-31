@@ -75,7 +75,7 @@ function Hero({
         >
           {it.backdrop_path && (
             <img
-              src={IMG(it.backdrop_path, "w1280")}
+              src={IMG(it.backdrop_path, "w780")}
               alt=""
               loading={idx === 0 ? "eager" : "lazy"}
               decoding="async"
