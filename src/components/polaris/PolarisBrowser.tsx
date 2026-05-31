@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
-import { ArrowRight, Globe2, RotateCcw, Search, Shield, Zap } from "lucide-react";
+import { ArrowRight, ExternalLink, RotateCcw, Search, Shield, Zap } from "lucide-react";
 import { getProxyUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
+import logo from "@/assets/polaris-logo.png";
 
 const QUICK_LINKS = [
   "google.com",
@@ -18,17 +19,26 @@ export function PolarisBrowser() {
   const [query, setQuery] = useState(search.url ? normalizeUrl(search.url) : "google.com");
   const [target, setTarget] = useState(search.url ? normalizeUrl(search.url) : "https://www.google.com");
   const [ready, setReady] = useState(false);
+  const [activeSrc, setActiveSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    registerStaticProxies().finally(() => setReady(true));
-  }, []);
+    setReady(false);
+    setActiveSrc(null);
+    registerStaticProxies(engine).finally(() => setReady(true));
+  }, [engine]);
 
-  const src = useMemo(() => (ready ? getProxyUrl(engine, target) : "about:blank"), [engine, ready, target]);
+  const src = useMemo(() => getProxyUrl(engine, target), [engine, target]);
 
   function go(input = query) {
     const next = normalizeUrl(input);
     setQuery(input);
     setTarget(next);
+    setActiveSrc(null);
+  }
+
+  function launch() {
+    if (!ready) return;
+    setActiveSrc(src);
   }
 
   return (
@@ -37,7 +47,7 @@ export function PolarisBrowser() {
         <header className="flex flex-col gap-3 border-b border-white/10 p-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2 pr-1">
             <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10">
-              <Globe2 className="h-5 w-5 text-white" />
+              <img src={logo} alt="Polaris Browser" className="h-7 w-7 object-contain" />
             </div>
             <div className="hidden leading-tight sm:block">
               <div className="text-sm font-black text-white">Polaris Browser</div>
@@ -92,13 +102,33 @@ export function PolarisBrowser() {
           ))}
         </div>
 
-        {ready ? (
+        {activeSrc ? (
           <iframe
-            key={`${engine}-${target}-${ready}`}
+            key={activeSrc}
             title="Polaris Browser"
-            src={src}
+            src={activeSrc}
             className="min-h-0 flex-1 border-0 bg-black/40"
           />
+        ) : ready ? (
+          <div className="grid min-h-0 flex-1 place-items-center bg-black/35 text-center">
+            <div className="max-w-md space-y-4 px-6">
+              <img src={logo} alt="Polaris Browser" className="mx-auto h-16 w-16 object-contain" />
+              <div>
+                <div className="text-xl font-black text-white">Ready to browse</div>
+                <div className="mt-2 text-sm leading-6 text-white/55">
+                  {engine === "uv" ? "Ultraviolet" : "Scramjet"} is loaded. Launch the current website when you’re ready.
+                </div>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                <button onClick={launch} className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-black hover:bg-white/90">
+                  Open {new URL(target).hostname.replace("www.", "")} <ArrowRight className="h-4 w-4" />
+                </button>
+                <a href={src} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white/75 hover:bg-white/10 hover:text-white">
+                  New tab <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="grid min-h-0 flex-1 place-items-center bg-black/35 text-center">
             <div className="space-y-2 px-6">
