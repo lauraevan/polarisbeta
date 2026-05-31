@@ -181,6 +181,10 @@ export function Player({ kind, id, title, onClose }: Props) {
           <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-[10px] text-white/60 backdrop-blur">
             <AlertCircle className="mr-1 inline h-3 w-3" /> Source blocked? Try the next one →
           </div>
+          {/* Copyright disclaimer */}
+          <div className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-[9px] text-white/40 backdrop-blur">
+            We don't condone copyright. 3rd party streamers host this content, not us.
+          </div>
         </div>
 
         {/* Netflix-style episode panel */}

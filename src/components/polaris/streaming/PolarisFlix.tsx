@@ -651,6 +651,13 @@ function FlixInner() {
             )}
           </>
         )}
+
+        {/* Copyright disclaimer */}
+        <div className="mx-4 sm:mx-6 mt-8 mb-4 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-center backdrop-blur-sm">
+          <p className="text-[11px] text-white/50">
+            We don't condone copyright infringement. Content is hosted by third-party streamers, not us.
+          </p>
+        </div>
       </div>
 
       {selected && (

@@ -1,7 +1,11 @@
+export type Resolution = "540p" | "1080p" | "4k";
+
 export type Wallpaper = {
   id: string;
   name: string;
   src: string;
+  src1080: string;
+  src4k: string;
   type: "static" | "animated";
   /** RGB triplet string used for --polaris-accent */
   accent: string;
@@ -16,6 +20,8 @@ const wp = (id: number, slug: string, posterPath: string, accent: string, name: 
   type: "animated",
   accent,
   src: `${MB}/media/${id}/${slug}.960x540.mp4`,
+  src1080: `${MB}/media/${id}/${slug}.1920x1080.mp4`,
+  src4k: `${MB}/media/${id}/${slug}.3840x2160.mp4`,
   poster: `${MB}${posterPath}`,
 });
 

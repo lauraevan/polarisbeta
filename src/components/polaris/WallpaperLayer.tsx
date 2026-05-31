@@ -3,13 +3,15 @@ import { useEffect, useState } from "react";
 import { useTheme } from "@/lib/theme-context";
 
 export function WallpaperLayer() {
-  const { wallpaper } = useWallpaper();
+  const { wallpaper, resolution } = useWallpaper();
   const { mode, outlineColor } = useTheme();
   const [videoFailed, setVideoFailed] = useState(false);
 
   useEffect(() => {
     setVideoFailed(false);
-  }, [wallpaper.id]);
+  }, [wallpaper.id, resolution]);
+
+  const videoSrc = resolution === "4k" ? wallpaper.src4k : resolution === "1080p" ? wallpaper.src1080 : wallpaper.src;
 
   // Outline-only mode: pure black with a colored vignette outline.
   if (mode === "outline") {
@@ -37,9 +39,9 @@ export function WallpaperLayer() {
       />
       {wallpaper.type === "animated" && !videoFailed ? (
         <video
-          key={wallpaper.id}
+          key={`${wallpaper.id}-${resolution}`}
           className="absolute inset-0 h-full w-full object-cover animate-[fadeIn_700ms_ease]"
-          src={wallpaper.src}
+          src={videoSrc}
           poster={wallpaper.poster}
           autoPlay
           muted
@@ -49,7 +51,7 @@ export function WallpaperLayer() {
         />
       ) : wallpaper.poster ? (
         <img
-          key={`${wallpaper.id}-poster`}
+          key={`${wallpaper.id}-${resolution}-poster`}
           className="absolute inset-0 h-full w-full object-cover animate-[fadeIn_700ms_ease]"
           src={wallpaper.poster}
           alt=""
@@ -58,9 +60,9 @@ export function WallpaperLayer() {
         />
       ) : (
         <img
-          key={wallpaper.id}
+          key={`${wallpaper.id}-${resolution}`}
           className="absolute inset-0 h-full w-full object-cover animate-[fadeIn_700ms_ease]"
-          src={wallpaper.src}
+          src={videoSrc}
           alt=""
           loading="eager"
           onError={(e) => ((e.currentTarget as HTMLImageElement).style.opacity = "0")}
