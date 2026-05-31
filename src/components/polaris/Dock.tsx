@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Compass, SlidersHorizontal, Signal, Wifi, LayoutGrid } from "lucide-react";
+import { Compass, SlidersHorizontal, Signal, Wifi, LayoutGrid, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { Launchpad } from "./Launchpad";
 import { Link } from "@tanstack/react-router";
@@ -21,7 +21,7 @@ const PIN_CATALOG: Record<string, string> = {
 export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
   const [now, setNow] = useState<Date | null>(null);
   const [launchpadOpen, setLaunchpadOpen] = useState(false);
-  const { dockSize, dockPins, defaultEngine } = useTheme();
+  const { dockSize, dockPins, defaultEngine, dockPosition, setDockPosition } = useTheme();
 
   useEffect(() => {
     // Only run on the client to avoid SSR/CSR hydration mismatch.
@@ -40,11 +40,33 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
   return (
     <>
       <Launchpad open={launchpadOpen} onClose={() => setLaunchpadOpen(false)} />
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
+      <div
+        className={`pointer-events-none fixed inset-x-0 bottom-4 z-30 flex px-4 ${
+          dockPosition === "left" ? "justify-start" : dockPosition === "right" ? "justify-end" : "justify-center"
+        }`}
+      >
         <div
-          className="liquid-glass-themed pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-3 overflow-x-auto rounded-2xl px-3 py-2 sm:gap-4 sm:px-4"
-          style={{ transform: `scale(${dockSize})`, transformOrigin: "bottom center" }}
+          className="pointer-events-auto flex items-center gap-1.5"
+          style={{
+            transform: `scale(${dockSize})`,
+            transformOrigin:
+              dockPosition === "left" ? "bottom left" : dockPosition === "right" ? "bottom right" : "bottom center",
+          }}
         >
+          {/* Left handle: shift dock left */}
+          <button
+            onClick={() => setDockPosition(dockPosition === "right" ? "center" : "left")}
+            aria-label="Move dock left"
+            title="Move dock left"
+            className="liquid-glass-ghost grid h-8 w-5 place-items-center rounded-l-xl text-white/55 hover:text-white disabled:opacity-30"
+            disabled={dockPosition === "left"}
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+
+          <div className="liquid-glass-themed flex max-w-[calc(100vw-6rem)] items-center gap-3 overflow-x-auto rounded-2xl px-3 py-2 sm:gap-4 sm:px-4">
+            {/* Drag-grip indicator (decorative) */}
+            <GripVertical className="h-4 w-4 shrink-0 text-white/30" />
         {/* Brand */}
         <div className="flex items-center gap-2 pr-1 sm:pr-2">
           <img src={logo} alt="Polaris One" className="h-7 w-7 rounded-lg object-contain" />
@@ -108,8 +130,20 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
           <span className="text-[13px] font-semibold text-white tabular-nums" suppressHydrationWarning>{time}</span>
           <span className="text-[10px] text-white/60" suppressHydrationWarning>{date}</span>
         </div>
+          </div>
+
+          {/* Right handle: shift dock right */}
+          <button
+            onClick={() => setDockPosition(dockPosition === "left" ? "center" : "right")}
+            aria-label="Move dock right"
+            title="Move dock right"
+            className="liquid-glass-ghost grid h-8 w-5 place-items-center rounded-r-xl text-white/55 hover:text-white disabled:opacity-30"
+            disabled={dockPosition === "right"}
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
-    </div>
     </>
   );
 }
