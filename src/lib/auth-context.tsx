@@ -107,6 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error.message };
     }
     await supabase.auth.signInWithPassword({ email: toEmail(clean), password });
+    if (typeof window !== "undefined") {
+      // Slight delay so AuthDialog has time to close before profile opens.
+      setTimeout(() => window.dispatchEvent(new CustomEvent("polaris:signed-up")), 200);
+    }
     return { error: null };
   }, []);
 
