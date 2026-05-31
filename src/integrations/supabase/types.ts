@@ -104,6 +104,45 @@ export type Database = {
           },
         ]
       }
+      direct_messages: {
+        Row: {
+          attachments: Json
+          content: string | null
+          created_at: string
+          id: string
+          recipient_id: string
+          sender_accent_color: string | null
+          sender_avatar_emoji: string | null
+          sender_avatar_url: string | null
+          sender_id: string
+          sender_username: string
+        }
+        Insert: {
+          attachments?: Json
+          content?: string | null
+          created_at?: string
+          id?: string
+          recipient_id: string
+          sender_accent_color?: string | null
+          sender_avatar_emoji?: string | null
+          sender_avatar_url?: string | null
+          sender_id: string
+          sender_username: string
+        }
+        Update: {
+          attachments?: Json
+          content?: string | null
+          created_at?: string
+          id?: string
+          recipient_id?: string
+          sender_accent_color?: string | null
+          sender_avatar_emoji?: string | null
+          sender_avatar_url?: string | null
+          sender_id?: string
+          sender_username?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           about_me: string | null
