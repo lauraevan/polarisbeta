@@ -1,14 +1,12 @@
 import { useState } from "react";
-import { Gamepad2, Cloud, FlaskConical } from "lucide-react";
+import { Gamepad2, Cloud } from "lucide-react";
 import { RetroPane } from "./RetroPane";
-import { IframePane } from "./IframePane";
 import { SwitchCloudPane } from "./SwitchCloudPane";
 
-type Tab = "retro" | "cloud" | "vela";
+type Tab = "retro" | "cloud";
 const TABS: { id: Tab; label: string; icon: typeof Gamepad2; sub: string }[] = [
   { id: "retro", label: "Retro", icon: Gamepad2, sub: "NES · SNES · GBA · N64 · PS1" },
   { id: "cloud", label: "Switch · Cloud", icon: Cloud, sub: "Streamed via Afterplay" },
-  { id: "vela", label: "Switch · Experimental", icon: FlaskConical, sub: "Vela WebGPU alpha" },
 ];
 
 export function Emulator() {
@@ -52,14 +50,6 @@ export function Emulator() {
       <div className="min-h-0 flex-1">
         {tab === "retro" && <RetroPane />}
         {tab === "cloud" && <SwitchCloudPane />}
-        {tab === "vela" && (
-          <IframePane
-            url="https://proxy-alt.github.io/Vela/"
-            label="Vela"
-            warning
-            banner="Experimental open-source WebGPU Switch emulator. Most commercial games will not boot yet."
-          />
-        )}
       </div>
     </div>
   );
