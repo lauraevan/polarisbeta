@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useEffect } from "react";
 import { X, User as UserIcon, Lock, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import logo from "@/assets/polaris-logo.png";
