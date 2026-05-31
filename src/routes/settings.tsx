@@ -81,6 +81,7 @@ function SettingsPage() {
     dockSize, setDockSize, shortcutSize, setShortcutSize, dockPins, setDockPins,
     defaultEngine, setDefaultEngine, homeAISwipe, setHomeAISwipe,
     uiTheme, setUITheme, liquidGlass, setLiquidGlass,
+    setSecondaryAccent,
   } = useTheme();
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const { cloak, setCloakId, cloaks } = useTabCloak();
@@ -90,6 +91,7 @@ function SettingsPage() {
     setUITheme(p.ui);
     setLiquidGlass(p.glass);
     setCustomAccent(p.accent);
+    setSecondaryAccent(p.accent2 ?? p.accent);
   }
 
   const activePresetId = THEME_PRESETS.find(
