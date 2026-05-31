@@ -686,27 +686,57 @@ function ModelGroup({
 
 function MessageBubble({ role, content, modelLabel }: { role: Role; content: string; modelLabel: string }) {
   const isUser = role === "user";
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {/* noop */}
+  }
   return (
-    <div className={`flex gap-3 animate-[fadeIn_220ms_ease] ${isUser ? "flex-row-reverse" : ""}`}>
+    <div className={`group flex gap-3 animate-[fadeIn_220ms_ease] ${isUser ? "flex-row-reverse" : ""}`}>
       <div
         className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
         style={{
-          background: isUser ? "rgb(var(--polaris-accent))" : "rgba(255,255,255,0.08)",
-          boxShadow: isUser ? "0 4px 16px -4px rgba(var(--polaris-accent)/0.6)" : undefined,
+          background: isUser
+            ? "linear-gradient(140deg, rgb(var(--polaris-accent)), rgba(var(--polaris-accent)/0.7))"
+            : "linear-gradient(140deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04))",
+          boxShadow: isUser
+            ? "0 8px 24px -8px rgba(var(--polaris-accent)/0.7), inset 0 0 0 1px rgba(255,255,255,0.18)"
+            : "inset 0 0 0 1px rgba(255,255,255,0.10)",
         }}
       >
         {isUser ? "Y" : <Bot className="h-4 w-4" />}
       </div>
-      <div
-        className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed text-white/95"
-        style={{
-          background: isUser ? "rgba(var(--polaris-accent)/0.12)" : "rgba(255,255,255,0.025)",
-          border: `1px solid rgba(var(--polaris-accent)/${isUser ? 0.55 : 0.28})`,
-          boxShadow: `0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px -12px rgba(var(--polaris-accent)/${isUser ? 0.35 : 0.18})`,
-        }}
-      >
-        {!isUser && <div className="mb-1 text-[10px] uppercase tracking-widest text-white/40">{modelLabel}</div>}
-        {content || <span className="text-white/40">…</span>}
+      <div className={`relative max-w-[82%] ${isUser ? "items-end" : "items-start"} flex flex-col`}>
+        {!isUser && (
+          <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+            {modelLabel}
+          </div>
+        )}
+        <div
+          className="relative whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed text-white/95 backdrop-blur-xl"
+          style={{
+            background: isUser
+              ? "linear-gradient(140deg, rgba(var(--polaris-accent)/0.22), rgba(var(--polaris-accent)/0.08))"
+              : "rgba(255,255,255,0.04)",
+            border: `1px solid rgba(var(--polaris-accent)/${isUser ? 0.55 : 0.22})`,
+            boxShadow: `0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 30px -16px rgba(var(--polaris-accent)/${isUser ? 0.45 : 0.22})`,
+          }}
+        >
+          {content || <span className="text-white/40">…</span>}
+        </div>
+        {!!content && (
+          <button
+            onClick={copy}
+            className="mt-1 flex items-center gap-1 self-start rounded-md px-1.5 py-0.5 text-[10px] text-white/40 opacity-0 transition hover:text-white/80 group-hover:opacity-100"
+            aria-label="Copy message"
+          >
+            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            {copied ? "Copied" : "Copy"}
+          </button>
+        )}
       </div>
     </div>
   );
