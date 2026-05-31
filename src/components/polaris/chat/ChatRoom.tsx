@@ -3,6 +3,7 @@ import {
   Send, Image as ImageIcon, Smile, Paintbrush, Sparkles, Loader2, Hash, Plus, X, Search,
   MessageCircle, Palette, AtSign, Bold, Italic, Code, Mic, BarChart3, Heart, Users, Bell,
   Megaphone, Bug, RefreshCcw, Crown, Link2, ChevronDown,
+  Gamepad2, Coffee, Pin, Newspaper, Zap, MessagesSquare, Star,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -47,10 +48,17 @@ function categorize(slug: string): "important" | "main" | "links" {
 }
 function iconForChannel(slug: string) {
   if (slug === "updates") return RefreshCcw;
-  if (slug === "bug-fixes" || slug.includes("bug")) return Bug;
-  if (slug === "announcements" || slug === "news") return Megaphone;
+  if (slug === "bug-fixes" || slug === "bug-reports" || slug.includes("bug")) return Bug;
+  if (slug === "announcements") return Megaphone;
+  if (slug === "news") return Newspaper;
   if (slug === "premium") return Crown;
+  if (slug === "gaming" || slug.includes("game")) return Gamepad2;
+  if (slug === "off-topic" || slug.includes("lounge")) return Coffee;
+  if (slug === "general") return MessagesSquare;
+  if (slug === "official-links" || slug === "official") return Pin;
+  if (slug === "temporary-links" || slug.includes("temp")) return Zap;
   if (LINK_KEYWORDS.some((k) => slug.includes(k))) return Link2;
+  if (slug.includes("star") || slug.includes("fav")) return Star;
   return Hash;
 }
 
