@@ -4,25 +4,19 @@
  * routing and per-origin cookie isolation keep working without us running
  * any infrastructure. */
 (function (g) {
-  var _p = ["/uv/svc/", "/uv/service/"]; // primary + legacy alias
+  var _p = ["/uv/service/"]; // keep stable so existing links resolve
   var _b = [
     "https://tomp.app/bare/",
     "https://bare.titaniumnetwork.org/",
     "https://uv.holyubofficial.net/bare/",
   ];
   // Obfuscated XOR helper kept editable: change KEY to rotate.
-  var KEY = 0x5a;
-  function _x(s){var o="";for(var i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^KEY);return o;}
   g.__uv$config = {
     prefix: _p[0],
     bare: _b,
-    encodeUrl: function (str) {
-      // fragment-safe + XOR-light obfuscation so URLs aren't trivially readable
-      try { return encodeURIComponent(_x(String(str))); } catch (e) { return encodeURIComponent(str); }
-    },
-    decodeUrl: function (str) {
-      try { return _x(decodeURIComponent(String(str))); } catch (e) { return decodeURIComponent(str); }
-    },
+    // Standard URL codec — keeps generated links shareable across sessions.
+    encodeUrl: encodeURIComponent,
+    decodeUrl: decodeURIComponent,
     handler: "/uv/uv.handler.js",
     bundle: "/uv/uv.bundle.js",
     client: "/uv/uv.client.js",
