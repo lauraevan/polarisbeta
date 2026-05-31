@@ -410,6 +410,15 @@ export function PolarisAI() {
 
       {/* Main — translucent so the wallpaper shows through */}
       <div className="liquid-glass-strong relative m-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)] md:m-3">
+        {/* Ambient accent aura that lives behind the panel content */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-0 opacity-80"
+          style={{
+            background:
+              "radial-gradient(800px 360px at 50% -10%, rgba(var(--polaris-accent)/0.18), transparent 60%), radial-gradient(600px 320px at 100% 100%, rgba(var(--polaris-accent)/0.10), transparent 70%)",
+          }}
+        />
         {/* Top bar */}
         <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-white/[0.04] px-3 py-3 backdrop-blur-xl sm:px-5">
           <button
