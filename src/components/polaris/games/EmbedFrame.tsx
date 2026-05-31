@@ -10,13 +10,16 @@ export function EmbedFrame({
   src: string;
   title: string;
   onClose: () => void;
-  /** "src" loads the URL directly; "srcdoc" fetches the HTML and injects it
-   *  (fixes CDNs that serve .html as text/plain — e.g. jsdelivr for the
-   *  Polaris game collection). */
+  /** "src" loads the URL directly. "srcdoc" fetches the HTML, rewrites it
+   *  with a <base href> pointing at the original CDN folder, and serves it
+   *  through a blob: URL with type text/html. This fixes CDNs that send
+   *  .html as text/plain (jsdelivr) WITHOUT trapping the game in an
+   *  opaque srcdoc origin — so localStorage, canvas, audio context, and
+   *  fetch all work the way the game expects. */
   mode?: "src" | "srcdoc";
 }) {
   const [key, setKey] = useState(0);
-  const [html, setHtml] = useState<string | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [fs, setFs] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -36,23 +39,32 @@ export function EmbedFrame({
   useEffect(() => {
     if (mode !== "srcdoc") return;
     let cancelled = false;
-    setHtml(null);
+    let created: string | null = null;
+    setBlobUrl(null);
     setErr(null);
     fetch(src)
       .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((t) => {
         if (cancelled) return;
-        // Ensure a <base> exists so relative asset paths resolve against the source URL.
-        const hasBase = /<base\s/i.test(t);
+        // Inject <base href> so relative assets resolve against the source URL.
         const baseHref = src.replace(/[^/]+$/, "");
-        const out = hasBase
-          ? t
-          : t.replace(/<head(\s[^>]*)?>/i, (m) => `${m}\n<base href="${baseHref}">`);
-        setHtml(out);
+        let out = t;
+        if (!/<base\s/i.test(out)) {
+          if (/<head(\s[^>]*)?>/i.test(out)) {
+            out = out.replace(/<head(\s[^>]*)?>/i, (m) => `${m}\n<base href="${baseHref}">`);
+          } else {
+            // No <head> at all — prepend one so the base tag still applies.
+            out = `<!doctype html><head><base href="${baseHref}"></head>` + out;
+          }
+        }
+        const blob = new Blob([out], { type: "text/html" });
+        created = URL.createObjectURL(blob);
+        setBlobUrl(created);
       })
       .catch((e) => !cancelled && setErr(String(e?.message ?? e)));
     return () => {
       cancelled = true;
+      if (created) URL.revokeObjectURL(created);
     };
   }, [src, mode, key]);
 
@@ -115,14 +127,14 @@ export function EmbedFrame({
               Retry
             </button>
           </div>
-        ) : html == null ? (
+        ) : blobUrl == null ? (
           <div className="flex flex-1 items-center justify-center text-white/60">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : (
           <iframe
             key={key}
-            srcDoc={html}
+            src={blobUrl}
             title={title}
             className="flex-1 w-full border-0 bg-black"
             allow="autoplay; fullscreen; gamepad; cross-origin-isolated; clipboard-write"
