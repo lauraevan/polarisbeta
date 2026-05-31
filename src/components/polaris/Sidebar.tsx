@@ -35,7 +35,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`liquid-glass-strong relative z-20 hidden h-screen ${width} shrink-0 flex-col rounded-none transition-[width] duration-300 ease-out md:flex`}
+      className={`liquid-glass-strong sticky top-0 z-20 hidden h-screen ${width} shrink-0 flex-col self-start rounded-none transition-[width] duration-300 ease-out md:flex`}
     >
       {/* Brand */}
       <div className={`flex items-center pt-6 pb-2 ${collapsed ? "justify-center px-2" : "gap-3 px-5"}`}>

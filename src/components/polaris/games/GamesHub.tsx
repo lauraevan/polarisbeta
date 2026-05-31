@@ -241,7 +241,16 @@ export function GamesHub() {
   const [playing, setPlaying] = useState<Play | null>(null);
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen">
+      {/* Warm cinematic overlay so the games hub matches PolarisFlix warmth */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(110% 55% at 20% 0%, rgba(255,150,60,0.20) 0%, rgba(180,60,20,0.10) 35%, rgba(0,0,0,0) 70%), radial-gradient(90% 50% at 90% 100%, rgba(255,90,40,0.16) 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg, rgba(22,10,4,0.55) 0%, rgba(10,4,2,0.85) 100%)",
+        }}
+      />
       <SteamSplash />
       <ProfileSplash tag="games" />
       <div className="mx-auto flex max-w-[1600px] gap-6 px-4 py-6 pb-32 sm:px-6">
