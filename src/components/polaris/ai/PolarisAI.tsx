@@ -42,6 +42,10 @@ const MODELS: Model[] = [
   { id: "openai/gpt-5-mini", label: "GPT-5 Smart", blurb: "Balanced reasoning", tier: "premium", badge: "5", color: "bg-zinc-900" },
   { id: "openai/gpt-5.4", label: "GPT-5.4", blurb: "Advanced reasoning", tier: "premium", badge: "5", color: "bg-zinc-900" },
   { id: "openai/gpt-5.5", label: "GPT-5.5", blurb: "State of the art", tier: "premium", badge: "5", color: "bg-zinc-950" },
+  { id: "deepseek/deepseek-chat", label: "DeepSeek V3", blurb: "Open · reasoning", tier: "premium", badge: "D", color: "bg-blue-600" },
+  { id: "deepseek/deepseek-r1", label: "DeepSeek R1", blurb: "Open · deep think", tier: "premium", badge: "D", color: "bg-blue-700" },
+  { id: "meta-llama/llama-3.3-70b", label: "Llama 3.3 70B", blurb: "Open · Meta", tier: "premium", badge: "L", color: "bg-orange-500" },
+  { id: "meta-llama/llama-3.1-405b", label: "Llama 3.1 405B", blurb: "Open · largest", tier: "premium", badge: "L", color: "bg-orange-600" },
 ];
 
 type Mode = { id: string; label: string; system: string };
@@ -61,6 +65,31 @@ const STARTERS = [
 ];
 
 const STORAGE_KEY = "polaris-ai-chats-v1";
+const LIMIT_KEY = "polaris-ai-limits-v1";
+const DAILY_LIMITS: Record<ModelTier, number> = { free: 25, premium: 8 };
+const COOLDOWN_MS = 2500;
+
+type LimitState = { day: string; free: number; premium: number; lastAt: number };
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadLimits(): LimitState {
+  if (typeof window === "undefined") return { day: todayKey(), free: 0, premium: 0, lastAt: 0 };
+  try {
+    const raw = localStorage.getItem(LIMIT_KEY);
+    const parsed = raw ? (JSON.parse(raw) as LimitState) : null;
+    if (!parsed || parsed.day !== todayKey()) return { day: todayKey(), free: 0, premium: 0, lastAt: 0 };
+    return parsed;
+  } catch {
+    return { day: todayKey(), free: 0, premium: 0, lastAt: 0 };
+  }
+}
+
+function saveLimits(s: LimitState) {
+  try { localStorage.setItem(LIMIT_KEY, JSON.stringify(s)); } catch { /* noop */ }
+}
 
 function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -135,6 +164,26 @@ export function PolarisAI() {
   async function send(text: string) {
     if (!text.trim() || streaming) return;
     setError(null);
+    // Rate limit guard — protect credits
+    const limits = loadLimits();
+    const now = Date.now();
+    if (now - limits.lastAt < COOLDOWN_MS) {
+      const wait = Math.ceil((COOLDOWN_MS - (now - limits.lastAt)) / 1000);
+      setError(`Slow down — wait ${wait}s before sending another message.`);
+      return;
+    }
+    const used = model.tier === "premium" ? limits.premium : limits.free;
+    const cap = DAILY_LIMITS[model.tier];
+    if (used >= cap) {
+      setError(`Daily ${model.tier} limit reached (${cap}/day). Switch model or try again tomorrow.`);
+      return;
+    }
+    saveLimits({
+      day: todayKey(),
+      free: model.tier === "free" ? limits.free + 1 : limits.free,
+      premium: model.tier === "premium" ? limits.premium + 1 : limits.premium,
+      lastAt: now,
+    });
     let chat = active;
     if (!chat) {
       chat = { id: uid(), title: text.slice(0, 40), messages: [], updatedAt: Date.now() };
@@ -159,7 +208,10 @@ export function PolarisAI() {
     setInput("");
     setStreaming(true);
 
-    const history = [...(chat.messages || []), userMsg].map((m) => ({ role: m.role, content: m.content }));
+    // Cap history to last 12 messages to keep token usage (and credits) sane
+    const history = [...(chat.messages || []), userMsg]
+      .slice(-12)
+      .map((m) => ({ role: m.role, content: m.content }));
 
     try {
       const res = await fetch("/api/ai-chat", {

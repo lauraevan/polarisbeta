@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/ai-chat")({
               Authorization: `Bearer ${apiKey}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ model, messages, stream: true }),
+            body: JSON.stringify({ model, messages, stream: true, max_tokens: 1024 }),
           });
 
           if (!upstream.ok) {
