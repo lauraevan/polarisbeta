@@ -5,10 +5,11 @@ import { WallpaperPicker } from "./WallpaperPicker";
 import { Dock } from "./Dock";
 import { WallpaperProvider } from "@/lib/wallpaper-context";
 import { SidebarProvider } from "@/lib/sidebar-context";
-import { PolarisCursor } from "./Cursor";
 import { PolarisBoot } from "./Boot";
+import { useState } from "react";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const [wallpaperOpen, setWallpaperOpen] = useState(false);
   return (
     <WallpaperProvider>
       <SidebarProvider>
@@ -17,10 +18,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Sidebar />
           <main className="relative flex-1 overflow-x-hidden">{children}</main>
         </div>
-        <Dock />
-        <WallpaperPicker />
-        <PolarisCursor />
-      <PolarisBoot />
+        <Dock onOpenWallpaper={() => setWallpaperOpen(true)} />
+        <WallpaperPicker open={wallpaperOpen} onOpenChange={setWallpaperOpen} />
+        <PolarisBoot />
       </SidebarProvider>
     </WallpaperProvider>
   );
