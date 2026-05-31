@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearch } from "@tanstack/react-router";
 import { ArrowRight, Globe2, RotateCcw, Search, Shield, Zap } from "lucide-react";
 import { getProxyUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
 
@@ -12,9 +13,10 @@ const QUICK_LINKS = [
 ];
 
 export function PolarisBrowser() {
-  const [engine, setEngine] = useState<ProxyEngine>("uv");
-  const [query, setQuery] = useState("google.com");
-  const [target, setTarget] = useState("https://www.google.com");
+  const search = useSearch({ strict: false }) as { engine?: ProxyEngine; url?: string };
+  const [engine, setEngine] = useState<ProxyEngine>(search.engine === "scramjet" ? "scramjet" : "uv");
+  const [query, setQuery] = useState(search.url ? normalizeUrl(search.url) : "google.com");
+  const [target, setTarget] = useState(search.url ? normalizeUrl(search.url) : "https://www.google.com");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
