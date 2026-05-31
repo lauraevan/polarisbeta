@@ -202,12 +202,14 @@ export function ChatRoom() {
   // Load active DM thread
   useEffect(() => {
     if (!user || !dmActiveUserId) { setDmMessages([]); return; }
+    const uid = user.id;
+    const otherId = dmActiveUserId;
     let cancelled = false;
     supabase
       .from("direct_messages")
       .select("*")
       .or(
-        `and(sender_id.eq.${user.id},recipient_id.eq.${dmActiveUserId}),and(sender_id.eq.${dmActiveUserId},recipient_id.eq.${user.id})`,
+        `and(sender_id.eq.${uid},recipient_id.eq.${otherId}),and(sender_id.eq.${otherId},recipient_id.eq.${uid})`,
       )
       .order("created_at", { ascending: true })
       .limit(200)
@@ -217,12 +219,12 @@ export function ChatRoom() {
         setTimeout(() => dmScrollRef.current?.scrollTo({ top: dmScrollRef.current.scrollHeight }), 40);
       });
     const sub = supabase
-      .channel(`dm_thread_${user.id}_${dmActiveUserId}`)
+      .channel(`dm_thread_${uid}_${otherId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages" }, (payload) => {
         const row = payload.new as unknown as DM;
         const involvesPair =
-          (row.sender_id === user.id && row.recipient_id === dmActiveUserId) ||
-          (row.sender_id === dmActiveUserId && row.recipient_id === user.id);
+          (row.sender_id === uid && row.recipient_id === otherId) ||
+          (row.sender_id === otherId && row.recipient_id === uid);
         if (!involvesPair) return;
         setDmMessages((m) => [...m, row]);
         setTimeout(() => dmScrollRef.current?.scrollTo({ top: dmScrollRef.current!.scrollHeight, behavior: "smooth" }), 30);
