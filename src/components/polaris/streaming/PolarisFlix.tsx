@@ -8,6 +8,7 @@ import { Player } from "./Player";
 import { PolarisFlixSplash } from "./Splash";
 import { MyListProvider, useMyList } from "@/lib/mylist-context";
 import { ProfileSplash } from "@/components/polaris/ProfileSplash";
+import polarisLogo from "@/assets/polaris-logo.png";
 
 type Tab = "home" | "movies" | "shows" | "anime";
 
@@ -122,8 +123,8 @@ function Hero({
 
 type ViewerProfile = { id: string; label: string; emoji: string; tint: string; kids?: boolean };
 const VIEWERS: ViewerProfile[] = [
-  { id: "polaris", label: "Polaris User", emoji: "✨", tint: "from-indigo-500/70 to-violet-600/40" },
-  { id: "kids", label: "Kids", emoji: "🧸", tint: "from-amber-400/70 to-rose-500/40", kids: true },
+  { id: "polaris", label: "Polaris User", emoji: "", tint: "from-orange-500/60 to-amber-400/30" },
+  { id: "kids", label: "Kids", emoji: "", tint: "from-amber-400/70 to-rose-500/40", kids: true },
 ];
 const VIEWER_KEY = "polaris-flix-viewer";
 
@@ -140,9 +141,9 @@ function WhosWatching({ onPick }: { onPick: (v: ViewerProfile) => void }) {
               className="group flex flex-col items-center gap-3"
             >
               <div
-                className={`grid h-28 w-28 place-items-center rounded-2xl bg-gradient-to-br ${v.tint} text-6xl shadow-2xl ring-1 ring-white/10 transition group-hover:scale-105 group-hover:ring-white md:h-36 md:w-36`}
+                className={`grid h-28 w-28 place-items-center rounded-2xl bg-gradient-to-br ${v.tint} p-4 shadow-2xl ring-1 ring-white/10 transition group-hover:scale-105 group-hover:ring-white md:h-36 md:w-36`}
               >
-                {v.emoji}
+                <img src={polarisLogo} alt="Polaris" className="h-full w-full object-contain drop-shadow-[0_4px_16px_rgba(255,140,40,0.55)]" />
               </div>
               <div className="text-base font-medium text-white/70 group-hover:text-white">
                 {v.label}
@@ -248,7 +249,7 @@ function FlixInner() {
 
   const intlMovies = useQuery({
     queryKey: ["intl-movies", searchLang],
-    queryFn: () => tmdbApi.international("movie", searchLang || "ko"),
+    queryFn: () => tmdbApi.international("movie", searchLang || "en"),
     enabled: searchOpen && query.trim().length < 2,
     staleTime: 1000 * 60 * 10,
   });
