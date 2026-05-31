@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Search, Shield, Zap } from "lucide-react";
-import { getProxyUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
+import { getPolarisBrowserUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
 
 type Shortcut = { name: string; url: string; category: Category };
 type Category = "Popular" | "Games" | "AI Tools" | "Websites" | "Media" | "Apps";
@@ -49,7 +49,7 @@ export function Home() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          window.open(getProxyUrl(engine, normalizeUrl(query)), "_blank", "noopener,noreferrer");
+          window.open(getPolarisBrowserUrl(engine, normalizeUrl(query)), "_blank", "noopener,noreferrer");
         }}
         className="liquid-glass flex w-full max-w-xl items-center gap-3 rounded-2xl px-4 py-3 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.6),0_20px_50px_-20px_rgba(var(--polaris-accent)/0.45)]"
       >
@@ -116,7 +116,7 @@ export function Home() {
           {visible.map((s) => (
             <a
               key={s.name}
-              href={getProxyUrl(engine, s.url)}
+              href={getPolarisBrowserUrl(engine, s.url)}
               target="_blank"
               rel="noreferrer"
               className="liquid-glass shortcut-card group flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl p-2 text-center"

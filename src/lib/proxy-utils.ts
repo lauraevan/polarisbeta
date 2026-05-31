@@ -27,6 +27,10 @@ export function getProxyUrl(engine: ProxyEngine, input: string) {
   return `/uv/service/${encodeURIComponent(url)}`;
 }
 
+export function getPolarisBrowserUrl(engine: ProxyEngine, input: string) {
+  return `/browser?engine=${engine}&url=${encodeURIComponent(normalizeUrl(input))}`;
+}
+
 function loadScript(src: string) {
   return new Promise<void>((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) return resolve();
@@ -53,11 +57,14 @@ export async function registerStaticProxies() {
     });
   };
 
-  const registrations = await Promise.all([
-    navigator.serviceWorker.register("/uv/sw.js", { scope: "/uv/" }),
-    navigator.serviceWorker.register("/scramjet/sw.js", { scope: "/scramjet/" }),
-  ]);
-  await Promise.all(registrations.map(waitForActive));
+  const setup = async () => {
+    const registrations = await Promise.all([
+      navigator.serviceWorker.register("/uv/sw.js", { scope: "/uv/" }),
+      navigator.serviceWorker.register("/scramjet/sw.js", { scope: "/scramjet/" }),
+    ]);
+    await Promise.all(registrations.map(waitForActive));
+  };
+  await Promise.race([setup(), new Promise((resolve) => setTimeout(resolve, 1800))]);
 
   if (!window.__polarisScramjetReady) {
     window.__polarisScramjetReady = loadScript("/scramjet/scramjet.all.js").then(async () => {
@@ -83,5 +90,5 @@ export async function registerStaticProxies() {
     });
   }
 
-  await window.__polarisScramjetReady;
+  await Promise.race([window.__polarisScramjetReady, new Promise((resolve) => setTimeout(resolve, 1800))]);
 }
