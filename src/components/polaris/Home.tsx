@@ -29,6 +29,7 @@ const CATEGORIES: (Category | "Popular")[] = ["Popular", "Games", "AI Tools", "W
 export function Home() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState<0 | 1>(0);
+  const { homeAISwipe } = useTheme();
 
   // Track which page is centered after a swipe/scroll
   useEffect(() => {
@@ -46,6 +47,14 @@ export function Home() {
     const el = scrollerRef.current;
     if (!el) return;
     el.scrollTo({ left: p * el.clientWidth, behavior: "smooth" });
+  }
+
+  if (!homeAISwipe) {
+    return (
+      <div className="relative">
+        <HomeWeb />
+      </div>
+    );
   }
 
   return (
