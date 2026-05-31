@@ -27,6 +27,8 @@ type Ctx = {
   setDefaultEngine: (e: "uv" | "scramjet") => void;
   dockPosition: DockPosition;
   setDockPosition: (p: DockPosition) => void;
+  homeAISwipe: boolean;
+  setHomeAISwipe: (b: boolean) => void;
 };
 
 const ThemeCtx = createContext<Ctx | null>(null);
@@ -50,6 +52,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [dockPins, setDockPins] = useState<string[]>(["YouTube", "Spotify", "Discord"]);
   const [defaultEngine, setDefaultEngine] = useState<"uv" | "scramjet">("uv");
   const [dockPosition, setDockPosition] = useState<DockPosition>("center");
+  const [homeAISwipe, setHomeAISwipe] = useState<boolean>(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -65,6 +68,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (Array.isArray(v.dockPins)) setDockPins(v.dockPins);
         if (v.defaultEngine === "uv" || v.defaultEngine === "scramjet") setDefaultEngine(v.defaultEngine);
         if (v.dockPosition === "left" || v.dockPosition === "center" || v.dockPosition === "right") setDockPosition(v.dockPosition);
+        if (typeof v.homeAISwipe === "boolean") setHomeAISwipe(v.homeAISwipe);
       }
     } catch {}
   }, []);
@@ -73,7 +77,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
       KEY,
-      JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition }),
+      JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe }),
     );
     // Apply custom accent if set
     if (customAccent && typeof document !== "undefined") {
@@ -88,15 +92,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       document.documentElement.style.setProperty("--polaris-dock-scale", String(dockSize));
       document.documentElement.style.setProperty("--polaris-shortcut-scale", String(shortcutSize));
     }
-  }, [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition]);
+  }, [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe]);
 
   const value = useMemo<Ctx>(
     () => ({
       mode, setMode, customAccent, setCustomAccent, outlineColor, setOutlineColor,
       dockSize, setDockSize, shortcutSize, setShortcutSize, dockPins, setDockPins,
       defaultEngine, setDefaultEngine, dockPosition, setDockPosition,
+      homeAISwipe, setHomeAISwipe,
     }),
-    [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition],
+    [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe],
   );
 
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
