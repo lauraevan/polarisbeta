@@ -457,7 +457,7 @@ export function PolarisAI() {
         </header>
 
         {/* Messages */}
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-black px-3 py-6 sm:px-8">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-6 sm:px-8">
           {!active || active.messages.length === 0 ? (
             <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
               <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/10">
@@ -494,7 +494,7 @@ export function PolarisAI() {
         </div>
 
         {/* Composer */}
-        <div className="border-t border-white/10 bg-black px-3 py-3 sm:px-6">
+        <div className="border-t border-white/10 bg-white/[0.04] px-3 py-3 backdrop-blur-xl sm:px-6">
           {error && (
             <div className="mx-auto mb-2 max-w-3xl rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
               {error}
