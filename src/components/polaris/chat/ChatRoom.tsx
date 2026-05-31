@@ -533,6 +533,28 @@ export function ChatRoom() {
       </aside>
 
       {/* Main */}
+      {tab !== "global" ? (
+        <main className="flex h-full min-w-0 flex-1 flex-col">
+          {tab === "dms" ? (
+            dmActiveUserId ? (
+              <DMThread
+                meId={user.id}
+                partner={dmPartners.find((p) => p.user_id === dmActiveUserId) || null}
+                messages={dmMessages}
+                value={dmText}
+                onChange={setDmText}
+                onSend={sendDM}
+                onAvatar={(uid) => setViewProfileId(uid)}
+                scrollRef={dmScrollRef}
+              />
+            ) : (
+              <EmptyMain icon={Users} title="Direct Messages" hint="Pick a conversation on the left, or hit + to start a new DM." />
+            )
+          ) : (
+            <EmptyMain icon={Bell} title="Notifications" hint="Mentions of you across global channels show up on the left." />
+          )}
+        </main>
+      ) : (
       <main className="flex h-full min-w-0 flex-1 flex-col">
         {/* Header */}
         <header
