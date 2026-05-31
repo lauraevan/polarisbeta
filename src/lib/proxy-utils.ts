@@ -42,10 +42,22 @@ function loadScript(src: string) {
 export async function registerStaticProxies() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
-  await Promise.allSettled([
+  const waitForActive = async (registration: ServiceWorkerRegistration) => {
+    if (registration.active) return;
+    const worker = registration.installing || registration.waiting;
+    if (!worker) return;
+    await new Promise<void>((resolve) => {
+      worker.addEventListener("statechange", () => {
+        if (worker.state === "activated") resolve();
+      });
+    });
+  };
+
+  const registrations = await Promise.all([
     navigator.serviceWorker.register("/uv/sw.js", { scope: "/uv/" }),
     navigator.serviceWorker.register("/scramjet/sw.js", { scope: "/scramjet/" }),
   ]);
+  await Promise.all(registrations.map(waitForActive));
 
   if (!window.__polarisScramjetReady) {
     window.__polarisScramjetReady = loadScript("/scramjet/scramjet.all.js").then(async () => {
