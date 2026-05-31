@@ -106,6 +106,25 @@ function HomeWeb() {
       <div className="mb-6 text-center">
         <div className="text-[10px] uppercase tracking-[0.32em] text-white/70">Polaris One</div>
         <div className="mt-1 text-[11px] text-white/45">Your warm cinematic web hub</div>
+        <div className="mt-3 flex flex-col items-center gap-1">
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white"
+            style={{
+              background: "rgba(var(--polaris-accent)/0.18)",
+              boxShadow: "inset 0 0 0 1px rgba(var(--polaris-accent)/0.55)",
+            }}
+          >
+            ★ T9 is the best
+          </span>
+          <a
+            href="https://t9os.space"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[10px] text-white/55 underline decoration-white/20 underline-offset-4 transition hover:text-white"
+          >
+            Support T9 at t9os.space — our partner OS
+          </a>
+        </div>
       </div>
 
       {/* Single centered search */}

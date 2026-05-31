@@ -626,16 +626,25 @@ export function ChatRoom() {
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 sm:px-6">
-          <div className="mx-auto flex max-w-3xl flex-col gap-3">
-            {messages.map((m, i) => (
-              <MessageBubble
-                key={m.id}
-                m={m}
-                prevSame={i > 0 && messages[i - 1].user_id === m.user_id && new Date(m.created_at).getTime() - new Date(messages[i - 1].created_at).getTime() < 5 * 60 * 1000}
-                onAvatarClick={() => setViewProfileId(m.user_id)}
-                onMention={() => insert(`@${m.username} `, "")}
-              />
-            ))}
+          <div className="mx-auto flex max-w-3xl flex-col gap-0.5">
+            {messages.map((m, i) => {
+              const prev = messages[i - 1];
+              const next = messages[i + 1];
+              const within = (a?: Message, b?: Message) =>
+                !!a && !!b && a.user_id === b.user_id &&
+                Math.abs(new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) < 5 * 60 * 1000;
+              return (
+                <MessageBubble
+                  key={m.id}
+                  m={m}
+                  mine={m.user_id === user.id}
+                  prevSame={within(prev, m)}
+                  nextSame={within(m, next)}
+                  onAvatarClick={() => setViewProfileId(m.user_id)}
+                  onMention={() => insert(`@${m.username} `, "")}
+                />
+              );
+            })}
             {messages.length === 0 && (
               <div className="mt-12 text-center text-sm text-white/45">
                 It’s cozy in here. Say hi 🍂
@@ -754,16 +763,41 @@ function ToolbarBtn({ children, label, onClick }: { children: React.ReactNode; l
   );
 }
 
-function MessageBubble({ m, prevSame, onAvatarClick, onMention }: { m: Message; prevSame: boolean; onAvatarClick: () => void; onMention: () => void }) {
+function MessageBubble({
+  m, mine, prevSame, nextSame, onAvatarClick, onMention,
+}: {
+  m: Message; mine: boolean; prevSame: boolean; nextSame: boolean;
+  onAvatarClick: () => void; onMention: () => void;
+}) {
   const time = new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  // iMessage-style grouped corners
+  const topRound = prevSame ? (mine ? "rounded-tr-md" : "rounded-tl-md") : "";
+  const botRound = nextSame ? (mine ? "rounded-br-md" : "rounded-bl-md") : "";
+  const bubbleBase = "max-w-[78%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-[14px] leading-snug shadow-sm";
+  const bubbleStyle: React.CSSProperties = mine
+    ? {
+        background: "linear-gradient(180deg, rgba(var(--polaris-accent)/0.95), rgba(var(--polaris-accent)/0.78))",
+        color: "white",
+        boxShadow: "0 1px 0 rgba(255,255,255,0.08) inset, 0 6px 18px -10px rgba(var(--polaris-accent)/0.55)",
+      }
+    : {
+        background: "rgba(255,255,255,0.07)",
+        color: "rgba(255,255,255,0.92)",
+        boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
+      };
+
   return (
-    <div className={`group flex gap-3 rounded-xl px-2 py-1 transition hover:bg-white/[0.03] ${prevSame ? "pt-0.5" : "pt-3"}`}>
-      <div className="w-9 shrink-0">
-        {!prevSame && (
+    <div className={`group flex w-full items-end gap-2 ${mine ? "flex-row-reverse" : ""} ${prevSame ? "mt-0.5" : "mt-2.5"}`}>
+      {/* Avatar slot — only on the LAST message of a run from someone else (iMessage style) */}
+      <div className="w-7 shrink-0">
+        {!mine && !nextSame && (
           <button
             onClick={onAvatarClick}
-            className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-full text-base transition hover:scale-110"
-            style={{ background: `rgb(${m.accent_color || "120 120 130"}/0.35)`, boxShadow: `inset 0 0 0 1px rgb(${m.accent_color || "120 120 130"}/0.55)` }}
+            className="relative grid h-7 w-7 place-items-center overflow-hidden rounded-full text-xs transition hover:scale-110"
+            style={{
+              background: `rgb(${m.accent_color || "120 120 130"}/0.35)`,
+              boxShadow: `inset 0 0 0 1px rgb(${m.accent_color || "120 120 130"}/0.55)`,
+            }}
             title={`View ${m.username}'s profile`}
           >
             {m.avatar_url ? (
@@ -774,29 +808,27 @@ function MessageBubble({ m, prevSame, onAvatarClick, onMention }: { m: Message; 
           </button>
         )}
       </div>
-      <div className="min-w-0 flex-1">
-        {!prevSame && (
-          <div className="flex items-baseline gap-2">
-            <button
-              onClick={onAvatarClick}
-              className="text-sm font-bold hover:underline"
-              style={{ color: `rgb(${m.accent_color || "240 240 240"})` }}
-            >
-              {m.username}
-            </button>
-            <span className="text-[10px] text-white/35">{time}</span>
-            <button
-              onClick={onMention}
-              className="ml-1 hidden text-[10px] text-white/30 group-hover:inline hover:text-white"
-              title="Mention"
-            >
-              @
-            </button>
+
+      <div className={`flex min-w-0 flex-col ${mine ? "items-end" : "items-start"}`}>
+        {/* Name shown above the first message of a non-mine group */}
+        {!mine && !prevSame && (
+          <button
+            onClick={onAvatarClick}
+            className="mb-0.5 px-1 text-[11px] font-semibold hover:underline"
+            style={{ color: `rgb(${m.accent_color || "240 240 240"})` }}
+          >
+            {m.username}
+          </button>
+        )}
+
+        {m.content && (
+          <div className={`${bubbleBase} ${topRound} ${botRound}`} style={bubbleStyle}>
+            {m.content}
           </div>
         )}
-        {m.content && <div className="whitespace-pre-wrap break-words text-sm text-white/90">{m.content}</div>}
+
         {m.attachments?.map((a, i) => (
-          <div key={i} className="mt-1.5 max-w-md overflow-hidden rounded-lg border border-white/10">
+          <div key={i} className={`mt-1 max-w-[78%] overflow-hidden rounded-2xl border border-white/10 ${topRound} ${botRound}`}>
             {a.kind === "image" || a.kind === "gif" || a.kind === "drawing" ? (
               <img src={a.url} alt="" className="block max-h-80 w-auto object-contain" loading="lazy" />
             ) : (
@@ -804,6 +836,22 @@ function MessageBubble({ m, prevSame, onAvatarClick, onMention }: { m: Message; 
             )}
           </div>
         ))}
+
+        {/* Time + mention shortcut on hover */}
+        {!nextSame && (
+          <div className={`mt-0.5 flex items-center gap-1.5 px-1 text-[10px] text-white/35 ${mine ? "flex-row-reverse" : ""}`}>
+            <span>{time}</span>
+            {!mine && (
+              <button
+                onClick={onMention}
+                className="hidden hover:text-white group-hover:inline"
+                title="Mention"
+              >
+                @
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
