@@ -17,8 +17,10 @@ export function AppShell({ children, hideDock = false }: { children: ReactNode; 
     const open = () => setProfileOpen(true);
     window.addEventListener("polaris:open-profile", open);
     window.addEventListener("polaris:signed-up", open);
-    return () => window.removeEventListener("polaris:open-profile", open);
-    // cleanup of signed-up too
+    return () => {
+      window.removeEventListener("polaris:open-profile", open);
+      window.removeEventListener("polaris:signed-up", open);
+    };
   }, []);
 
   return (
