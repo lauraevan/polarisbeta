@@ -154,19 +154,20 @@ export function ChatRoom() {
   // ===== DMs: load partner list & subscribe =====
   useEffect(() => {
     if (!user || tab !== "dms") return;
+    const uid = user.id;
     let cancelled = false;
     async function loadPartners() {
       const { data } = await supabase
         .from("direct_messages")
         .select("*")
-        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .or(`sender_id.eq.${uid},recipient_id.eq.${uid}`)
         .order("created_at", { ascending: false })
         .limit(200);
       if (cancelled) return;
       const list = (data || []) as unknown as DM[];
       const byPartner = new Map<string, DMPartner>();
       for (const m of list) {
-        const otherId = m.sender_id === user.id ? m.recipient_id : m.sender_id;
+        const otherId = m.sender_id === uid ? m.recipient_id : m.sender_id;
         if (byPartner.has(otherId)) continue;
         // Best-effort partner info: if they sent the latest msg we have it, otherwise placeholder
         const fromSender = m.sender_id === otherId;
@@ -184,15 +185,15 @@ export function ChatRoom() {
     }
     loadPartners();
     const sub = supabase
-      .channel(`dm_inbox_${user.id}`)
+      .channel(`dm_inbox_${uid}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${user.id}` },
+        { event: "INSERT", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${uid}` },
         () => loadPartners(),
       )
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "direct_messages", filter: `sender_id=eq.${user.id}` },
+        { event: "INSERT", schema: "public", table: "direct_messages", filter: `sender_id=eq.${uid}` },
         () => loadPartners(),
       )
       .subscribe();
