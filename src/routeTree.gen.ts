@@ -14,6 +14,7 @@ import { Route as MediaRouteImport } from './routes/media'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as EmulatorRouteImport } from './routes/emulator'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as BrowserRouteImport } from './routes/browser'
 import { Route as AppsRouteImport } from './routes/apps'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
@@ -43,6 +44,11 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BrowserRoute = BrowserRouteImport.update({
+  id: '/browser',
+  path: '/browser',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppsRoute = AppsRouteImport.update({
   id: '/apps',
   path: '/apps',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/apps': typeof AppsRoute
+  '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/apps': typeof AppsRoute
+  '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/apps': typeof AppsRoute
+  '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/apps'
+    | '/browser'
     | '/chat'
     | '/emulator'
     | '/games'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/apps'
+    | '/browser'
     | '/chat'
     | '/emulator'
     | '/games'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai'
     | '/apps'
+    | '/browser'
     | '/chat'
     | '/emulator'
     | '/games'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiRoute: typeof AiRoute
   AppsRoute: typeof AppsRoute
+  BrowserRoute: typeof BrowserRoute
   ChatRoute: typeof ChatRoute
   EmulatorRoute: typeof EmulatorRoute
   GamesRoute: typeof GamesRoute
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/browser': {
+      id: '/browser'
+      path: '/browser'
+      fullPath: '/browser'
+      preLoaderRoute: typeof BrowserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/apps': {
       id: '/apps'
       path: '/apps'
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiRoute: AiRoute,
   AppsRoute: AppsRoute,
+  BrowserRoute: BrowserRoute,
   ChatRoute: ChatRoute,
   EmulatorRoute: EmulatorRoute,
   GamesRoute: GamesRoute,
@@ -208,3 +229,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
