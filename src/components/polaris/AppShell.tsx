@@ -6,10 +6,23 @@ import { Dock } from "./Dock";
 import { WallpaperProvider } from "@/lib/wallpaper-context";
 import { SidebarProvider } from "@/lib/sidebar-context";
 import { PolarisBoot } from "./Boot";
-import { useState } from "react";
+import { ProfileSheet } from "./ProfileSheet";
+import { useEffect, useState } from "react";
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, hideDock = false }: { children: ReactNode; hideDock?: boolean }) {
   const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  useEffect(() => {
+    const open = () => setProfileOpen(true);
+    window.addEventListener("polaris:open-profile", open);
+    window.addEventListener("polaris:signed-up", open);
+    return () => {
+      window.removeEventListener("polaris:open-profile", open);
+      window.removeEventListener("polaris:signed-up", open);
+    };
+  }, []);
+
   return (
     <WallpaperProvider>
       <SidebarProvider>
@@ -18,8 +31,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Sidebar />
           <main className="relative flex-1 overflow-x-hidden">{children}</main>
         </div>
-        <Dock onOpenWallpaper={() => setWallpaperOpen(true)} />
+        {!hideDock && <Dock onOpenWallpaper={() => setWallpaperOpen(true)} />}
         <WallpaperPicker open={wallpaperOpen} onOpenChange={setWallpaperOpen} />
+        <ProfileSheet open={profileOpen} onClose={() => setProfileOpen(false)} />
         <PolarisBoot />
       </SidebarProvider>
     </WallpaperProvider>

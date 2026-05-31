@@ -4,5 +4,5 @@ import { ChatRoom } from "@/components/polaris/chat/ChatRoom";
 
 export const Route = createFileRoute("/chat")({
   head: () => ({ meta: [{ title: "Chat — Polaris One" }] }),
-  component: () => <AppShell><ChatRoom /></AppShell>,
+  component: () => <AppShell hideDock><ChatRoom /></AppShell>,
 });

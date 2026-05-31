@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Send, Image as ImageIcon, Smile, Paintbrush, Sparkles, Loader2, Hash, Plus, X, Search, MessageCircle, Palette } from "lucide-react";
+import { Send, Image as ImageIcon, Smile, Paintbrush, Sparkles, Loader2, Hash, Plus, X, Search, MessageCircle, Palette, AtSign, Bold, Italic, Code, Mic, BarChart3, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { tenorSearch, type TenorGif } from "@/lib/tenor";
 import { DrawingCanvas } from "./DrawingCanvas";
 import { AuthDialog } from "../AuthDialog";
+import { ProfileSheet } from "../ProfileSheet";
 
 type Channel = { id: string; slug: string; name: string; description: string | null; emoji: string | null };
 type Attachment = { kind: "image" | "gif" | "drawing" | "link"; url: string };
@@ -35,6 +36,10 @@ export function ChatRoom() {
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [drawOpen, setDrawOpen] = useState(false);
   const [newChannelOpen, setNewChannelOpen] = useState(false);
+  const [viewProfileId, setViewProfileId] = useState<string | null>(null);
+  const [recording, setRecording] = useState(false);
+  const recRef = useRef<MediaRecorder | null>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -111,8 +116,61 @@ export function ChatRoom() {
   const sendGartic = useCallback(async () => {
     const url = window.prompt("Paste your Gartic Phone invite URL", "https://garticphone.com/en/?c=");
     if (!url) return;
-    await send(`🎨 Join my Gartic Phone game!`, [{ kind: "link", url }]);
+    await send(`Join my Gartic Phone game!`, [{ kind: "link", url }]);
   }, [send]);
+
+  const sendPoll = useCallback(async () => {
+    const q = window.prompt("Poll question?");
+    if (!q) return;
+    const options = window.prompt("Options (comma separated, max 6)", "Yes, No, Maybe");
+    if (!options) return;
+    const list = options.split(",").map((o) => o.trim()).filter(Boolean).slice(0, 6);
+    const body = `📊 **${q}**\n${list.map((o, i) => `${i + 1}. ${o}`).join("\n")}`;
+    await send(body);
+  }, [send]);
+
+  const insert = useCallback((before: string, after = before) => {
+    const el = textRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const next = text.slice(0, start) + before + text.slice(start, end) + after + text.slice(end);
+    setText(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + before.length, end + before.length);
+    });
+  }, [text]);
+
+  const toggleRecord = useCallback(async () => {
+    if (recording && recRef.current) {
+      recRef.current.stop();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) return alert("Microphone not available");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const chunks: BlobPart[] = [];
+      const rec = new MediaRecorder(stream);
+      recRef.current = rec;
+      rec.ondataavailable = (e) => chunks.push(e.data);
+      rec.onstop = async () => {
+        setRecording(false);
+        stream.getTracks().forEach((t) => t.stop());
+        if (!user) return;
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const path = `${user.id}/voice-${Date.now()}.webm`;
+        const { error } = await supabase.storage.from("chat").upload(path, blob, { contentType: "audio/webm" });
+        if (error) return alert("Voice upload failed: " + error.message);
+        const { data } = supabase.storage.from("chat").getPublicUrl(path);
+        await send("🎙️ Voice message", [{ kind: "link", url: data.publicUrl }]);
+      };
+      rec.start();
+      setRecording(true);
+    } catch {
+      alert("Could not access microphone");
+    }
+  }, [recording, user, send]);
 
   const uploadImage = useCallback(
     async (file: File) => {
@@ -154,37 +212,21 @@ export function ChatRoom() {
 
   if (!user || !profile) {
     return (
-      <div className="min-h-screen px-5 pb-28 pt-8 sm:px-8">
+      <div className="min-h-screen px-5 pb-12 pt-8 sm:px-8">
         <AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} defaultMode={authMode} />
-        <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_360px]">
-          <section className="liquid-glass-themed overflow-hidden rounded-3xl">
-            <div className="border-b border-white/10 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/12">
-                  <MessageCircle className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-black text-white">Polaris Chat</h1>
-                  <p className="text-xs text-white/50">Live rooms, GIFs, drawings, invites, photos, and cozy glass messages.</p>
-                </div>
-              </div>
+        <div className="mx-auto max-w-xl">
+          <section
+            className="liquid-glass-themed overflow-hidden rounded-3xl p-8 text-center"
+            style={{ background: "linear-gradient(160deg, rgba(var(--polaris-accent)/0.25), rgba(20,12,10,0.85))" }}
+          >
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-white/15">
+              <MessageCircle className="h-9 w-9 text-white" />
             </div>
-            <div className="space-y-4 p-5">
-              <PreviewBubble name="Nova" color="255 160 95" text="Anyone up for a movie night after games?" />
-              <PreviewBubble name="Atlas" color="145 210 180" text="I’ll drop a Gartic Phone invite in the lounge." />
-              <PreviewBubble name="Mira" color="190 160 245" text="The drawing board has custom colors now — it feels smooth." />
-            </div>
-          </section>
-
-          <aside className="liquid-glass-themed rounded-3xl p-6 text-center">
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/12">
-              <MessageCircle className="h-8 w-8 text-white" />
-            </div>
-            <h2 className="mt-4 text-2xl font-black text-white">Get into chat</h2>
-            <p className="mt-2 text-sm leading-6 text-white/60">
-              Create a Polaris profile so your username, avatar, and color show up in every room.
+            <h1 className="mt-5 text-3xl font-black text-white">Polaris Chat</h1>
+            <p className="mt-3 text-sm leading-6 text-white/65">
+              Cozy live rooms with GIFs, drawings, voice notes, polls, Gartic invites, and warm glass messages. Sign up to join the fire.
             </p>
-            <div className="mt-5 grid gap-2">
+            <div className="mt-6 grid gap-2">
               <button
                 onClick={() => { setAuthMode("signup"); setAuthOpen(true); }}
                 className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-black hover:bg-white/90"
@@ -195,19 +237,29 @@ export function ChatRoom() {
                 onClick={() => { setAuthMode("signin"); setAuthOpen(true); }}
                 className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-bold text-white/75 hover:bg-white/10 hover:text-white"
               >
-                Sign in
+                I already have an account
               </button>
             </div>
-          </aside>
+          </section>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-1px)] overflow-hidden">
+    <div
+      className="flex h-[calc(100vh-1px)] overflow-hidden"
+      style={{ background: "linear-gradient(180deg, rgba(20,12,10,0.55), rgba(15,10,8,0.7))" }}
+    >
       {/* Channels sidebar */}
-      <aside className="liquid-glass hidden h-full w-56 flex-col gap-1 rounded-none border-r border-white/5 p-3 sm:flex">
+      <aside
+        className="hidden h-full w-56 flex-col gap-1 rounded-none border-r border-white/10 p-3 sm:flex"
+        style={{
+          background: "linear-gradient(180deg, rgba(var(--polaris-accent)/0.15), rgba(15,10,8,0.75))",
+          backdropFilter: "blur(28px) saturate(180%)",
+          WebkitBackdropFilter: "blur(28px) saturate(180%)",
+        }}
+      >
         <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.2em] text-white/45">Channels</div>
         {channels.map((c) => (
           <button
@@ -232,7 +284,10 @@ export function ChatRoom() {
       {/* Main */}
       <main className="flex h-full min-w-0 flex-1 flex-col">
         {/* Header */}
-        <header className="liquid-glass flex items-center gap-3 border-b border-white/5 px-4 py-3 sm:px-6">
+        <header
+          className="flex items-center gap-3 border-b border-white/10 px-4 py-3 sm:px-6"
+          style={{ background: "rgba(20,12,10,0.55)", backdropFilter: "blur(20px) saturate(160%)" }}
+        >
           <Hash className="h-4 w-4 text-white/40" />
           <div className="min-w-0">
             <div className="truncate text-sm font-bold text-white">{active?.name || "Chat"}</div>
@@ -258,14 +313,43 @@ export function ChatRoom() {
                 key={m.id}
                 m={m}
                 prevSame={i > 0 && messages[i - 1].user_id === m.user_id && new Date(m.created_at).getTime() - new Date(messages[i - 1].created_at).getTime() < 5 * 60 * 1000}
+                onAvatarClick={() => setViewProfileId(m.user_id)}
+                onMention={() => insert(`@${m.username} `, "")}
               />
             ))}
+            {messages.length === 0 && (
+              <div className="mt-12 text-center text-sm text-white/45">
+                It’s cozy in here. Say hi 🍂
+              </div>
+            )}
           </div>
         </div>
 
         {/* Composer */}
-        <div className="border-t border-white/5 p-3 sm:px-6">
-          <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-white/10 bg-black/30 p-2 backdrop-blur-md">
+        <div
+          className="border-t border-white/10 p-3 sm:px-6"
+          style={{ background: "rgba(15,10,8,0.55)", backdropFilter: "blur(18px) saturate(160%)" }}
+        >
+          <div className="mx-auto max-w-3xl space-y-2">
+          {/* Formatting toolbar */}
+          <div className="flex flex-wrap items-center gap-1 px-1 text-white/55">
+            <ToolbarBtn label="Bold (markdown)" onClick={() => insert("**")}><Bold className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Italic" onClick={() => insert("*")}><Italic className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Inline code" onClick={() => insert("`")}><Code className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Mention" onClick={() => insert("@", "")}><AtSign className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Poll" onClick={sendPoll}><BarChart3 className="h-3.5 w-3.5" /></ToolbarBtn>
+            <ToolbarBtn label="Reaction shortcut" onClick={() => insert("❤️", "")}><Heart className="h-3.5 w-3.5" /></ToolbarBtn>
+            <span className="ml-auto text-[10px] uppercase tracking-[0.18em] text-white/30">{text.length}/1000</span>
+          </div>
+          <div
+            className="flex items-end gap-2 rounded-2xl border border-white/15 p-2"
+            style={{
+              background: "linear-gradient(160deg, rgba(var(--polaris-accent)/0.16), rgba(15,10,8,0.7))",
+              backdropFilter: "blur(20px) saturate(170%)",
+              WebkitBackdropFilter: "blur(20px) saturate(170%)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}
+          >
             <button onClick={() => fileRef.current?.click()} className="rounded-lg p-2 text-white/65 hover:bg-white/5 hover:text-white" title="Upload image">
               <ImageIcon className="h-4 w-4" />
             </button>
@@ -281,10 +365,14 @@ export function ChatRoom() {
             <button onClick={sendGartic} className="rounded-lg p-2 text-white/65 hover:bg-white/5 hover:text-white" title="Gartic Phone">
               <Palette className="h-4 w-4" />
             </button>
+            <button onClick={toggleRecord} className={`rounded-lg p-2 transition ${recording ? "bg-red-500/30 text-red-200 animate-pulse" : "text-white/65 hover:bg-white/5 hover:text-white"}`} title={recording ? "Stop recording" : "Voice note"}>
+              <Mic className="h-4 w-4" />
+            </button>
             <div className="relative flex-1">
               <textarea
+                ref={textRef}
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => setText(e.target.value.slice(0, 1000))}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -314,6 +402,7 @@ export function ChatRoom() {
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </button>
           </div>
+          </div>
         </div>
       </main>
 
@@ -322,46 +411,53 @@ export function ChatRoom() {
       {newChannelOpen && (
         <NewChannelDialog onCreate={createChannel} onClose={() => setNewChannelOpen(false)} />
       )}
+      <ProfileSheet open={!!viewProfileId} onClose={() => setViewProfileId(null)} viewUserId={viewProfileId} />
     </div>
   );
 }
 
-function PreviewBubble({ name, color, text }: { name: string; color: string; text: string }) {
+function ToolbarBtn({ children, label, onClick }: { children: React.ReactNode; label: string; onClick: () => void }) {
   return (
-    <div className="flex gap-3">
-      <div
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-sm font-black text-white"
-        style={{ background: `rgba(${color}/0.35)`, boxShadow: `inset 0 0 0 1px rgba(${color}/0.65)` }}
-      >
-        {name.slice(0, 1)}
-      </div>
-      <div className="min-w-0 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left">
-        <div className="text-xs font-black" style={{ color: `rgb(${color})` }}>{name}</div>
-        <div className="mt-1 text-sm leading-5 text-white/72">{text}</div>
-      </div>
-    </div>
+    <button onClick={onClick} title={label} className="rounded-md p-1.5 hover:bg-white/10 hover:text-white">
+      {children}
+    </button>
   );
 }
 
-function MessageBubble({ m, prevSame }: { m: Message; prevSame: boolean }) {
+function MessageBubble({ m, prevSame, onAvatarClick, onMention }: { m: Message; prevSame: boolean; onAvatarClick: () => void; onMention: () => void }) {
   const time = new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   return (
-    <div className={`flex gap-3 ${prevSame ? "pt-0.5" : "pt-2"}`}>
+    <div className={`group flex gap-3 ${prevSame ? "pt-0.5" : "pt-2"}`}>
       <div className="w-9 shrink-0">
         {!prevSame && (
-          <div
-            className="grid h-9 w-9 place-items-center rounded-full text-base"
+          <button
+            onClick={onAvatarClick}
+            className="grid h-9 w-9 place-items-center rounded-full text-base transition hover:scale-110"
             style={{ background: `rgb(${m.accent_color || "120 120 130"}/0.35)`, boxShadow: `inset 0 0 0 1px rgb(${m.accent_color || "120 120 130"}/0.55)` }}
+            title={`View ${m.username}'s profile`}
           >
             {m.avatar_emoji || "✨"}
-          </div>
+          </button>
         )}
       </div>
       <div className="min-w-0 flex-1">
         {!prevSame && (
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-bold" style={{ color: `rgb(${m.accent_color || "240 240 240"})` }}>{m.username}</span>
+            <button
+              onClick={onAvatarClick}
+              className="text-sm font-bold hover:underline"
+              style={{ color: `rgb(${m.accent_color || "240 240 240"})` }}
+            >
+              {m.username}
+            </button>
             <span className="text-[10px] text-white/35">{time}</span>
+            <button
+              onClick={onMention}
+              className="ml-1 hidden text-[10px] text-white/30 group-hover:inline hover:text-white"
+              title="Mention"
+            >
+              @
+            </button>
           </div>
         )}
         {m.content && <div className="whitespace-pre-wrap break-words text-sm text-white/90">{m.content}</div>}
