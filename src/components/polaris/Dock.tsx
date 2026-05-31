@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Compass, SlidersHorizontal, Signal, Wifi, LayoutGrid, GripVertical, Sun, Moon } from "lucide-react";
+import { Compass, SlidersHorizontal, Signal, Wifi, LayoutGrid, GripVertical, Sun, Moon, Droplets, Square } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { Launchpad } from "./Launchpad";
 import { Link } from "@tanstack/react-router";
@@ -21,7 +21,7 @@ const PIN_CATALOG: Record<string, string> = {
 export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
   const [now, setNow] = useState<Date | null>(null);
   const [launchpadOpen, setLaunchpadOpen] = useState(false);
-  const { dockSize, dockPins, defaultEngine, dockPosition, setDockPosition, uiTheme, setUITheme } = useTheme();
+  const { dockSize, dockPins, defaultEngine, dockPosition, setDockPosition, uiTheme, setUITheme, liquidGlass, setLiquidGlass } = useTheme();
   const [dragging, setDragging] = useState(false);
   const dragX = useRef<number | null>(null);
 
@@ -130,6 +130,14 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
           title={uiTheme === "dark" ? "Switch to light" : "Switch to dark"}
         >
           {uiTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+        <button
+          onClick={() => setLiquidGlass(!liquidGlass)}
+          className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
+          aria-label="Toggle Liquid Glass"
+          title={liquidGlass ? "Disable Liquid Glass" : "Enable Liquid Glass"}
+        >
+          {liquidGlass ? <Square className="h-4 w-4" /> : <Droplets className="h-4 w-4" />}
         </button>
 
         {/* Pinned shortcuts */}

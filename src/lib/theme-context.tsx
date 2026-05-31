@@ -32,6 +32,8 @@ type Ctx = {
   setHomeAISwipe: (b: boolean) => void;
   uiTheme: UITheme;
   setUITheme: (t: UITheme) => void;
+  liquidGlass: boolean;
+  setLiquidGlass: (b: boolean) => void;
 };
 
 const ThemeCtx = createContext<Ctx | null>(null);
@@ -57,6 +59,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [dockPosition, setDockPosition] = useState<DockPosition>("center");
   const [homeAISwipe, setHomeAISwipe] = useState<boolean>(true);
   const [uiTheme, setUITheme] = useState<UITheme>("dark");
+  const [liquidGlass, setLiquidGlass] = useState<boolean>(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -74,6 +77,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (v.dockPosition === "left" || v.dockPosition === "center" || v.dockPosition === "right") setDockPosition(v.dockPosition);
         if (typeof v.homeAISwipe === "boolean") setHomeAISwipe(v.homeAISwipe);
         if (v.uiTheme === "light" || v.uiTheme === "dark") setUITheme(v.uiTheme);
+        if (typeof v.liquidGlass === "boolean") setLiquidGlass(v.liquidGlass);
       }
     } catch {}
   }, []);
@@ -82,7 +86,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
       KEY,
-      JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme }),
+      JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme, liquidGlass }),
     );
     // Apply custom accent if set
     if (customAccent && typeof document !== "undefined") {
@@ -99,8 +103,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       document.documentElement.classList.toggle("dark", uiTheme === "dark");
       document.documentElement.classList.toggle("light", uiTheme === "light");
       document.documentElement.dataset.polarisTheme = uiTheme;
+      document.documentElement.dataset.polarisGlass = liquidGlass ? "on" : "off";
     }
-  }, [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme]);
+  }, [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme, liquidGlass]);
 
   const value = useMemo<Ctx>(
     () => ({
@@ -108,8 +113,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       dockSize, setDockSize, shortcutSize, setShortcutSize, dockPins, setDockPins,
       defaultEngine, setDefaultEngine, dockPosition, setDockPosition,
       homeAISwipe, setHomeAISwipe, uiTheme, setUITheme,
+      liquidGlass, setLiquidGlass,
     }),
-    [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme],
+    [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme, liquidGlass],
   );
 
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;

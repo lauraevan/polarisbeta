@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
@@ -37,7 +37,7 @@ function SettingsPage() {
     mode, setMode, customAccent, setCustomAccent, outlineColor, setOutlineColor,
     dockSize, setDockSize, shortcutSize, setShortcutSize, dockPins, setDockPins,
     defaultEngine, setDefaultEngine, homeAISwipe, setHomeAISwipe,
-    uiTheme, setUITheme,
+    uiTheme, setUITheme, liquidGlass, setLiquidGlass,
   } = useTheme();
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const { cloak, setCloakId, cloaks } = useTabCloak();
@@ -75,6 +75,31 @@ function SettingsPage() {
                   {t === "dark" ? "Dark" : "Light"}
                 </button>
               ))}
+            </div>
+          </div>
+          <div className="mt-4">
+            <SectionTitle icon={Droplets} title="Liquid Glass" subtitle="Frosted blur surfaces across every page" />
+            <div className="mt-3 flex items-start justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-white">Enable Liquid Glass</div>
+                <p className="mt-0.5 text-[11px] text-white/55">
+                  When off, every glass surface becomes a flat opaque card — simpler,
+                  cleaner, and easier to read.
+                </p>
+              </div>
+              <button
+                onClick={() => setLiquidGlass(!liquidGlass)}
+                aria-pressed={liquidGlass}
+                className={`relative h-7 w-12 shrink-0 rounded-full border transition ${
+                  liquidGlass ? "border-white/20 bg-white" : "border-white/15 bg-white/10"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-6 w-6 rounded-full transition-all ${
+                    liquidGlass ? "left-5 bg-black" : "left-0.5 bg-white"
+                  }`}
+                />
+              </button>
             </div>
           </div>
           <SectionTitle icon={ImageIcon} title="Background mode" subtitle="Wallpaper or clean outline" />
