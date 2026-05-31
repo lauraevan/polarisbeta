@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Polaris Emulator</title>
+    <style>
+      html, body { margin: 0; padding: 0; background: #000; color: #fff; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      #game { width: 100vw; height: 100vh; }
+      #empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; }
+      #empty p { color: rgba(255,255,255,0.55); max-width: 420px; }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="empty">
+      <div>
+        <h2>No ROM loaded</h2>
+        <p>Pick a console and a ROM (upload your own or choose from the homebrew library) on the left.</p>
+      </div>
+    </div>
+    <script>
+      // Query params:
+      //   ?core=snes&rom=https://...  — stream a hosted ROM
+      //   ?core=snes&blob=1            — wait for parent window to postMessage a File/Blob
+      const params = new URLSearchParams(location.search);
+      const core = params.get("core");
+      const rom = params.get("rom");
+      const blobMode = params.get("blob") === "1";
+      const name = params.get("name") || "game";
+
+      function boot(romUrl) {
+        document.getElementById("empty").style.display = "none";
+        window.EJS_player = "#game";
+        window.EJS_core = core;
+        window.EJS_gameUrl = romUrl;
+        window.EJS_gameName = name;
+        window.EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
+        window.EJS_startOnLoaded = true;
+        window.EJS_backgroundColor = "#000";
+        const s = document.createElement("script");
+        s.src = "https://cdn.emulatorjs.org/stable/data/loader.js";
+        document.body.appendChild(s);
+      }
+
+      if (core && rom) {
+        boot(rom);
+      } else if (core && blobMode) {
+        window.addEventListener("message", (e) => {
+          if (e.data && e.data.type === "polaris-rom" && e.data.file instanceof Blob) {
+            const url = URL.createObjectURL(e.data.file);
+            boot(url);
+          }
+        });
+        // Let the parent know we're ready
+        parent.postMessage({ type: "polaris-rom-ready" }, "*");
+      }
+    </script>
+  </body>
+</html>
