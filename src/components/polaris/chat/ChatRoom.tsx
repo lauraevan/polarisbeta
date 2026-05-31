@@ -425,34 +425,111 @@ export function ChatRoom() {
       className="flex h-[calc(100vh-1px)] overflow-hidden"
       style={{ background: "linear-gradient(180deg, rgba(38,22,16,0.55), rgba(22,14,10,0.75))" }}
     >
-      {/* Channels sidebar */}
+      {/* Channels / DMs / Notifs sidebar */}
       <aside
-        className="hidden h-full w-56 flex-col gap-1 rounded-none border-r border-white/10 p-3 sm:flex"
+        className="hidden h-full w-64 shrink-0 flex-col rounded-none border-r border-white/10 sm:flex"
         style={{
-          background: "linear-gradient(180deg, rgba(var(--polaris-accent)/0.15), rgba(15,10,8,0.75))",
+          background: "linear-gradient(180deg, rgba(var(--polaris-accent)/0.18), rgba(15,10,8,0.78))",
           backdropFilter: "blur(28px) saturate(180%)",
           WebkitBackdropFilter: "blur(28px) saturate(180%)",
         }}
       >
-        <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.2em] text-white/45">Channels</div>
-        {channels.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setActiveId(c.id)}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition ${
-              activeId === c.id ? "bg-white/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            <span>{c.emoji || "#"}</span>
-            <span className="truncate">{c.name}</span>
-          </button>
-        ))}
-        <button
-          onClick={() => setNewChannelOpen(true)}
-          className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-white/50 hover:bg-white/5 hover:text-white"
-        >
-          <Plus className="h-3.5 w-3.5" /> New channel
-        </button>
+        {/* Brand row */}
+        <div className="flex items-center gap-2 px-4 pb-3 pt-4">
+          <img src={logo} alt="Polaris" className="h-7 w-7 object-contain drop-shadow" />
+          <div className="text-[15px] font-black tracking-wide text-white">Polaris<span className="text-white/45">Chat</span></div>
+        </div>
+        {/* Top tabs */}
+        <div className="flex items-center gap-1 px-3">
+          <TabBtn icon={Hash} label="Global" active={tab === "global"} onClick={() => setTab("global")} />
+          <TabBtn icon={Users} label="DMs" active={tab === "dms"} onClick={() => setTab("dms")} />
+          <TabBtn icon={Bell} label="Notifs" active={tab === "notifs"} onClick={() => setTab("notifs")} />
+        </div>
+
+        <div className="mt-3 flex-1 space-y-4 overflow-y-auto px-2 pb-4">
+          {tab === "global" && (
+            <>
+              <ChannelSection
+                title="Important"
+                channels={channels.filter((c) => categorize(c.slug) === "important")}
+                activeId={activeId}
+                onSelect={setActiveId}
+              />
+              <ChannelSection
+                title="Main"
+                channels={channels.filter((c) => categorize(c.slug) === "main")}
+                activeId={activeId}
+                onSelect={setActiveId}
+              />
+              <ChannelSection
+                title="Links"
+                channels={channels.filter((c) => categorize(c.slug) === "links")}
+                activeId={activeId}
+                onSelect={setActiveId}
+              />
+              <button
+                onClick={() => setNewChannelOpen(true)}
+                className="mx-2 flex w-[calc(100%-1rem)] items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-white/50 hover:bg-white/5 hover:text-white"
+              >
+                <Plus className="h-3.5 w-3.5" /> New channel
+              </button>
+            </>
+          )}
+          {tab === "dms" && (
+            <div className="space-y-1 px-1">
+              <div className="flex items-center justify-between px-3 pb-1 pt-1">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">Direct Messages</div>
+                <button
+                  onClick={() => setDmStartOpen(true)}
+                  className="rounded-md p-1 text-white/55 hover:bg-white/10 hover:text-white"
+                  title="Start a DM"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              {dmPartners.length === 0 && (
+                <div className="px-4 py-6 text-center text-xs text-white/45">
+                  No conversations yet.<br />Click + to start one.
+                </div>
+              )}
+              {dmPartners.map((p) => (
+                <button
+                  key={p.user_id}
+                  onClick={() => setDmActiveUserId(p.user_id)}
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition ${
+                    dmActiveUserId === p.user_id ? "bg-white/12 text-white" : "text-white/75 hover:bg-white/5"
+                  }`}
+                >
+                  <div
+                    className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full text-sm"
+                    style={{ background: `rgb(${p.accent_color || "120 120 130"}/0.35)` }}
+                  >
+                    {p.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : <span>{p.avatar_emoji || "✨"}</span>}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold">{p.username}</div>
+                    <div className="truncate text-[11px] text-white/45">{p.last || "—"}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+          {tab === "notifs" && (
+            <div className="space-y-1 px-2">
+              <div className="px-3 pb-1 pt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">Mentions</div>
+              {notifs.length === 0 && (
+                <div className="px-3 py-6 text-center text-xs text-white/45">You're all caught up ✨</div>
+              )}
+              {notifs.map((n) => (
+                <div key={n.id} className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
+                  <div className="text-[11px] font-bold text-white/85">@{n.username}</div>
+                  <div className="mt-0.5 line-clamp-2 text-[12px] text-white/65">{n.content}</div>
+                  <div className="mt-1 text-[10px] text-white/35">{new Date(n.created_at).toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </aside>
 
       {/* Main */}
