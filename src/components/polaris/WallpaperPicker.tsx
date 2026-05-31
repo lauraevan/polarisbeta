@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ImageIcon, X, Play, Check } from "lucide-react";
+import { ImageIcon, X, Play, Check, Monitor } from "lucide-react";
 import { useWallpaper } from "@/lib/wallpaper-context";
 import { useRouterState } from "@tanstack/react-router";
 
@@ -10,7 +10,7 @@ export function WallpaperPicker({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
-  const { wallpaper, setWallpaperId, all } = useWallpaper();
+  const { wallpaper, setWallpaperId, resolution, setResolution, all } = useWallpaper();
   const [localOpen, setLocalOpen] = useState(false);
   const [query, setQuery] = useState("");
   const open = controlledOpen ?? localOpen;
@@ -59,6 +59,23 @@ export function WallpaperPicker({
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {/* Resolution toggle */}
+                <div className="flex items-center gap-1 rounded-full liquid-glass px-1.5 py-1">
+                  <Monitor className="h-3 w-3 text-white/60 ml-1" />
+                  {(["540p", "1080p", "4k"] as const).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setResolution(r)}
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition ${
+                        resolution === r
+                          ? "bg-white/20 text-white"
+                          : "text-white/50 hover:text-white/80"
+                      }`}
+                    >
+                      {r === "4k" ? "4K" : r}
+                    </button>
+                  ))}
+                </div>
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -151,7 +168,7 @@ export function WallpaperPicker({
             </div>
 
             <div className="border-t border-white/10 px-5 py-2.5 text-[10px] text-white/45">
-              {visible.length} wallpapers · Streamed live from motionbgs.com
+              {visible.length} wallpapers · Streamed live from motionbgs.com · {resolution === "4k" ? "4K" : resolution} mode
             </div>
           </div>
         </div>
