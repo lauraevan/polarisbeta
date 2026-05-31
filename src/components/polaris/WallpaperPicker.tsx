@@ -3,10 +3,18 @@ import { ImageIcon, X, Play, Check } from "lucide-react";
 import { useWallpaper } from "@/lib/wallpaper-context";
 import { useRouterState } from "@tanstack/react-router";
 
-export function WallpaperPicker() {
+export function WallpaperPicker({
+  open: controlledOpen,
+  onOpenChange,
+}: {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const { wallpaper, setWallpaperId, all } = useWallpaper();
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const open = controlledOpen ?? localOpen;
+  const setOpen = onOpenChange ?? setLocalOpen;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // Hide the floating launcher on routes with their own top-right controls
   // (e.g. PolarisFlix has a search button in that exact spot).
@@ -22,7 +30,7 @@ export function WallpaperPicker() {
     <>
       {!hideLauncher && (
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(!open)}
         className="liquid-glass fixed right-5 top-5 z-30 flex items-center gap-2 rounded-full px-3.5 py-2 text-xs text-white/90 hover:text-white"
         style={{
           boxShadow: `0 10px 30px -10px rgba(var(--polaris-accent)/0.6), inset 0 0 0 1px rgba(var(--polaris-accent)/0.35)`,
@@ -95,19 +103,11 @@ export function WallpaperPicker() {
                           : undefined
                       }
                     >
-                      {w.type === "animated" ? (
-                        <video
-                          src={w.src}
-                          poster={w.poster}
-                          muted
-                          loop
-                          playsInline
-                          preload="metadata"
-                          onMouseEnter={(e) => e.currentTarget.play().catch(() => {})}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.pause();
-                            e.currentTarget.currentTime = 0;
-                          }}
+                      {w.poster ? (
+                        <img
+                          src={w.poster}
+                          alt={w.name}
+                          loading="lazy"
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (

@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Compass, SlidersHorizontal, Signal, Wifi, LayoutGrid } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { Launchpad } from "./Launchpad";
+import { Link } from "@tanstack/react-router";
 
-export function Dock() {
+export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
   const [now, setNow] = useState<Date | null>(null);
   const [launchpadOpen, setLaunchpadOpen] = useState(false);
 
@@ -45,10 +46,10 @@ export function Dock() {
         </button>
 
         {/* Quick controls */}
-        <button className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Browse">
+        <Link to="/" className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Browse">
           <Compass className="h-4 w-4" />
-        </button>
-        <button className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Settings">
+        </Link>
+        <button onClick={onOpenWallpaper} className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Change wallpaper">
           <SlidersHorizontal className="h-4 w-4" />
         </button>
 
