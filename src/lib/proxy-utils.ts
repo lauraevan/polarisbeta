@@ -43,7 +43,7 @@ function loadScript(src: string) {
   });
 }
 
-export async function registerStaticProxies() {
+export async function registerStaticProxies(engine: ProxyEngine = "uv") {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
   const waitForActive = async (registration: ServiceWorkerRegistration) => {
@@ -58,15 +58,16 @@ export async function registerStaticProxies() {
   };
 
   const setup = async () => {
-    const registrations = await Promise.all([
-      navigator.serviceWorker.register("/uv/sw.js", { scope: "/uv/" }),
-      navigator.serviceWorker.register("/scramjet/sw.js", { scope: "/scramjet/" }),
-    ]);
+    const registrations = await Promise.all(
+      engine === "scramjet"
+        ? [navigator.serviceWorker.register("/scramjet/sw.js", { scope: "/scramjet/" })]
+        : [navigator.serviceWorker.register("/uv/sw.js", { scope: "/uv/" })],
+    );
     await Promise.all(registrations.map(waitForActive));
   };
   await Promise.race([setup(), new Promise((resolve) => setTimeout(resolve, 1800))]);
 
-  if (!window.__polarisScramjetReady) {
+  if (engine === "scramjet" && !window.__polarisScramjetReady) {
     window.__polarisScramjetReady = loadScript("/scramjet/scramjet.all.js").then(async () => {
       const Controller = window.$scramjetLoadController?.().ScramjetController;
       if (!Controller) return;
@@ -90,5 +91,7 @@ export async function registerStaticProxies() {
     });
   }
 
-  await Promise.race([window.__polarisScramjetReady, new Promise((resolve) => setTimeout(resolve, 1800))]);
+  if (engine === "scramjet" && window.__polarisScramjetReady) {
+    await Promise.race([window.__polarisScramjetReady, new Promise((resolve) => setTimeout(resolve, 1800))]);
+  }
 }

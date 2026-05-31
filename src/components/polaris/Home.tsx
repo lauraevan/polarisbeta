@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Search, Shield, Zap } from "lucide-react";
-import { getPolarisBrowserUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
+import { getPolarisBrowserUrl, normalizeUrl, type ProxyEngine } from "@/lib/proxy-utils";
 
 type Shortcut = { name: string; url: string; category: Category };
 type Category = "Popular" | "Games" | "AI Tools" | "Websites" | "Media" | "Apps";
@@ -28,10 +28,6 @@ export function Home() {
   const [active, setActive] = useState<(typeof CATEGORIES)[number]>("Popular");
   const [engine, setEngine] = useState<ProxyEngine>("uv");
   const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    registerStaticProxies().catch(() => undefined);
-  }, []);
 
   const visible = SHORTCUTS.filter((s) =>
     active === "Popular" ? POPULAR_NAMES.has(s.name) : s.category === active
