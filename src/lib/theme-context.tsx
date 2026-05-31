@@ -9,6 +9,7 @@ import {
 } from "react";
 
 type Mode = "wallpaper" | "outline";
+export type DockPosition = "left" | "center" | "right";
 type Ctx = {
   mode: Mode;
   setMode: (m: Mode) => void;
@@ -24,6 +25,8 @@ type Ctx = {
   setDockPins: (a: string[]) => void;
   defaultEngine: "uv" | "scramjet";
   setDefaultEngine: (e: "uv" | "scramjet") => void;
+  dockPosition: DockPosition;
+  setDockPosition: (p: DockPosition) => void;
 };
 
 const ThemeCtx = createContext<Ctx | null>(null);
@@ -46,6 +49,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [shortcutSize, setShortcutSize] = useState<number>(1);
   const [dockPins, setDockPins] = useState<string[]>(["YouTube", "Spotify", "Discord"]);
   const [defaultEngine, setDefaultEngine] = useState<"uv" | "scramjet">("uv");
+  const [dockPosition, setDockPosition] = useState<DockPosition>("center");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -60,6 +64,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (typeof v.shortcutSize === "number") setShortcutSize(v.shortcutSize);
         if (Array.isArray(v.dockPins)) setDockPins(v.dockPins);
         if (v.defaultEngine === "uv" || v.defaultEngine === "scramjet") setDefaultEngine(v.defaultEngine);
+        if (v.dockPosition === "left" || v.dockPosition === "center" || v.dockPosition === "right") setDockPosition(v.dockPosition);
       }
     } catch {}
   }, []);
@@ -68,7 +73,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
       KEY,
-      JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine }),
+      JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition }),
     );
     // Apply custom accent if set
     if (customAccent && typeof document !== "undefined") {
@@ -83,15 +88,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       document.documentElement.style.setProperty("--polaris-dock-scale", String(dockSize));
       document.documentElement.style.setProperty("--polaris-shortcut-scale", String(shortcutSize));
     }
-  }, [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine]);
+  }, [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition]);
 
   const value = useMemo<Ctx>(
     () => ({
       mode, setMode, customAccent, setCustomAccent, outlineColor, setOutlineColor,
       dockSize, setDockSize, shortcutSize, setShortcutSize, dockPins, setDockPins,
-      defaultEngine, setDefaultEngine,
+      defaultEngine, setDefaultEngine, dockPosition, setDockPosition,
     }),
-    [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine],
+    [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition],
   );
 
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
