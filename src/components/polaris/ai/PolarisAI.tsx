@@ -14,6 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
+import { useAuth } from "@/lib/auth-context";
 
 type Role = "user" | "assistant";
 type ChatMessage = { id: string; role: Role; content: string };
@@ -69,7 +70,9 @@ const STARTERS = [
 
 const STORAGE_KEY = "polaris-ai-chats-v1";
 const LIMIT_KEY = "polaris-ai-limits-v1";
-const DAILY_LIMITS: Record<ModelTier, number> = { free: 120, premium: 40 };
+// Guests get a tight cap to protect credits; signed-in users get the full allowance.
+const DAILY_LIMITS_GUEST: Record<ModelTier, number> = { free: 15, premium: 0 };
+const DAILY_LIMITS_USER: Record<ModelTier, number> = { free: 150, premium: 50 };
 const COOLDOWN_MS = 1200;
 
 type LimitState = { day: string; free: number; premium: number; lastAt: number };
@@ -117,6 +120,9 @@ function saveChats(chats: Chat[]) {
 }
 
 export function PolarisAI() {
+  const { profile } = useAuth();
+  const isSignedIn = !!profile;
+  const DAILY_LIMITS = isSignedIn ? DAILY_LIMITS_USER : DAILY_LIMITS_GUEST;
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [model, setModel] = useState<Model>(MODELS[0]);
@@ -177,8 +183,16 @@ export function PolarisAI() {
     }
     const used = model.tier === "premium" ? limits.premium : limits.free;
     const cap = DAILY_LIMITS[model.tier];
+    if (cap === 0) {
+      setError("Premium models are for signed-in users — sign in to unlock.");
+      return;
+    }
     if (used >= cap) {
-      setError(`Daily ${model.tier} limit reached (${cap}/day). Switch model or try again tomorrow.`);
+      setError(
+        isSignedIn
+          ? `Daily ${model.tier} limit reached (${cap}/day). Try again tomorrow.`
+          : `Guest limit reached (${cap}/day). Sign in for ${DAILY_LIMITS_USER.free}/day + premium models.`,
+      );
       return;
     }
     saveLimits({
@@ -368,10 +382,10 @@ export function PolarisAI() {
         </div>
       </aside>
 
-      {/* Main */}
-      <div className="relative m-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] md:m-3">
+      {/* Main — translucent so the wallpaper shows through */}
+      <div className="liquid-glass-strong relative m-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)] md:m-3">
         {/* Top bar */}
-        <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-black px-3 py-3 sm:px-5">
+        <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-white/[0.04] px-3 py-3 backdrop-blur-xl sm:px-5">
           <button
             onClick={() => setSidebarOpen(true)}
             className="rounded-full p-1.5 text-white/70 hover:bg-white/10 hover:text-white md:hidden"
@@ -443,7 +457,7 @@ export function PolarisAI() {
         </header>
 
         {/* Messages */}
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-black px-3 py-6 sm:px-8">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-6 sm:px-8">
           {!active || active.messages.length === 0 ? (
             <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
               <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/10">
@@ -480,7 +494,7 @@ export function PolarisAI() {
         </div>
 
         {/* Composer */}
-        <div className="border-t border-white/10 bg-black px-3 py-3 sm:px-6">
+        <div className="border-t border-white/10 bg-white/[0.04] px-3 py-3 backdrop-blur-xl sm:px-6">
           {error && (
             <div className="mx-auto mb-2 max-w-3xl rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
               {error}
