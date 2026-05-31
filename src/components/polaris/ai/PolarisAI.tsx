@@ -293,7 +293,8 @@ export function PolarisAI() {
   const filteredChats = chats.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="flex h-screen min-h-0 overflow-hidden text-white">
+    <div className="relative flex h-screen min-h-0 overflow-hidden text-white">
+      {/* Wallpaper stays visible behind the sidebar/edges; chat panel itself is solid black */}
       {/* Sidebar (Nox-style) */}
       <aside
         className={`liquid-glass-strong absolute left-0 top-0 z-30 h-full w-[300px] shrink-0 flex-col border-r border-white/10 transition-transform duration-300 md:relative md:flex md:translate-x-0 ${
@@ -368,9 +369,9 @@ export function PolarisAI() {
       </aside>
 
       {/* Main */}
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      <div className="relative m-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] md:m-3">
         {/* Top bar */}
-        <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-black/20 px-3 py-3 backdrop-blur-xl sm:px-5">
+        <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-black px-3 py-3 sm:px-5">
           <button
             onClick={() => setSidebarOpen(true)}
             className="rounded-full p-1.5 text-white/70 hover:bg-white/10 hover:text-white md:hidden"
@@ -442,7 +443,7 @@ export function PolarisAI() {
         </header>
 
         {/* Messages */}
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-6 sm:px-8">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-black px-3 py-6 sm:px-8">
           {!active || active.messages.length === 0 ? (
             <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
               <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/10">
@@ -479,7 +480,7 @@ export function PolarisAI() {
         </div>
 
         {/* Composer */}
-        <div className="border-t border-white/10 bg-black/25 px-3 py-3 backdrop-blur-xl sm:px-6">
+        <div className="border-t border-white/10 bg-black px-3 py-3 sm:px-6">
           {error && (
             <div className="mx-auto mb-2 max-w-3xl rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
               {error}
@@ -490,7 +491,7 @@ export function PolarisAI() {
               e.preventDefault();
               send(input);
             }}
-            className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-white/10 bg-black/40 p-2"
+            className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-white/15 bg-zinc-950 p-2 transition-shadow focus-within:border-[rgb(var(--polaris-accent))] focus-within:shadow-[0_0_0_3px_rgba(var(--polaris-accent)/0.18)]"
           >
             <textarea
               value={input}
@@ -508,14 +509,15 @@ export function PolarisAI() {
             <button
               type="submit"
               disabled={streaming || !input.trim()}
-              className="grid h-10 w-10 place-items-center rounded-2xl bg-white text-black transition disabled:opacity-40"
+              className="grid h-10 w-10 place-items-center rounded-2xl text-white transition disabled:opacity-40"
+              style={{ background: "rgb(var(--polaris-accent))" }}
               aria-label="Send"
             >
               <Send className="h-4 w-4" />
             </button>
           </form>
           <div className="mx-auto mt-2 flex max-w-3xl items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-white/35">
-            <Sparkles className="h-3 w-3" /> Polaris AI · powered by Lovable AI gateway
+            <Sparkles className="h-3 w-3" /> Polaris AI · multi-model assistant
           </div>
         </div>
       </div>
@@ -565,18 +567,23 @@ function ModelGroup({
 function MessageBubble({ role, content, modelLabel }: { role: Role; content: string; modelLabel: string }) {
   const isUser = role === "user";
   return (
-    <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
+    <div className={`flex gap-3 animate-[fadeIn_220ms_ease] ${isUser ? "flex-row-reverse" : ""}`}>
       <div
-        className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold ${
-          isUser ? "bg-white text-black" : "bg-white/10 text-white"
-        }`}
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
+        style={{
+          background: isUser ? "rgb(var(--polaris-accent))" : "rgba(255,255,255,0.08)",
+          boxShadow: isUser ? "0 4px 16px -4px rgba(var(--polaris-accent)/0.6)" : undefined,
+        }}
       >
         {isUser ? "Y" : <Bot className="h-4 w-4" />}
       </div>
       <div
-        className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-          isUser ? "bg-white text-black" : "bg-black/35 text-white/90 border border-white/10"
-        }`}
+        className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed text-white/95"
+        style={{
+          background: isUser ? "rgba(var(--polaris-accent)/0.12)" : "rgba(255,255,255,0.025)",
+          border: `1px solid rgba(var(--polaris-accent)/${isUser ? 0.55 : 0.28})`,
+          boxShadow: `0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px -12px rgba(var(--polaris-accent)/${isUser ? 0.35 : 0.18})`,
+        }}
       >
         {!isUser && <div className="mb-1 text-[10px] uppercase tracking-widest text-white/40">{modelLabel}</div>}
         {content || <span className="text-white/40">…</span>}
