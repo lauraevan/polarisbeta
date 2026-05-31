@@ -52,6 +52,7 @@ export type Database = {
           accent_color: string | null
           attachments: Json
           avatar_emoji: string | null
+          avatar_url: string | null
           channel_id: string
           content: string | null
           created_at: string
@@ -64,6 +65,7 @@ export type Database = {
           accent_color?: string | null
           attachments?: Json
           avatar_emoji?: string | null
+          avatar_url?: string | null
           channel_id: string
           content?: string | null
           created_at?: string
@@ -76,6 +78,7 @@ export type Database = {
           accent_color?: string | null
           attachments?: Json
           avatar_emoji?: string | null
+          avatar_url?: string | null
           channel_id?: string
           content?: string | null
           created_at?: string
