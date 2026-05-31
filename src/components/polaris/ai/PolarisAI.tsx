@@ -42,6 +42,10 @@ const MODELS: Model[] = [
   { id: "openai/gpt-5-mini", label: "GPT-5 Smart", blurb: "Balanced reasoning", tier: "premium", badge: "5", color: "bg-zinc-900" },
   { id: "openai/gpt-5.4", label: "GPT-5.4", blurb: "Advanced reasoning", tier: "premium", badge: "5", color: "bg-zinc-900" },
   { id: "openai/gpt-5.5", label: "GPT-5.5", blurb: "State of the art", tier: "premium", badge: "5", color: "bg-zinc-950" },
+  { id: "deepseek/deepseek-chat", label: "DeepSeek V3", blurb: "Open · reasoning", tier: "premium", badge: "D", color: "bg-blue-600" },
+  { id: "deepseek/deepseek-r1", label: "DeepSeek R1", blurb: "Open · deep think", tier: "premium", badge: "D", color: "bg-blue-700" },
+  { id: "meta-llama/llama-3.3-70b", label: "Llama 3.3 70B", blurb: "Open · Meta", tier: "premium", badge: "L", color: "bg-orange-500" },
+  { id: "meta-llama/llama-3.1-405b", label: "Llama 3.1 405B", blurb: "Open · largest", tier: "premium", badge: "L", color: "bg-orange-600" },
 ];
 
 type Mode = { id: string; label: string; system: string };
