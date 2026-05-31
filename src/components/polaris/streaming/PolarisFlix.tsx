@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info } from "lucide-react";
 import { tmdbApi, IMG, type TmdbItem, type MediaKind } from "@/lib/tmdb";
@@ -48,36 +48,105 @@ const LANGUAGES = [
   { code: "tr", label: "Turkish" },
 ] as const;
 
-function Hero({ item, onPlay, onInfo }: { item: TmdbItem; onPlay: () => void; onInfo: () => void }) {
+function Hero({
+  items,
+  onPlay,
+  onInfo,
+}: {
+  items: TmdbItem[];
+  onPlay: (item: TmdbItem) => void;
+  onInfo: (item: TmdbItem) => void;
+}) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (items.length < 2) return;
+    const t = setInterval(() => setI((x) => (x + 1) % Math.min(items.length, 5)), 8000);
+    return () => clearInterval(t);
+  }, [items.length]);
+  const item = items[i];
+  if (!item) return null;
   return (
-    <div className="relative mb-6 h-[46vh] min-h-[300px] overflow-hidden rounded-2xl mx-4 sm:mx-6">
-      {item.backdrop_path && (
-        <img
-          src={IMG(item.backdrop_path, "original")}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      )}
+    <div className="relative mb-6 h-[52vh] min-h-[340px] overflow-hidden rounded-2xl mx-4 sm:mx-6">
+      {items.slice(0, 5).map((it, idx) => (
+        <div
+          key={it.id}
+          className={`absolute inset-0 transition-opacity duration-1000 ease-out ${idx === i ? "opacity-100" : "opacity-0"}`}
+        >
+          {it.backdrop_path && (
+            <img
+              src={IMG(it.backdrop_path, "original")}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover scale-105"
+              style={{ animation: idx === i ? "kenburns 9s ease-out forwards" : undefined }}
+            />
+          )}
+        </div>
+      ))}
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent" />
-      <div className="relative flex h-full max-w-2xl flex-col justify-end p-6">
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent" />
+      <div className="relative flex h-full max-w-2xl flex-col justify-end p-6 sm:p-8">
+        <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/65">Featured · Top 5 this week</div>
         <h1 className="text-3xl font-black text-white drop-shadow md:text-5xl">
           {item.title || item.name}
         </h1>
         <p className="mt-2 line-clamp-2 text-sm text-white/80 md:text-base">{item.overview}</p>
-        <div className="mt-5 flex gap-2.5">
+        <div className="mt-5 flex items-center gap-2.5">
           <button
-            onClick={onPlay}
+            onClick={() => onPlay(item)}
             className="flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-base font-bold text-black shadow-lg hover:bg-white/90"
           >
             <Play className="h-5 w-5 fill-black" /> Play
           </button>
           <button
-            onClick={onInfo}
+            onClick={() => onInfo(item)}
             className="liquid-glass flex items-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-white"
           >
             <Info className="h-5 w-5" /> More info
           </button>
+          <div className="ml-3 hidden gap-1.5 sm:flex">
+            {items.slice(0, 5).map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setI(idx)}
+                className={`h-1.5 rounded-full transition-all ${idx === i ? "w-8 bg-white" : "w-1.5 bg-white/40 hover:bg-white/70"}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type ViewerProfile = { id: string; label: string; emoji: string; tint: string; kids?: boolean };
+const VIEWERS: ViewerProfile[] = [
+  { id: "polaris", label: "Polaris User", emoji: "✨", tint: "from-indigo-500/70 to-violet-600/40" },
+  { id: "kids", label: "Kids", emoji: "🧸", tint: "from-amber-400/70 to-rose-500/40", kids: true },
+];
+const VIEWER_KEY = "polaris-flix-viewer";
+
+function WhosWatching({ onPick }: { onPick: (v: ViewerProfile) => void }) {
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/85 backdrop-blur-2xl animate-[fadeIn_220ms_ease]">
+      <div className="px-6 text-center">
+        <h2 className="mb-10 text-3xl font-light text-white md:text-5xl">Who's watching?</h2>
+        <div className="flex items-start justify-center gap-8 md:gap-14">
+          {VIEWERS.map((v) => (
+            <button
+              key={v.id}
+              onClick={() => onPick(v)}
+              className="group flex flex-col items-center gap-3"
+            >
+              <div
+                className={`grid h-28 w-28 place-items-center rounded-2xl bg-gradient-to-br ${v.tint} text-6xl shadow-2xl ring-1 ring-white/10 transition group-hover:scale-105 group-hover:ring-white md:h-36 md:w-36`}
+              >
+                {v.emoji}
+              </div>
+              <div className="text-base font-medium text-white/70 group-hover:text-white">
+                {v.label}
+              </div>
+            </button>
+          ))}
         </div>
       </div>
     </div>
@@ -87,6 +156,11 @@ function Hero({ item, onPlay, onInfo }: { item: TmdbItem; onPlay: () => void; on
 function FlixInner() {
   const [splash, setSplash] = useState(true);
   const [tab, setTab] = useState<Tab>("home");
+  const [viewer, setViewer] = useState<ViewerProfile | null>(() => {
+    if (typeof window === "undefined") return null;
+    const saved = sessionStorage.getItem(VIEWER_KEY);
+    return VIEWERS.find((v) => v.id === saved) ?? null;
+  });
   const [selected, setSelected] = useState<{ item: TmdbItem; kind: MediaKind } | null>(null);
   const [playing, setPlaying] = useState<{ item: TmdbItem; kind: MediaKind } | null>(null);
   const [query, setQuery] = useState("");
@@ -178,8 +252,7 @@ function FlixInner() {
   });
 
   const heroSource = tab === "home" ? trendingAll.data : trending.data;
-  const hero = useMemo(() => heroSource?.[0], [heroSource]);
-  const heroKind: MediaKind = hero ? inferKind(hero) : "movie";
+  const heroItems = useMemo(() => (heroSource ?? []).slice(0, 5), [heroSource]);
   const myListForTab = list.filter((i) => i.kind === kind);
 
   const tabs: { id: Tab; label: string; icon: typeof Film }[] = [
@@ -193,6 +266,14 @@ function FlixInner() {
     <>
       {splash && <PolarisFlixSplash onDone={() => setSplash(false)} />}
       <ProfileSplash tag="media" />
+      {!splash && !viewer && (
+        <WhosWatching
+          onPick={(v) => {
+            setViewer(v);
+            try { sessionStorage.setItem(VIEWER_KEY, v.id); } catch { /* noop */ }
+          }}
+        />
+      )}
 
       <div className="min-h-screen pb-32">
         {/* Top bar */}
@@ -330,11 +411,11 @@ function FlixInner() {
 
         {!searchOpen && (
           <>
-            {hero && (
+            {heroItems.length > 0 && (
               <Hero
-                item={hero}
-                onPlay={() => setPlaying({ item: hero, kind: heroKind })}
-                onInfo={() => setSelected({ item: hero, kind: heroKind })}
+                items={heroItems}
+                onPlay={(it) => setPlaying({ item: it, kind: inferKind(it) })}
+                onInfo={(it) => setSelected({ item: it, kind: inferKind(it) })}
               />
             )}
 

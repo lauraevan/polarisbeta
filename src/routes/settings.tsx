@@ -48,6 +48,14 @@ const THEME_PRESETS: ThemePreset[] = [
   { id: "vapor",     label: "Vapor",       desc: "Violet + magenta y2k",         ui: "dark",  glass: true,  accent: "230 90 200",  swatch: "linear-gradient(135deg,#1a0a22,#e65ac8)" },
   { id: "coral",     label: "Coral",       desc: "Warm coral pop",               ui: "dark",  glass: true,  accent: "255 120 140", swatch: "linear-gradient(135deg,#1a0a10,#ff788c)" },
   { id: "cyber",     label: "Cyber",       desc: "Neon cyan on black",           ui: "dark",  glass: true,  accent: "80 210 230",  swatch: "linear-gradient(135deg,#000814,#50d2e6)" },
+  { id: "nordic",    label: "Nordic",      desc: "Cool slate + ice blue",        ui: "dark",  glass: true,  accent: "120 180 220", swatch: "linear-gradient(135deg,#0c1116,#78b4dc)" },
+  { id: "ember-lite",label: "Ember Lite",  desc: "Light warm cream",             ui: "light", glass: true,  accent: "230 110 70",  swatch: "linear-gradient(135deg,#fff5ec,#e66e46)" },
+  { id: "matrix",    label: "Matrix",      desc: "Terminal green on black",      ui: "dark",  glass: false, accent: "100 240 140", swatch: "linear-gradient(135deg,#000000,#64f08c)" },
+  { id: "rosegold",  label: "Rose Gold",   desc: "Warm pink luxury",             ui: "dark",  glass: true,  accent: "240 170 160", swatch: "linear-gradient(135deg,#1a1014,#f0aaa0)" },
+  { id: "obsidian",  label: "Obsidian",    desc: "Pure black, violet glow",      ui: "dark",  glass: true,  accent: "170 130 240", swatch: "linear-gradient(135deg,#000000,#aa82f0)" },
+  { id: "mocha",     label: "Mocha",       desc: "Warm brown + cream",           ui: "dark",  glass: true,  accent: "210 170 130", swatch: "linear-gradient(135deg,#1a120a,#d2aa82)" },
+  { id: "blueprint", label: "Blueprint",   desc: "Architect cyan grid",          ui: "dark",  glass: true,  accent: "100 200 230", swatch: "linear-gradient(135deg,#06141f,#64c8e6)" },
+  { id: "candy",     label: "Candy",       desc: "Bubblegum pop",                ui: "light", glass: true,  accent: "240 100 170", swatch: "linear-gradient(135deg,#fff0f8,#f064aa)" },
 ];
 
 const DOCK_APP_CHOICES = [
