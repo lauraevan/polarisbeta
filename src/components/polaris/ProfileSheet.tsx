@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Save, LogOut, Loader2 } from "lucide-react";
 import { useAuth, type Profile } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 
 const PRESET_COLORS: { label: string; rgb: string }[] = [
   { label: "Ember",     rgb: "255 140 80" },
@@ -16,19 +18,35 @@ const PRESET_COLORS: { label: string; rgb: string }[] = [
 const PRESET_EMOJI = ["✨","🔥","🌙","🌸","🍂","☕️","🎮","🎬","🦊","🐉","💎","🌊"];
 const PRESET_ROLES = ["Member","Cinephile","Gamer","Otaku","Night Owl","Explorer","Beta Tester","Founder"];
 
-export function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onClose: () => void; viewUserId?: string | null }) {
   const { profile, updateProfile, signOut } = useAuth();
   const [draft, setDraft] = useState<Partial<Profile>>({});
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<Profile | null>(null);
+  const [loadingView, setLoadingView] = useState(false);
 
   useEffect(() => {
     if (open && profile) setDraft({});
   }, [open, profile]);
 
-  if (!open || !profile) return null;
+  // Load other user profile when viewing
+  useEffect(() => {
+    if (!open || !viewUserId) { setViewing(null); return; }
+    setLoadingView(true);
+    supabase.from("profiles").select("*").eq("id", viewUserId).maybeSingle().then(({ data }) => {
+      setViewing((data as unknown as Profile) ?? null);
+      setLoadingView(false);
+    });
+  }, [open, viewUserId]);
 
-  const merged = { ...profile, ...draft };
+  if (!open || typeof document === "undefined") return null;
+
+  const isView = !!viewUserId && (!profile || viewUserId !== profile.id);
+  const base = isView ? viewing : profile;
+  if (!base && !loadingView) return null;
+
+  const merged = { ...(base as Profile), ...(isView ? {} : draft) };
 
   async function save() {
     setErr(null);
@@ -47,46 +65,61 @@ export function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => 
     setDraft({ ...draft, roles: next });
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-2xl animate-[fadeIn_180ms_ease]"
+      className="fixed inset-0 z-[500] overflow-y-auto bg-black/85 text-white backdrop-blur-2xl animate-[fadeIn_180ms_ease]"
       onClick={onClose}
     >
+      <button
+        onClick={onClose}
+        className="fixed right-4 top-4 z-10 rounded-full bg-white/10 p-3 text-white/70 hover:bg-white/20 hover:text-white"
+        aria-label="Close"
+      >
+        <X className="h-5 w-5" />
+      </button>
+      <div className="mx-auto flex min-h-screen w-full max-w-2xl items-center px-4 py-12 sm:px-6">
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/15 bg-zinc-950 text-white shadow-2xl"
+        className="relative w-full overflow-hidden rounded-3xl border border-white/15 bg-zinc-950/95 text-white shadow-2xl"
       >
+        {loadingView && !base ? (
+          <div className="grid h-64 place-items-center"><Loader2 className="h-6 w-6 animate-spin text-white/60" /></div>
+        ) : (
+        <>
         {/* Banner — Discord style */}
         <div
-          className="h-28 w-full"
+          className="h-32 w-full"
           style={{
             background: `linear-gradient(135deg, rgba(${merged.banner_color}/0.95), rgba(${merged.accent_color}/0.7))`,
           }}
         />
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-full bg-black/40 p-2 text-white/80 hover:bg-black/60"
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
         {/* Avatar */}
         <div className="relative -mt-10 px-6">
           <div
-            className="grid h-20 w-20 place-items-center rounded-2xl border-4 border-zinc-950 text-4xl shadow-xl"
+            className="grid h-24 w-24 place-items-center rounded-2xl border-4 border-zinc-950 text-4xl shadow-xl"
             style={{ background: `rgba(${merged.accent_color}/0.95)` }}
           >
             {merged.avatar_emoji ?? "✨"}
           </div>
         </div>
 
-        <div className="max-h-[60vh] space-y-5 overflow-y-auto px-6 py-5">
+        <div className="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-5">
           <div>
             <div className="text-lg font-bold">{merged.display_name || merged.username}</div>
             <div className="text-xs text-white/50">@{merged.username} {merged.pronouns && `· ${merged.pronouns}`}</div>
+            {merged.about_me && isView && (
+              <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/75">{merged.about_me}</div>
+            )}
+            {isView && merged.roles?.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {merged.roles.map((r) => (
+                  <span key={r} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] text-white/70">{r}</span>
+                ))}
+              </div>
+            )}
           </div>
 
+          {!isView && <>
           {/* Display name */}
           <Field label="Display name">
             <input
@@ -192,8 +225,10 @@ export function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => 
               {err}
             </div>
           )}
+          </>}
         </div>
 
+        {!isView && (
         <div className="flex items-center justify-between gap-2 border-t border-white/5 bg-black/30 p-4">
           <button
             onClick={async () => {
@@ -213,8 +248,13 @@ export function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => 
             Save changes
           </button>
         </div>
+        )}
+        </>
+        )}
       </div>
-    </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
