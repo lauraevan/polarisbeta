@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Compass, SlidersHorizontal, Signal, Wifi, LayoutGrid, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Compass, SlidersHorizontal, Signal, Wifi, LayoutGrid, GripVertical, Sun, Moon } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { Launchpad } from "./Launchpad";
 import { Link } from "@tanstack/react-router";
@@ -21,7 +21,9 @@ const PIN_CATALOG: Record<string, string> = {
 export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
   const [now, setNow] = useState<Date | null>(null);
   const [launchpadOpen, setLaunchpadOpen] = useState(false);
-  const { dockSize, dockPins, defaultEngine, dockPosition, setDockPosition } = useTheme();
+  const { dockSize, dockPins, defaultEngine, dockPosition, setDockPosition, uiTheme, setUITheme } = useTheme();
+  const [dragging, setDragging] = useState(false);
+  const dragX = useRef<number | null>(null);
 
   useEffect(() => {
     // Only run on the client to avoid SSR/CSR hydration mismatch.
@@ -37,6 +39,32 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
     ? now.toLocaleDateString([], { month: "long", day: "numeric" })
     : "";
 
+  // Snap dock to nearest third based on pointer X
+  function snapFromX(x: number) {
+    if (typeof window === "undefined") return;
+    const w = window.innerWidth;
+    if (x < w / 3) setDockPosition("left");
+    else if (x > (w * 2) / 3) setDockPosition("right");
+    else setDockPosition("center");
+  }
+
+  function onGripDown(e: React.PointerEvent) {
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setDragging(true);
+    dragX.current = e.clientX;
+  }
+  function onGripMove(e: React.PointerEvent) {
+    if (!dragging) return;
+    dragX.current = e.clientX;
+    snapFromX(e.clientX);
+  }
+  function onGripUp(e: React.PointerEvent) {
+    if (!dragging) return;
+    setDragging(false);
+    if (dragX.current != null) snapFromX(dragX.current);
+    dragX.current = null;
+  }
+
   return (
     <>
       <Launchpad open={launchpadOpen} onClose={() => setLaunchpadOpen(false)} />
@@ -51,22 +79,25 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
             transform: `scale(${dockSize})`,
             transformOrigin:
               dockPosition === "left" ? "bottom left" : dockPosition === "right" ? "bottom right" : "bottom center",
+            transition: dragging ? "none" : "transform 220ms cubic-bezier(.2,.7,.2,1)",
           }}
         >
-          {/* Left handle: shift dock left */}
+          {/* Left grip — drag to reposition */}
           <button
-            onClick={() => setDockPosition(dockPosition === "right" ? "center" : "left")}
-            aria-label="Move dock left"
-            title="Move dock left"
-            className="liquid-glass-ghost grid h-8 w-5 place-items-center rounded-l-xl text-white/55 hover:text-white disabled:opacity-30"
-            disabled={dockPosition === "left"}
+            onPointerDown={onGripDown}
+            onPointerMove={onGripMove}
+            onPointerUp={onGripUp}
+            onPointerCancel={onGripUp}
+            aria-label="Drag dock"
+            title="Drag to move dock"
+            className={`liquid-glass-ghost grid h-9 w-5 cursor-grab place-items-center rounded-l-xl touch-none ${
+              dragging ? "cursor-grabbing text-white" : "text-white/55 hover:text-white"
+            }`}
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <GripVertical className="h-4 w-4 pointer-events-none" />
           </button>
 
           <div className="liquid-glass-themed flex max-w-[calc(100vw-6rem)] items-center gap-3 overflow-x-auto rounded-2xl px-3 py-2 sm:gap-4 sm:px-4">
-            {/* Drag-grip indicator (decorative) */}
-            <GripVertical className="h-4 w-4 shrink-0 text-white/30" />
         {/* Brand */}
         <div className="flex items-center gap-2 pr-1 sm:pr-2">
           <img src={logo} alt="Polaris One" className="h-7 w-7 rounded-lg object-contain" />
@@ -91,6 +122,14 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
         </Link>
         <button onClick={onOpenWallpaper} className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Change wallpaper">
           <SlidersHorizontal className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => setUITheme(uiTheme === "dark" ? "light" : "dark")}
+          className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
+          aria-label="Toggle theme"
+          title={uiTheme === "dark" ? "Switch to light" : "Switch to dark"}
+        >
+          {uiTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
 
         {/* Pinned shortcuts */}
@@ -132,15 +171,19 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
         </div>
           </div>
 
-          {/* Right handle: shift dock right */}
+          {/* Right grip — same drag handle on the opposite side for ambidextrous use */}
           <button
-            onClick={() => setDockPosition(dockPosition === "left" ? "center" : "right")}
-            aria-label="Move dock right"
-            title="Move dock right"
-            className="liquid-glass-ghost grid h-8 w-5 place-items-center rounded-r-xl text-white/55 hover:text-white disabled:opacity-30"
-            disabled={dockPosition === "right"}
+            onPointerDown={onGripDown}
+            onPointerMove={onGripMove}
+            onPointerUp={onGripUp}
+            onPointerCancel={onGripUp}
+            aria-label="Drag dock"
+            title="Drag to move dock"
+            className={`liquid-glass-ghost grid h-9 w-5 cursor-grab place-items-center rounded-r-xl touch-none ${
+              dragging ? "cursor-grabbing text-white" : "text-white/55 hover:text-white"
+            }`}
           >
-            <ChevronRight className="h-3.5 w-3.5" />
+            <GripVertical className="h-4 w-4 pointer-events-none" />
           </button>
         </div>
       </div>
