@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { tenorSearch, type TenorGif } from "@/lib/tenor";
 import { DrawingCanvas } from "./DrawingCanvas";
+import { AuthDialog } from "../AuthDialog";
 
 type Channel = { id: string; slug: string; name: string; description: string | null; emoji: string | null };
 type Attachment = { kind: "image" | "gif" | "drawing" | "link"; url: string };
@@ -23,6 +24,8 @@ const EMOJI_SHORTCUTS = ["😂","❤️","🔥","✨","🎮","🎬","🌙","🍂
 
 export function ChatRoom() {
   const { user, profile } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signup");
   const [channels, setChannels] = useState<Channel[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -37,6 +40,7 @@ export function ChatRoom() {
 
   // Load channels
   useEffect(() => {
+    if (!user) return;
     supabase.from("chat_channels").select("*").order("created_at", { ascending: true }).then(({ data }) => {
       const list = (data || []) as Channel[];
       setChannels(list);
@@ -50,11 +54,11 @@ export function ChatRoom() {
       .subscribe();
     return () => { sub.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   // Load messages + subscribe per channel
   useEffect(() => {
-    if (!activeId) return;
+    if (!user || !activeId) return;
     setMessages([]);
     let cancelled = false;
     supabase
@@ -80,7 +84,7 @@ export function ChatRoom() {
       )
       .subscribe();
     return () => { cancelled = true; sub.unsubscribe(); };
-  }, [activeId]);
+  }, [activeId, user]);
 
   const active = useMemo(() => channels.find((c) => c.id === activeId) ?? null, [channels, activeId]);
 
@@ -150,10 +154,80 @@ export function ChatRoom() {
 
   if (!user || !profile) {
     return (
-      <div className="flex h-full items-center justify-center px-6">
-        <div className="liquid-glass-themed max-w-md rounded-3xl p-8 text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/12">
-            <MessageCircle className="h-8 w-8 text-white" />
+      <div className="min-h-screen px-5 pb-28 pt-8 sm:px-8">
+        <AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} defaultMode={authMode} />
+        <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[1fr_360px]">
+          <section className="liquid-glass-themed overflow-hidden rounded-3xl">
+            <div className="border-b border-white/10 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/12">
+                  <MessageCircle className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-black text-white">Polaris Chat</h1>
+                  <p className="text-xs text-white/50">Live rooms, GIFs, drawings, invites, photos, and cozy glass messages.</p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4 p-5">
+              <PreviewBubble name="Nova" color="255 160 95" text="Anyone up for a movie night after games?" />
+              <PreviewBubble name="Atlas" color="145 210 180" text="I’ll drop a Gartic Phone invite in the lounge." />
+              <PreviewBubble name="Mira" color="190 160 245" text="The drawing board has custom colors now — it feels smooth." />
+            </div>
+          </section>
+
+          <aside className="liquid-glass-themed rounded-3xl p-6 text-center">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/12">
+              <MessageCircle className="h-8 w-8 text-white" />
+            </div>
+            <h2 className="mt-4 text-2xl font-black text-white">Get into chat</h2>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              Create a Polaris profile so your username, avatar, and color show up in every room.
+            </p>
+            <div className="mt-5 grid gap-2">
+              <button
+                onClick={() => { setAuthMode("signup"); setAuthOpen(true); }}
+                className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-black hover:bg-white/90"
+              >
+                Sign up for chat
+              </button>
+              <button
+                onClick={() => { setAuthMode("signin"); setAuthOpen(true); }}
+                className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-bold text-white/75 hover:bg-white/10 hover:text-white"
+              >
+                Sign in
+              </button>
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-[calc(100vh-1px)] overflow-hidden">
+      {/* Channels sidebar */}
+      <aside className="liquid-glass hidden h-full w-56 flex-col gap-1 rounded-none border-r border-white/5 p-3 sm:flex">
+        <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.2em] text-white/45">Channels</div>
+        {channels.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => setActiveId(c.id)}
+            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition ${
+              activeId === c.id ? "bg-white/15 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <span>{c.emoji || "#"}</span>
+            <span className="truncate">{c.name}</span>
+          </button>
+        ))}
+        <button
+          onClick={() => setNewChannelOpen(true)}
+          className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-white/50 hover:bg-white/5 hover:text-white"
+        >
+          <Plus className="h-3.5 w-3.5" /> New channel
+        </button>
+      </aside>
           </div>
           <h2 className="mt-3 text-xl font-bold text-white">Sign in to chat</h2>
           <p className="mt-1 text-sm text-white/60">
