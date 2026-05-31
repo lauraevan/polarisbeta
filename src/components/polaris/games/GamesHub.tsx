@@ -6,6 +6,7 @@ import { GnMathCollection } from "./GnMathCollection";
 import { HydraCatalog } from "./HydraCatalog";
 import { GameTile } from "./GameTile";
 import { SteamSplash } from "./SteamSplash";
+import { ProfileSplash } from "@/components/polaris/ProfileSplash";
 import { POLARIS_GAMES } from "@/lib/polaris-games";
 import { hydraSearch, steamHeader, type HydraEdge } from "@/lib/hydra-api";
 
@@ -202,6 +203,7 @@ export function GamesHub() {
   return (
     <div className="min-h-screen bg-zinc-950">
       <SteamSplash />
+      <ProfileSplash tag="games" />
       <div className="mx-auto flex max-w-[1600px] gap-6 px-4 py-6 pb-32 sm:px-6">
         {/* Sidebar nav (Steam-style) */}
         <aside className="sticky top-6 hidden h-fit w-56 shrink-0 self-start rounded-md border border-white/5 bg-zinc-900/60 p-2 backdrop-blur md:block">

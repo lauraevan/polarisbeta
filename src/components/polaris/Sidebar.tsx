@@ -7,13 +7,13 @@ import {
   Sparkles,
   Joystick,
   MessageCircle,
-  User,
-  LogOut,
+  Settings as SettingsIcon,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useSidebarState } from "@/lib/sidebar-context";
+import { ProfileButton } from "./ProfileButton";
 
 const nav = [
   { to: "/", label: "Home", icon: Home },
@@ -23,6 +23,7 @@ const nav = [
   { to: "/ai", label: "AI Tools", icon: Sparkles },
   { to: "/emulator", label: "Emulator", icon: Joystick },
   { to: "/chat", label: "Chat", icon: MessageCircle },
+  { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 
 export function Sidebar() {
@@ -95,22 +96,7 @@ export function Sidebar() {
       </nav>
 
       <div className={`border-t border-white/5 ${collapsed ? "px-2 py-3" : "p-3"}`}>
-        <button
-          title={collapsed ? "Profile" : undefined}
-          className={`flex w-full items-center rounded-xl text-sm text-white/70 hover:bg-white/5 hover:text-white ${
-            collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"
-          }`}
-        >
-          <User className="h-[18px] w-[18px] shrink-0" /> {!collapsed && "Profile"}
-        </button>
-        <button
-          title={collapsed ? "Logout" : undefined}
-          className={`flex w-full items-center rounded-xl text-sm text-white/50 hover:bg-white/5 hover:text-white ${
-            collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"
-          }`}
-        >
-          <LogOut className="h-[18px] w-[18px] shrink-0" /> {!collapsed && "Logout"}
-        </button>
+        <ProfileButton collapsed={collapsed} />
       </div>
     </aside>
   );

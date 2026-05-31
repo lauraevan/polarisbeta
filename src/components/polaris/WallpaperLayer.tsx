@@ -1,7 +1,30 @@
 import { useWallpaper } from "@/lib/wallpaper-context";
+import { useEffect, useState } from "react";
+import { useTheme } from "@/lib/theme-context";
 
 export function WallpaperLayer() {
   const { wallpaper } = useWallpaper();
+  const { mode, outlineColor } = useTheme();
+  const [videoFailed, setVideoFailed] = useState(false);
+
+  useEffect(() => {
+    setVideoFailed(false);
+  }, [wallpaper.id]);
+
+  // Outline-only mode: pure black with a colored vignette outline.
+  if (mode === "outline") {
+    return (
+      <div className="fixed inset-0 -z-10 overflow-hidden bg-black">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            boxShadow: `inset 0 0 220px 40px ${outlineColor}55, inset 0 0 0 2px ${outlineColor}88`,
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden bg-[#0a0910]">
       {/* Accent-tinted fallback paints instantly */}
@@ -12,7 +35,7 @@ export function WallpaperLayer() {
           transition: "background 600ms ease",
         }}
       />
-      {wallpaper.type === "animated" ? (
+      {wallpaper.type === "animated" && !videoFailed ? (
         <video
           key={wallpaper.id}
           className="absolute inset-0 h-full w-full object-cover animate-[fadeIn_700ms_ease]"
@@ -22,6 +45,16 @@ export function WallpaperLayer() {
           muted
           loop
           playsInline
+          onError={() => setVideoFailed(true)}
+        />
+      ) : wallpaper.poster ? (
+        <img
+          key={`${wallpaper.id}-poster`}
+          className="absolute inset-0 h-full w-full object-cover animate-[fadeIn_700ms_ease]"
+          src={wallpaper.poster}
+          alt=""
+          loading="eager"
+          onError={(e) => ((e.currentTarget as HTMLImageElement).style.opacity = "0")}
         />
       ) : (
         <img
@@ -30,6 +63,7 @@ export function WallpaperLayer() {
           src={wallpaper.src}
           alt=""
           loading="eager"
+          onError={(e) => ((e.currentTarget as HTMLImageElement).style.opacity = "0")}
         />
       )}
       {/* Cinematic darken + vignette */}

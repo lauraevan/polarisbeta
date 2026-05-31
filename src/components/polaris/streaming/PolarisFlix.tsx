@@ -7,6 +7,7 @@ import { MovieModal } from "./MovieModal";
 import { Player } from "./Player";
 import { PolarisFlixSplash } from "./Splash";
 import { MyListProvider, useMyList } from "@/lib/mylist-context";
+import { ProfileSplash } from "@/components/polaris/ProfileSplash";
 
 type Tab = "home" | "movies" | "shows" | "anime";
 
@@ -182,6 +183,7 @@ function FlixInner() {
   return (
     <>
       {splash && <PolarisFlixSplash onDone={() => setSplash(false)} />}
+      <ProfileSplash tag="media" />
 
       <div className="min-h-screen pb-32">
         {/* Top bar */}
