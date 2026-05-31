@@ -1,5 +1,11 @@
 export type ProxyEngine = "uv" | "scramjet";
 
+// Wisp endpoint (public Mercury Workshop relay). All proxy transports tunnel through this.
+export const POLARIS_WISP_URL = "wss://wisp.mercurywork.shop/";
+const BAREMUX_BUNDLE = "https://unpkg.com/@mercuryworkshop/bare-mux@2/dist/index.js";
+const BAREMUX_WORKER = "https://unpkg.com/@mercuryworkshop/bare-mux@2/dist/worker.js";
+const EPOXY_TRANSPORT = "https://unpkg.com/@mercuryworkshop/epoxy-transport/dist/index.mjs";
+
 declare global {
   interface Window {
     $scramjetLoadController?: () => {
@@ -10,6 +16,12 @@ declare global {
       };
     };
     __polarisScramjetReady?: Promise<void>;
+    __polarisWispReady?: Promise<void>;
+    BareMux?: {
+      BareMuxConnection: new (workerPath?: string) => {
+        setTransport: (path: string, options: unknown[]) => Promise<void>;
+      };
+    };
   }
 }
 
@@ -43,6 +55,25 @@ function loadScript(src: string) {
   });
 }
 
+// Configure bare-mux to use the Epoxy transport over the Polaris wisp.
+// Without this, Scramjet (and any other bare-mux consumer) has no wisp and every
+// proxied request fails. Idempotent — first call sets it up, later calls await the same promise.
+async function ensureWispTransport() {
+  if (typeof window === "undefined") return;
+  if (window.__polarisWispReady) return window.__polarisWispReady;
+  window.__polarisWispReady = (async () => {
+    await loadScript(BAREMUX_BUNDLE);
+    if (!window.BareMux) throw new Error("bare-mux failed to load");
+    const connection = new window.BareMux.BareMuxConnection(BAREMUX_WORKER);
+    await connection.setTransport(EPOXY_TRANSPORT, [{ wisp: POLARIS_WISP_URL }]);
+  })().catch((err) => {
+    console.warn("[polaris] wisp transport setup failed", err);
+    // allow retry on next call
+    window.__polarisWispReady = undefined;
+  });
+  return window.__polarisWispReady;
+}
+
 export async function registerStaticProxies(engine: ProxyEngine = "uv") {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
@@ -66,6 +97,9 @@ export async function registerStaticProxies(engine: ProxyEngine = "uv") {
     await Promise.all(registrations.map(waitForActive));
   };
   await Promise.race([setup(), new Promise((resolve) => setTimeout(resolve, 1800))]);
+
+  // Wire bare-mux → epoxy → wisp before any proxied request is made.
+  await Promise.race([ensureWispTransport(), new Promise((resolve) => setTimeout(resolve, 2500))]);
 
   if (engine === "scramjet" && !window.__polarisScramjetReady) {
     window.__polarisScramjetReady = loadScript("/scramjet/scramjet.all.js").then(async () => {
