@@ -32,30 +32,32 @@ type ThemePreset = {
   ui: "dark" | "light";
   glass: boolean;
   accent: string; // rgb triplet
+  accent2?: string; // rgb triplet for secondary tone (buttons vs chips)
   swatch: string; // gradient css
 };
 
 const THEME_PRESETS: ThemePreset[] = [
-  { id: "midnight",  label: "Midnight",    desc: "Deep dark + ember glow",      ui: "dark",  glass: true,  accent: "255 140 80",  swatch: "linear-gradient(135deg,#0a0910,#ff8c50)" },
-  { id: "aurora",    label: "Aurora",      desc: "Glassy mint over night sky",   ui: "dark",  glass: true,  accent: "140 220 200", swatch: "linear-gradient(135deg,#0b1a1f,#8cdcc8)" },
-  { id: "sakura",    label: "Sakura",      desc: "Soft pink dusk",               ui: "dark",  glass: true,  accent: "240 150 200", swatch: "linear-gradient(135deg,#1a0d18,#f096c8)" },
-  { id: "indigo",    label: "Indigo Dream",desc: "Cozy indigo + glass",          ui: "dark",  glass: true,  accent: "140 150 240", swatch: "linear-gradient(135deg,#0e0d22,#8c96f0)" },
-  { id: "forest",    label: "Forest",      desc: "Mossy green calm",             ui: "dark",  glass: true,  accent: "160 220 160", swatch: "linear-gradient(135deg,#0a1410,#a0dca0)" },
-  { id: "ocean",     label: "Ocean",       desc: "Deep blue, cool glass",        ui: "dark",  glass: true,  accent: "90 170 240",  swatch: "linear-gradient(135deg,#06101f,#5aaaf0)" },
-  { id: "sunrise",   label: "Sunrise",     desc: "Light UI + warm gold",         ui: "light", glass: true,  accent: "240 200 100", swatch: "linear-gradient(135deg,#fff3df,#f0c864)" },
-  { id: "paper",     label: "Paper",       desc: "Clean light, no glass",        ui: "light", glass: false, accent: "150 165 180", swatch: "linear-gradient(135deg,#f5f3ee,#96a5b4)" },
-  { id: "mono",      label: "Mono",        desc: "Flat dark, no glass",          ui: "dark",  glass: false, accent: "230 230 235", swatch: "linear-gradient(135deg,#0a0a0a,#e6e6eb)" },
-  { id: "vapor",     label: "Vapor",       desc: "Violet + magenta y2k",         ui: "dark",  glass: true,  accent: "230 90 200",  swatch: "linear-gradient(135deg,#1a0a22,#e65ac8)" },
-  { id: "coral",     label: "Coral",       desc: "Warm coral pop",               ui: "dark",  glass: true,  accent: "255 120 140", swatch: "linear-gradient(135deg,#1a0a10,#ff788c)" },
-  { id: "cyber",     label: "Cyber",       desc: "Neon cyan on black",           ui: "dark",  glass: true,  accent: "80 210 230",  swatch: "linear-gradient(135deg,#000814,#50d2e6)" },
-  { id: "nordic",    label: "Nordic",      desc: "Cool slate + ice blue",        ui: "dark",  glass: true,  accent: "120 180 220", swatch: "linear-gradient(135deg,#0c1116,#78b4dc)" },
-  { id: "ember-lite",label: "Ember Lite",  desc: "Light warm cream",             ui: "light", glass: true,  accent: "230 110 70",  swatch: "linear-gradient(135deg,#fff5ec,#e66e46)" },
-  { id: "matrix",    label: "Matrix",      desc: "Terminal green on black",      ui: "dark",  glass: false, accent: "100 240 140", swatch: "linear-gradient(135deg,#000000,#64f08c)" },
-  { id: "rosegold",  label: "Rose Gold",   desc: "Warm pink luxury",             ui: "dark",  glass: true,  accent: "240 170 160", swatch: "linear-gradient(135deg,#1a1014,#f0aaa0)" },
-  { id: "obsidian",  label: "Obsidian",    desc: "Pure black, violet glow",      ui: "dark",  glass: true,  accent: "170 130 240", swatch: "linear-gradient(135deg,#000000,#aa82f0)" },
-  { id: "mocha",     label: "Mocha",       desc: "Warm brown + cream",           ui: "dark",  glass: true,  accent: "210 170 130", swatch: "linear-gradient(135deg,#1a120a,#d2aa82)" },
-  { id: "blueprint", label: "Blueprint",   desc: "Architect cyan grid",          ui: "dark",  glass: true,  accent: "100 200 230", swatch: "linear-gradient(135deg,#06141f,#64c8e6)" },
-  { id: "candy",     label: "Candy",       desc: "Bubblegum pop",                ui: "light", glass: true,  accent: "240 100 170", swatch: "linear-gradient(135deg,#fff0f8,#f064aa)" },
+  { id: "midnight",  label: "Midnight",    desc: "Ember CTA, indigo chips",      ui: "dark",  glass: true,  accent: "255 140 80",  accent2: "140 130 240", swatch: "linear-gradient(135deg,#0a0910,#ff8c50)" },
+  { id: "aurora",    label: "Aurora",      desc: "Mint CTA, teal chips",         ui: "dark",  glass: true,  accent: "140 220 200", accent2: "120 180 220", swatch: "linear-gradient(135deg,#0b1a1f,#8cdcc8)" },
+  { id: "sakura",    label: "Sakura",      desc: "Pink CTA, rose chips",         ui: "dark",  glass: true,  accent: "240 150 200", accent2: "200 130 220", swatch: "linear-gradient(135deg,#1a0d18,#f096c8)" },
+  { id: "indigo",    label: "Indigo Dream",desc: "Indigo CTA, violet chips",     ui: "dark",  glass: true,  accent: "140 150 240", accent2: "180 130 240", swatch: "linear-gradient(135deg,#0e0d22,#8c96f0)" },
+  { id: "forest",    label: "Forest",      desc: "Green CTA, moss chips",        ui: "dark",  glass: true,  accent: "160 220 160", accent2: "200 220 130", swatch: "linear-gradient(135deg,#0a1410,#a0dca0)" },
+  { id: "ocean",     label: "Ocean",       desc: "Blue CTA, cyan chips",         ui: "dark",  glass: true,  accent: "90 170 240",  accent2: "80 210 230",  swatch: "linear-gradient(135deg,#06101f,#5aaaf0)" },
+  { id: "sunrise",   label: "Sunrise",     desc: "Gold CTA, coral chips",        ui: "light", glass: true,  accent: "240 200 100", accent2: "255 140 100", swatch: "linear-gradient(135deg,#fff3df,#f0c864)" },
+  { id: "paper",     label: "Paper",       desc: "Slate, no glass",              ui: "light", glass: false, accent: "150 165 180", accent2: "100 120 150", swatch: "linear-gradient(135deg,#f5f3ee,#96a5b4)" },
+  { id: "mono",      label: "Mono",        desc: "Flat dark, no glass",          ui: "dark",  glass: false, accent: "230 230 235", accent2: "180 180 200", swatch: "linear-gradient(135deg,#0a0a0a,#e6e6eb)" },
+  { id: "vapor",     label: "Vapor",       desc: "Magenta CTA, cyan chips",      ui: "dark",  glass: true,  accent: "230 90 200",  accent2: "100 200 230", swatch: "linear-gradient(135deg,#1a0a22,#e65ac8)" },
+  { id: "coral",     label: "Coral",       desc: "Coral CTA, peach chips",       ui: "dark",  glass: true,  accent: "255 120 140", accent2: "255 180 120", swatch: "linear-gradient(135deg,#1a0a10,#ff788c)" },
+  { id: "cyber",     label: "Cyber",       desc: "Cyan CTA, magenta chips",      ui: "dark",  glass: true,  accent: "80 210 230",  accent2: "230 90 200",  swatch: "linear-gradient(135deg,#000814,#50d2e6)" },
+  { id: "nordic",    label: "Nordic",      desc: "Ice CTA, slate chips",         ui: "dark",  glass: true,  accent: "120 180 220", accent2: "150 165 180", swatch: "linear-gradient(135deg,#0c1116,#78b4dc)" },
+  { id: "ember-lite",label: "Ember Lite",  desc: "Warm light cream",             ui: "light", glass: true,  accent: "230 110 70",  accent2: "240 170 100", swatch: "linear-gradient(135deg,#fff5ec,#e66e46)" },
+  { id: "matrix",    label: "Matrix",      desc: "Terminal green on black",      ui: "dark",  glass: false, accent: "100 240 140", accent2: "60 180 100",  swatch: "linear-gradient(135deg,#000000,#64f08c)" },
+  { id: "rosegold",  label: "Rose Gold",   desc: "Rose CTA, gold chips",         ui: "dark",  glass: true,  accent: "240 170 160", accent2: "230 200 130", swatch: "linear-gradient(135deg,#1a1014,#f0aaa0)" },
+  { id: "obsidian",  label: "Obsidian",    desc: "Violet CTA, indigo chips",     ui: "dark",  glass: true,  accent: "170 130 240", accent2: "120 130 220", swatch: "linear-gradient(135deg,#000000,#aa82f0)" },
+  { id: "mocha",     label: "Mocha",       desc: "Warm brown + cream",           ui: "dark",  glass: true,  accent: "210 170 130", accent2: "230 200 160", swatch: "linear-gradient(135deg,#1a120a,#d2aa82)" },
+  { id: "blueprint", label: "Blueprint",   desc: "Cyan CTA, blue chips",         ui: "dark",  glass: true,  accent: "100 200 230", accent2: "90 140 230",  swatch: "linear-gradient(135deg,#06141f,#64c8e6)" },
+  { id: "candy",     label: "Candy",       desc: "Pink CTA, violet chips",       ui: "light", glass: true,  accent: "240 100 170", accent2: "170 130 240", swatch: "linear-gradient(135deg,#fff0f8,#f064aa)" },
+  { id: "backrooms", label: "Backrooms",   desc: "Amber CTA, indigo chips",      ui: "dark",  glass: true,  accent: "255 150 60",  accent2: "120 110 230", swatch: "linear-gradient(135deg,#1a1408,#ff963c)" },
 ];
 
 const DOCK_APP_CHOICES = [
@@ -79,6 +81,7 @@ function SettingsPage() {
     dockSize, setDockSize, shortcutSize, setShortcutSize, dockPins, setDockPins,
     defaultEngine, setDefaultEngine, homeAISwipe, setHomeAISwipe,
     uiTheme, setUITheme, liquidGlass, setLiquidGlass,
+    setSecondaryAccent,
   } = useTheme();
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const { cloak, setCloakId, cloaks } = useTabCloak();
@@ -88,6 +91,7 @@ function SettingsPage() {
     setUITheme(p.ui);
     setLiquidGlass(p.glass);
     setCustomAccent(p.accent);
+    setSecondaryAccent(p.accent2 ?? p.accent);
   }
 
   const activePresetId = THEME_PRESETS.find(

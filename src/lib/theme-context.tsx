@@ -34,6 +34,8 @@ type Ctx = {
   setUITheme: (t: UITheme) => void;
   liquidGlass: boolean;
   setLiquidGlass: (b: boolean) => void;
+  secondaryAccent: string | null; // RGB triplet for chip/secondary tone
+  setSecondaryAccent: (rgb: string | null) => void;
 };
 
 const ThemeCtx = createContext<Ctx | null>(null);
@@ -60,6 +62,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [homeAISwipe, setHomeAISwipe] = useState<boolean>(true);
   const [uiTheme, setUITheme] = useState<UITheme>("dark");
   const [liquidGlass, setLiquidGlass] = useState<boolean>(true);
+  const [secondaryAccent, setSecondaryAccent] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -78,6 +81,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (typeof v.homeAISwipe === "boolean") setHomeAISwipe(v.homeAISwipe);
         if (v.uiTheme === "light" || v.uiTheme === "dark") setUITheme(v.uiTheme);
         if (typeof v.liquidGlass === "boolean") setLiquidGlass(v.liquidGlass);
+        if (v.secondaryAccent !== undefined) setSecondaryAccent(v.secondaryAccent);
       }
     } catch {}
   }, []);
@@ -86,7 +90,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
       KEY,
-      JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme, liquidGlass }),
+      JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme, liquidGlass, secondaryAccent }),
     );
     // Apply custom accent if set
     if (customAccent && typeof document !== "undefined") {
@@ -104,8 +108,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       document.documentElement.classList.toggle("light", uiTheme === "light");
       document.documentElement.dataset.polarisTheme = uiTheme;
       document.documentElement.dataset.polarisGlass = liquidGlass ? "on" : "off";
+      document.documentElement.style.setProperty(
+        "--polaris-accent-2",
+        secondaryAccent ?? (customAccent ?? "140 150 240"),
+      );
     }
-  }, [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme, liquidGlass]);
+  }, [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme, liquidGlass, secondaryAccent]);
 
   const value = useMemo<Ctx>(
     () => ({
@@ -114,8 +122,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       defaultEngine, setDefaultEngine, dockPosition, setDockPosition,
       homeAISwipe, setHomeAISwipe, uiTheme, setUITheme,
       liquidGlass, setLiquidGlass,
+      secondaryAccent, setSecondaryAccent,
     }),
-    [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme, liquidGlass],
+    [mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme, liquidGlass, secondaryAccent],
   );
 
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;

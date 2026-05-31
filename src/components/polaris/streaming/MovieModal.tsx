@@ -86,7 +86,11 @@ export function MovieModal({ item, kind, onClose, onPlay }: Props) {
             {genres.map((g) => (
               <span
                 key={g.id}
-                className="rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-[11px] text-white/80"
+                className="rounded-full px-3 py-1 text-[11px] font-semibold text-white shadow-sm"
+                style={{
+                  backgroundColor: "rgb(var(--polaris-accent-2) / 0.85)",
+                  border: "1px solid rgb(var(--polaris-accent-2) / 0.6)",
+                }}
               >
                 {g.name}
               </span>
@@ -96,9 +100,10 @@ export function MovieModal({ item, kind, onClose, onPlay }: Props) {
           <div className="mt-5 flex flex-wrap gap-2">
             <button
               onClick={onPlay}
-              className="flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-base font-bold text-black shadow-lg hover:bg-white/90"
+              className="flex items-center gap-2 rounded-xl px-7 py-3 text-base font-bold text-black shadow-lg transition hover:brightness-110"
+              style={{ backgroundColor: "rgb(var(--polaris-accent))", boxShadow: "0 10px 30px -10px rgb(var(--polaris-accent) / 0.6)" }}
             >
-              <Play className="h-5 w-5 fill-black" /> Play
+              <Play className="h-5 w-5 fill-black" /> Watch Now
             </button>
             <button
               onClick={() =>
