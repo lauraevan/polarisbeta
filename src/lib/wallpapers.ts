@@ -342,4 +342,5 @@ export const WALLPAPERS: Wallpaper[] = [
   wp(3229, "minecraft-lanterns",           "/i/c/960x540/media/3229/minecraft-lanterns.jpg",                     "255 170 90",  "Minecraft Lanterns"),
 ];
 
-export const DEFAULT_WALLPAPER_ID = WALLPAPERS[0].id;
+// Cozy bedroom at night — warm, low-key default for a calmer first impression.
+export const DEFAULT_WALLPAPER_ID = "cozy-bedroom-at-night";
