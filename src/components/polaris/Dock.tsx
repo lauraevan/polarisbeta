@@ -74,9 +74,9 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
         }`}
       >
         <div
-          className="pointer-events-auto flex items-center gap-1.5"
+          className="pointer-events-auto flex items-center gap-1.5 transform-gpu will-change-transform [backface-visibility:hidden]"
           style={{
-            transform: `scale(${dockSize})`,
+            transform: `scale(${dockSize}) translateZ(0)`,
             transformOrigin:
               dockPosition === "left" ? "bottom left" : dockPosition === "right" ? "bottom right" : "bottom center",
             transition: dragging ? "none" : "transform 220ms cubic-bezier(.2,.7,.2,1)",
@@ -97,7 +97,7 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
             <GripVertical className="h-4 w-4 pointer-events-none" />
           </button>
 
-          <div className="liquid-glass-themed flex max-w-[calc(100vw-6rem)] items-center gap-3 overflow-x-auto rounded-2xl px-3 py-2 sm:gap-4 sm:px-4">
+          <div className="liquid-glass flex max-w-[calc(100vw-6rem)] items-center gap-3 overflow-x-auto rounded-2xl px-3 py-2 sm:gap-4 sm:px-4">
         {/* Brand */}
         <div className="flex items-center gap-2 pr-1 sm:pr-2">
           <img src={logo} alt="Polaris One" className="h-7 w-7 rounded-lg object-contain" />
