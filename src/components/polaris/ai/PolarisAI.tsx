@@ -3,6 +3,11 @@ import {
   Bot,
   Check,
   ChevronDown,
+  Copy,
+  Code2,
+  GraduationCap,
+  Lightbulb,
+  PencilLine,
   MessageSquare,
   Plus,
   Search,
@@ -61,11 +66,11 @@ const MODES: Mode[] = [
   { id: "tutor", label: "Tutor", system: "You are Polaris AI as a patient tutor. Explain step-by-step and check understanding." },
 ];
 
-const STARTERS = [
-  "Write me code that…",
-  "Help me brainstorm ideas for…",
-  "Summarize this for me:",
-  "Write a creative story about…",
+const STARTERS: { icon: React.ComponentType<{ className?: string }>; title: string; prompt: string; tint: string }[] = [
+  { icon: Code2, title: "Write code", prompt: "Write me code that…", tint: "from-emerald-400/30 to-emerald-600/10" },
+  { icon: Lightbulb, title: "Brainstorm", prompt: "Help me brainstorm ideas for…", tint: "from-amber-400/30 to-orange-600/10" },
+  { icon: PencilLine, title: "Summarize", prompt: "Summarize this for me:", tint: "from-sky-400/30 to-indigo-600/10" },
+  { icon: GraduationCap, title: "Teach me", prompt: "Explain like I'm 12:", tint: "from-fuchsia-400/30 to-purple-600/10" },
 ];
 
 const STORAGE_KEY = "polaris-ai-chats-v1";
