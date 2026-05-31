@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
+import { useTabCloak } from "@/lib/tab-cloaker";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
@@ -28,6 +29,7 @@ function hexToRgbTriplet(hex: string): string {
 function SettingsPage() {
   const { mode, setMode, customAccent, setCustomAccent, outlineColor, setOutlineColor } = useTheme();
   const { wallpaper, setWallpaperId, all } = useWallpaper();
+  const { cloak, setCloakId, cloaks } = useTabCloak();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
 
   return (
@@ -161,12 +163,45 @@ function SettingsPage() {
           </section>
         )}
 
-        {/* Tab Cloaker placeholder (will be expanded) */}
-        <section className="liquid-glass-themed rounded-2xl p-5 opacity-60">
-          <SectionTitle icon={EyeOff} title="Tab Cloaker" subtitle="Coming soon" />
+        {/* Tab Cloaker */}
+        <section className="liquid-glass-themed rounded-2xl p-5">
+          <SectionTitle
+            icon={VenetianMask}
+            title="Tab Cloaker"
+            subtitle={cloak.id === "none" ? "Off" : `Disguised as ${cloak.label}`}
+          />
           <p className="mt-2 text-xs text-white/55">
-            Disguise the browser tab title & favicon as Google Classroom, Docs, etc.
+            Change the browser tab title and favicon so Polaris blends in. Hidden in
+            other tabs too.
           </p>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            {cloaks.map((c) => {
+              const active = c.id === cloak.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setCloakId(c.id)}
+                  className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${
+                    active
+                      ? "border-white bg-white/10"
+                      : "border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10"
+                  }`}
+                >
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/10 overflow-hidden">
+                    {c.favicon ? (
+                      <img src={c.favicon} alt="" className="h-5 w-5" referrerPolicy="no-referrer" />
+                    ) : (
+                      <EyeOff className="h-4 w-4 text-white/70" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-xs font-semibold text-white">{c.label}</div>
+                    <div className="truncate text-[10px] text-white/45">{c.title}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </section>
       </div>
     </div>
