@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search, Shield, Zap } from "lucide-react";
 import { getPolarisBrowserUrl, normalizeUrl, type ProxyEngine } from "@/lib/proxy-utils";
+import { useTheme } from "@/lib/theme-context";
 
 type Shortcut = { name: string; url: string; category: Category };
 type Category = "Popular" | "Games" | "AI Tools" | "Websites" | "Media" | "Apps";
@@ -26,7 +27,9 @@ const CATEGORIES: (Category | "Popular")[] = ["Popular", "Games", "AI Tools", "W
 
 export function Home() {
   const [active, setActive] = useState<(typeof CATEGORIES)[number]>("Popular");
-  const [engine, setEngine] = useState<ProxyEngine>("uv");
+  const { defaultEngine, setDefaultEngine, shortcutSize } = useTheme();
+  const engine = defaultEngine;
+  const setEngine = (e: ProxyEngine) => setDefaultEngine(e);
   const [query, setQuery] = useState("");
 
   const visible = SHORTCUTS.filter((s) =>
@@ -105,7 +108,7 @@ export function Home() {
         <div
           className="grid w-full justify-center gap-3"
           style={{
-            gridTemplateColumns: "repeat(auto-fit, minmax(76px, 88px))",
+            gridTemplateColumns: `repeat(auto-fit, minmax(${Math.round(76 * shortcutSize)}px, ${Math.round(88 * shortcutSize)}px))`,
             justifyContent: "center",
           }}
         >
