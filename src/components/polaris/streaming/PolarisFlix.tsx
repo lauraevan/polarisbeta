@@ -8,6 +8,7 @@ import { Player } from "./Player";
 import { PolarisFlixSplash } from "./Splash";
 import { MyListProvider, useMyList } from "@/lib/mylist-context";
 import { ProfileSplash } from "@/components/polaris/ProfileSplash";
+import polarisLogo from "@/assets/polaris-logo.png";
 
 type Tab = "home" | "movies" | "shows" | "anime";
 
@@ -122,8 +123,8 @@ function Hero({
 
 type ViewerProfile = { id: string; label: string; emoji: string; tint: string; kids?: boolean };
 const VIEWERS: ViewerProfile[] = [
-  { id: "polaris", label: "Polaris User", emoji: "✨", tint: "from-indigo-500/70 to-violet-600/40" },
-  { id: "kids", label: "Kids", emoji: "🧸", tint: "from-amber-400/70 to-rose-500/40", kids: true },
+  { id: "polaris", label: "Polaris User", emoji: "", tint: "from-orange-500/60 to-amber-400/30" },
+  { id: "kids", label: "Kids", emoji: "", tint: "from-amber-400/70 to-rose-500/40", kids: true },
 ];
 const VIEWER_KEY = "polaris-flix-viewer";
 
@@ -140,9 +141,9 @@ function WhosWatching({ onPick }: { onPick: (v: ViewerProfile) => void }) {
               className="group flex flex-col items-center gap-3"
             >
               <div
-                className={`grid h-28 w-28 place-items-center rounded-2xl bg-gradient-to-br ${v.tint} text-6xl shadow-2xl ring-1 ring-white/10 transition group-hover:scale-105 group-hover:ring-white md:h-36 md:w-36`}
+                className={`grid h-28 w-28 place-items-center rounded-2xl bg-gradient-to-br ${v.tint} p-4 shadow-2xl ring-1 ring-white/10 transition group-hover:scale-105 group-hover:ring-white md:h-36 md:w-36`}
               >
-                {v.emoji}
+                <img src={polarisLogo} alt="Polaris" className="h-full w-full object-contain drop-shadow-[0_4px_16px_rgba(255,140,40,0.55)]" />
               </div>
               <div className="text-base font-medium text-white/70 group-hover:text-white">
                 {v.label}
@@ -202,6 +203,18 @@ function FlixInner() {
   const a24 = useQuery({
     queryKey: ["a24"], queryFn: () => tmdbApi.a24Style(), enabled: tab === "home" || tab === "movies",
   });
+  const blockbustersMovies = useQuery({
+    queryKey: ["blockbusters-movies"], queryFn: () => tmdbApi.blockbusters("movie"), enabled: tab === "home" || tab === "movies",
+  });
+  const acclaimedMovies = useQuery({
+    queryKey: ["acclaimed-movies"], queryFn: () => tmdbApi.criticallyAcclaimed("movie"), enabled: tab === "home" || tab === "movies",
+  });
+  const familyMovies = useQuery({
+    queryKey: ["family-movies"], queryFn: () => tmdbApi.familyNight(), enabled: tab === "home" || tab === "movies",
+  });
+  const thisYearMovies = useQuery({
+    queryKey: ["thisyear-movies"], queryFn: () => tmdbApi.thisYear("movie"), enabled: tab === "home" || tab === "movies",
+  });
 
   const trending = useQuery({
     queryKey: ["trending", tab],
@@ -248,7 +261,7 @@ function FlixInner() {
 
   const intlMovies = useQuery({
     queryKey: ["intl-movies", searchLang],
-    queryFn: () => tmdbApi.international("movie", searchLang || "ko"),
+    queryFn: () => tmdbApi.international("movie", searchLang || "en"),
     enabled: searchOpen && query.trim().length < 2,
     staleTime: 1000 * 60 * 10,
   });
@@ -277,7 +290,16 @@ function FlixInner() {
         />
       )}
 
-      <div className="min-h-screen pb-32">
+      <div className="relative min-h-screen pb-32">
+        {/* Warm autumn overlay so the wallpaper feels cinematic */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(120% 60% at 50% 0%, rgba(255,140,40,0.18) 0%, rgba(180,60,20,0.10) 35%, rgba(0,0,0,0) 70%), linear-gradient(180deg, rgba(20,8,2,0.55) 0%, rgba(10,4,2,0.85) 100%)",
+          }}
+        />
         {/* Top bar */}
         <header className="sticky top-0 z-30 flex items-center gap-3 px-4 pt-4 pb-3 sm:px-6">
           <div className="liquid-glass-themed flex w-full items-center gap-2 rounded-2xl px-3 py-2">
@@ -390,7 +412,7 @@ function FlixInner() {
                 {query.trim().length < 2 ? (
                   <>
                     <h3 className="mb-3 text-sm font-semibold text-white/80">
-                      Popular {LANGUAGES.find((l) => l.code === (searchLang || "ko"))?.label} cinema
+                      Popular {LANGUAGES.find((l) => l.code === (searchLang || "en"))?.label} cinema
                     </h3>
                     <Grid items={intlMovies.data ?? []} onSelect={(item) => setSelected({ item, kind: "movie" })} />
                   </>
@@ -473,6 +495,30 @@ function FlixInner() {
                   loading={a24.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
                 />
+                <Row
+                  title="Blockbuster Hits"
+                  items={blockbustersMovies.data ?? []}
+                  loading={blockbustersMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Critically Acclaimed"
+                  items={acclaimedMovies.data ?? []}
+                  loading={acclaimedMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Family Night"
+                  items={familyMovies.data ?? []}
+                  loading={familyMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title={`New in ${new Date().getFullYear()}`}
+                  items={thisYearMovies.data ?? []}
+                  loading={thisYearMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
               </>
             ) : (
             <>
@@ -510,6 +556,52 @@ function FlixInner() {
               loading={topRated.isLoading}
               onSelect={(item) => setSelected({ item, kind })}
             />
+            {tab === "movies" && (
+              <>
+                <Row
+                  title="Blockbuster Hits"
+                  items={blockbustersMovies.data ?? []}
+                  loading={blockbustersMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Critically Acclaimed"
+                  items={acclaimedMovies.data ?? []}
+                  loading={acclaimedMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Family Night"
+                  items={familyMovies.data ?? []}
+                  loading={familyMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title={`New in ${new Date().getFullYear()}`}
+                  items={thisYearMovies.data ?? []}
+                  loading={thisYearMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Hidden Gems"
+                  items={hiddenGemsMovies.data ?? []}
+                  loading={hiddenGemsMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Indie & Cult"
+                  items={indieCult.data ?? []}
+                  loading={indieCult.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="A24 Picks"
+                  items={a24.data ?? []}
+                  loading={a24.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+              </>
+            )}
             {genres.map((g) => (
               <GenreRow
                 key={g.id}

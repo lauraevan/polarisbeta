@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { IMG, type TmdbItem } from "@/lib/tmdb";
 
 type Props = {
@@ -49,44 +49,60 @@ export function Row({ title, items, onSelect, ranked, loading, size = "md" }: Pr
                 />
               ))
             : list.map((item, idx) => (
-            <button
-              key={item.id}
-              onClick={() => onSelect(item)}
-              className={`relative shrink-0 overflow-hidden rounded-xl liquid-glass transition hover:scale-[1.04] hover:z-10 ${
-                ranked ? "flex items-end" : ""
-              }`}
-              style={{ width: w, height: h }}
-            >
-              {ranked && (
-                <span
-                  className="absolute -left-2 bottom-0 z-0 font-black leading-[0.8] text-transparent select-none"
-                  style={{
-                    fontSize: numberSize,
-                    WebkitTextStroke: "3px rgba(255,255,255,0.85)",
-                  }}
-                >
-                  {idx + 1}
-                </span>
-              )}
-              <div
-                className={`relative h-full ${innerLeft} overflow-hidden rounded-xl`}
+            <div key={item.id} className="shrink-0" style={{ width: w }}>
+              <button
+                onClick={() => onSelect(item)}
+                className={`group/card relative block w-full overflow-hidden rounded-xl liquid-glass transition hover:scale-[1.04] hover:z-10 ${
+                  ranked ? "flex items-end" : ""
+                }`}
+                style={{ height: h }}
               >
-                {item.poster_path ? (
-                  <img
-                    src={IMG(item.poster_path, "w300")}
-                    alt={item.title || item.name}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover opacity-0 transition-opacity duration-500"
-                    onLoad={(e) => e.currentTarget.classList.remove("opacity-0")}
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-white/5 p-2 text-center text-xs text-white/60">
-                    {item.title || item.name}
-                  </div>
+                {ranked && (
+                  <span
+                    className="absolute -left-2 bottom-0 z-0 font-black leading-[0.8] text-transparent select-none"
+                    style={{
+                      fontSize: numberSize,
+                      WebkitTextStroke: "3px rgba(255,255,255,0.85)",
+                    }}
+                  >
+                    {idx + 1}
+                  </span>
                 )}
+                <div className={`relative h-full ${innerLeft} overflow-hidden rounded-xl`}>
+                  {item.poster_path ? (
+                    <img
+                      src={IMG(item.poster_path, "w300")}
+                      alt={item.title || item.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover opacity-0 transition-opacity duration-500"
+                      onLoad={(e) => e.currentTarget.classList.remove("opacity-0")}
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-white/5 p-2 text-center text-xs text-white/60">
+                      {item.title || item.name}
+                    </div>
+                  )}
+                  {item.vote_average > 0 && (
+                    <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-md bg-black/75 px-1.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      {item.vote_average.toFixed(1)}
+                    </div>
+                  )}
+                </div>
+              </button>
+              <div className="mt-2 px-0.5">
+                <div className="truncate text-[13px] font-semibold text-white" title={item.title || item.name}>
+                  {item.title || item.name}
+                </div>
+                <div
+                  className="text-[11px] font-medium"
+                  style={{ color: "rgb(var(--polaris-accent) / 0.85)" }}
+                >
+                  {(item.release_date || item.first_air_date || "").slice(0, 4) || "—"}
+                </div>
               </div>
-            </button>
+            </div>
           ))}
         </div>
         <button
