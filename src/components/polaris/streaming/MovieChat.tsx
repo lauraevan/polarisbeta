@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Send, Image as ImageIcon, Film as FilmIcon, Smile, X } from "lucide-react";
+import { Send, Image as ImageIcon, Film as FilmIcon, Smile, X, MonitorUp } from "lucide-react";
 
 type Attachment = {
   kind: "image" | "video" | "gif";
@@ -34,6 +34,9 @@ export function MovieChat({ room, title, onClose }: { room: string; title: strin
   const scroller = useRef<HTMLDivElement>(null);
   const imgInput = useRef<HTMLInputElement>(null);
   const vidInput = useRef<HTMLInputElement>(null);
+  const [screenSharing, setScreenSharing] = useState(false);
+  const screenRecRef = useRef<MediaRecorder | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
 
   // Load persisted messages
   useEffect(() => {
@@ -90,6 +93,42 @@ export function MovieChat({ room, title, onClose }: { room: string; title: strin
     setGifOpen(false);
     setGifQuery("");
     setGifResults([]);
+  };
+
+  const toggleScreenShare = async () => {
+    if (screenSharing && screenRecRef.current) {
+      screenRecRef.current.stop();
+      return;
+    }
+    const md = navigator.mediaDevices as MediaDevices & { getDisplayMedia?: (c?: unknown) => Promise<MediaStream> };
+    if (!md?.getDisplayMedia) {
+      alert("Screen sharing is not supported in this browser");
+      return;
+    }
+    try {
+      const stream = await md.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+      screenStreamRef.current = stream;
+      const chunks: BlobPart[] = [];
+      const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
+        ? "video/webm;codecs=vp9,opus"
+        : "video/webm";
+      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2_500_000 });
+      screenRecRef.current = rec;
+      rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      stream.getVideoTracks()[0]?.addEventListener("ended", () => { try { rec.stop(); } catch {} });
+      rec.onstop = () => {
+        setScreenSharing(false);
+        stream.getTracks().forEach((t) => t.stop());
+        screenStreamRef.current = null;
+        const blob = new Blob(chunks, { type: "video/webm" });
+        const url = URL.createObjectURL(blob);
+        setPending((p) => [...p, { kind: "video", url, name: "screen-share.webm" }]);
+      };
+      rec.start(1000);
+      setScreenSharing(true);
+    } catch {
+      // cancelled
+    }
   };
 
   const send = () => {
@@ -239,6 +278,14 @@ export function MovieChat({ room, title, onClose }: { room: string; title: strin
           aria-label="GIF"
         >
           <Smile className="h-4 w-4" />
+        </button>
+        <button
+          onClick={toggleScreenShare}
+          className={`rounded-md p-1.5 hover:bg-white/10 ${screenSharing ? "animate-pulse bg-red-500/30 text-red-200" : "text-white/75"}`}
+          aria-label={screenSharing ? "Stop screen share" : "Share screen"}
+          title={screenSharing ? "Stop screen share" : "Share screen"}
+        >
+          <MonitorUp className="h-4 w-4" />
         </button>
         <input
           value={text}

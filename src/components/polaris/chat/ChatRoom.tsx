@@ -3,7 +3,7 @@ import {
   Send, Image as ImageIcon, Smile, Paintbrush, Sparkles, Loader2, Hash, Plus, X, Search,
   MessageCircle, Palette, AtSign, Bold, Italic, Code, Mic, BarChart3, Heart, Users, Bell,
   Megaphone, Bug, RefreshCcw, Crown, Link2, ChevronDown,
-  Gamepad2, Coffee, Pin, Newspaper, Zap, MessagesSquare, Star,
+  Gamepad2, Coffee, Pin, Newspaper, Zap, MessagesSquare, Star, MonitorUp,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -104,6 +104,8 @@ export function ChatRoom() {
   // Notifs (mentions of current user across global channels)
   const [notifs, setNotifs] = useState<Message[]>([]);
   const recRef = useRef<MediaRecorder | null>(null);
+  const [screenSharing, setScreenSharing] = useState(false);
+  const screenRecRef = useRef<MediaRecorder | null>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -353,6 +355,42 @@ export function ChatRoom() {
       alert("Could not access microphone");
     }
   }, [recording, user, send]);
+
+  const toggleScreenShare = useCallback(async () => {
+    if (screenSharing && screenRecRef.current) {
+      screenRecRef.current.stop();
+      return;
+    }
+    const md = navigator.mediaDevices as MediaDevices & { getDisplayMedia?: (c?: unknown) => Promise<MediaStream> };
+    if (!md?.getDisplayMedia) return alert("Screen sharing is not supported in this browser");
+    try {
+      const stream = await md.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
+      const chunks: BlobPart[] = [];
+      const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
+        ? "video/webm;codecs=vp9,opus"
+        : "video/webm";
+      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2_500_000 });
+      screenRecRef.current = rec;
+      rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      const stopAll = () => stream.getTracks().forEach((t) => t.stop());
+      stream.getVideoTracks()[0]?.addEventListener("ended", () => { try { rec.stop(); } catch {} });
+      rec.onstop = async () => {
+        setScreenSharing(false);
+        stopAll();
+        if (!user) return;
+        const blob = new Blob(chunks, { type: "video/webm" });
+        const path = `${user.id}/screen-${Date.now()}.webm`;
+        const { error } = await supabase.storage.from("chat").upload(path, blob, { contentType: "video/webm" });
+        if (error) return alert("Screen share upload failed: " + error.message);
+        const { data } = supabase.storage.from("chat").getPublicUrl(path);
+        await send("🖥️ Screen recording", [{ kind: "link", url: data.publicUrl }]);
+      };
+      rec.start(1000);
+      setScreenSharing(true);
+    } catch {
+      // user cancelled or denied
+    }
+  }, [screenSharing, user, send]);
 
   const uploadImage = useCallback(
     async (file: File) => {
@@ -648,6 +686,9 @@ export function ChatRoom() {
             </button>
             <button onClick={toggleRecord} className={`rounded-lg p-2 transition ${recording ? "bg-red-500/30 text-red-200 animate-pulse" : "text-white/65 hover:bg-white/5 hover:text-white"}`} title={recording ? "Stop recording" : "Voice note"}>
               <Mic className="h-4 w-4" />
+            </button>
+            <button onClick={toggleScreenShare} className={`rounded-lg p-2 transition ${screenSharing ? "bg-red-500/30 text-red-200 animate-pulse" : "text-white/65 hover:bg-white/5 hover:text-white"}`} title={screenSharing ? "Stop screen share" : "Share screen"}>
+              <MonitorUp className="h-4 w-4" />
             </button>
             <div className="relative flex-1">
               <textarea
