@@ -626,16 +626,25 @@ export function ChatRoom() {
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 sm:px-6">
-          <div className="mx-auto flex max-w-3xl flex-col gap-3">
-            {messages.map((m, i) => (
-              <MessageBubble
-                key={m.id}
-                m={m}
-                prevSame={i > 0 && messages[i - 1].user_id === m.user_id && new Date(m.created_at).getTime() - new Date(messages[i - 1].created_at).getTime() < 5 * 60 * 1000}
-                onAvatarClick={() => setViewProfileId(m.user_id)}
-                onMention={() => insert(`@${m.username} `, "")}
-              />
-            ))}
+          <div className="mx-auto flex max-w-3xl flex-col gap-0.5">
+            {messages.map((m, i) => {
+              const prev = messages[i - 1];
+              const next = messages[i + 1];
+              const within = (a?: Message, b?: Message) =>
+                !!a && !!b && a.user_id === b.user_id &&
+                Math.abs(new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) < 5 * 60 * 1000;
+              return (
+                <MessageBubble
+                  key={m.id}
+                  m={m}
+                  mine={m.user_id === user.id}
+                  prevSame={within(prev, m)}
+                  nextSame={within(m, next)}
+                  onAvatarClick={() => setViewProfileId(m.user_id)}
+                  onMention={() => insert(`@${m.username} `, "")}
+                />
+              );
+            })}
             {messages.length === 0 && (
               <div className="mt-12 text-center text-sm text-white/45">
                 It’s cozy in here. Say hi 🍂
