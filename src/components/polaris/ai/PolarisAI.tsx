@@ -208,7 +208,10 @@ export function PolarisAI() {
     setInput("");
     setStreaming(true);
 
-    const history = [...(chat.messages || []), userMsg].map((m) => ({ role: m.role, content: m.content }));
+    // Cap history to last 12 messages to keep token usage (and credits) sane
+    const history = [...(chat.messages || []), userMsg]
+      .slice(-12)
+      .map((m) => ({ role: m.role, content: m.content }));
 
     try {
       const res = await fetch("/api/ai-chat", {
