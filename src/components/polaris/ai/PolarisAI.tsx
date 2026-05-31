@@ -3,6 +3,11 @@ import {
   Bot,
   Check,
   ChevronDown,
+  Copy,
+  Code2,
+  GraduationCap,
+  Lightbulb,
+  PencilLine,
   MessageSquare,
   Plus,
   Search,
@@ -61,11 +66,11 @@ const MODES: Mode[] = [
   { id: "tutor", label: "Tutor", system: "You are Polaris AI as a patient tutor. Explain step-by-step and check understanding." },
 ];
 
-const STARTERS = [
-  "Write me code that…",
-  "Help me brainstorm ideas for…",
-  "Summarize this for me:",
-  "Write a creative story about…",
+const STARTERS: { icon: React.ComponentType<{ className?: string }>; title: string; prompt: string; tint: string }[] = [
+  { icon: Code2, title: "Write code", prompt: "Write me code that…", tint: "from-emerald-400/30 to-emerald-600/10" },
+  { icon: Lightbulb, title: "Brainstorm", prompt: "Help me brainstorm ideas for…", tint: "from-amber-400/30 to-orange-600/10" },
+  { icon: PencilLine, title: "Summarize", prompt: "Summarize this for me:", tint: "from-sky-400/30 to-indigo-600/10" },
+  { icon: GraduationCap, title: "Teach me", prompt: "Explain like I'm 12:", tint: "from-fuchsia-400/30 to-purple-600/10" },
 ];
 
 const STORAGE_KEY = "polaris-ai-chats-v1";
@@ -405,6 +410,15 @@ export function PolarisAI() {
 
       {/* Main — translucent so the wallpaper shows through */}
       <div className="liquid-glass-strong relative m-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)] md:m-3">
+        {/* Ambient accent aura that lives behind the panel content */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-0 opacity-80"
+          style={{
+            background:
+              "radial-gradient(800px 360px at 50% -10%, rgba(var(--polaris-accent)/0.18), transparent 60%), radial-gradient(600px 320px at 100% 100%, rgba(var(--polaris-accent)/0.10), transparent 70%)",
+          }}
+        />
         {/* Top bar */}
         <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-white/[0.04] px-3 py-3 backdrop-blur-xl sm:px-5">
           <button
@@ -480,24 +494,95 @@ export function PolarisAI() {
         {/* Messages */}
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-6 sm:px-8">
           {!active || active.messages.length === 0 ? (
-            <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/10">
-                <img src={logo} alt="" className="h-9 w-9 object-contain" />
+            <div className="relative mx-auto flex h-full max-w-2xl flex-col items-center justify-center text-center">
+              {/* Ambient aura behind the hero */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 -z-10 opacity-70 blur-3xl"
+                style={{
+                  background:
+                    "radial-gradient(420px circle at 50% 30%, rgba(var(--polaris-accent)/0.28), transparent 60%), radial-gradient(360px circle at 30% 80%, rgba(255,255,255,0.06), transparent 70%)",
+                }}
+              />
+              <div
+                className="relative grid h-16 w-16 place-items-center rounded-[22px]"
+                style={{
+                  background:
+                    "linear-gradient(140deg, rgba(var(--polaris-accent)/0.45), rgba(255,255,255,0.06))",
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(255,255,255,0.12), 0 18px 50px -20px rgba(var(--polaris-accent)/0.55)",
+                }}
+              >
+                <img src={logo} alt="" className="h-9 w-9 object-contain drop-shadow" />
               </div>
-              <h1 className="mt-4 text-2xl font-black tracking-tight">Polaris AI</h1>
-              <p className="mt-1 text-sm text-white/55">
-                Multi-model assistant · {model.label} · {mode.label} mode
-              </p>
-              <div className="mt-8 grid w-full max-w-md gap-2">
-                {STARTERS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => send(s)}
-                    className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-left text-sm text-white/80 hover:bg-black/45 hover:text-white"
-                  >
-                    {s}
-                  </button>
-                ))}
+              <h1
+                className="mt-5 text-4xl font-black tracking-tight md:text-5xl"
+                style={{
+                  background:
+                    "linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.55) 110%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                }}
+              >
+                How can I help today?
+              </h1>
+              <div className="mt-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.28em] text-white/45">
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ background: "rgb(var(--polaris-accent))", boxShadow: "0 0 10px rgb(var(--polaris-accent))" }}
+                />
+                {model.label} · {mode.label}
+              </div>
+
+              {/* Inline mode chips */}
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-1.5">
+                {MODES.map((m) => {
+                  const on = m.id === mode.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setMode(m)}
+                      className="rounded-full border px-3 py-1 text-[11px] font-medium transition"
+                      style={
+                        on
+                          ? {
+                              borderColor: "rgba(var(--polaris-accent)/0.55)",
+                              background: "rgba(var(--polaris-accent)/0.18)",
+                              color: "#fff",
+                            }
+                          : { borderColor: "rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.7)" }
+                      }
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Iconic starter cards */}
+              <div className="mt-7 grid w-full max-w-xl grid-cols-2 gap-2.5">
+                {STARTERS.map((s) => {
+                  const Icon = s.icon;
+                  return (
+                    <button
+                      key={s.title}
+                      onClick={() => send(s.prompt)}
+                      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 text-left transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06]"
+                    >
+                      <div
+                        className={`pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gradient-to-br ${s.tint} opacity-60 blur-2xl transition group-hover:opacity-100`}
+                      />
+                      <div className="relative flex items-center gap-2.5">
+                        <span className="grid h-8 w-8 place-items-center rounded-xl border border-white/10 bg-white/[0.05] text-white/85">
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <div className="text-[13px] font-semibold text-white">{s.title}</div>
+                      </div>
+                      <div className="relative mt-2 text-[12px] leading-snug text-white/55">{s.prompt}</div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -515,7 +600,7 @@ export function PolarisAI() {
         </div>
 
         {/* Composer */}
-        <div className="border-t border-white/10 bg-white/[0.04] px-3 py-3 backdrop-blur-xl sm:px-6">
+        <div className="relative border-t border-white/10 bg-gradient-to-b from-white/[0.03] to-black/30 px-3 py-3 backdrop-blur-xl sm:px-6">
           {error && (
             <div className="mx-auto mb-2 max-w-3xl rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
               {error}
@@ -526,7 +611,7 @@ export function PolarisAI() {
               e.preventDefault();
               send(input);
             }}
-            className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border border-white/15 bg-zinc-950 p-2 transition-shadow focus-within:border-[rgb(var(--polaris-accent))] focus-within:shadow-[0_0_0_3px_rgba(var(--polaris-accent)/0.18)]"
+            className="mx-auto flex max-w-3xl flex-col gap-1.5 rounded-3xl border border-white/12 bg-black/55 p-2 shadow-[0_20px_60px_-30px_rgba(var(--polaris-accent)/0.55)] transition-all focus-within:border-[rgba(var(--polaris-accent)/0.7)] focus-within:shadow-[0_0_0_3px_rgba(var(--polaris-accent)/0.20),0_30px_80px_-30px_rgba(var(--polaris-accent)/0.65)]"
           >
             <textarea
               value={input}
@@ -539,17 +624,44 @@ export function PolarisAI() {
               }}
               rows={1}
               placeholder={`Message ${model.label}…`}
-              className="min-h-[40px] max-h-[180px] flex-1 resize-none bg-transparent px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
+              className="min-h-[44px] max-h-[200px] w-full resize-none bg-transparent px-3 py-2 text-sm text-white placeholder:text-white/35 focus:outline-none"
             />
-            <button
-              type="submit"
-              disabled={streaming || !input.trim()}
-              className="grid h-10 w-10 place-items-center rounded-2xl text-white transition disabled:opacity-40"
-              style={{ background: "rgb(var(--polaris-accent))" }}
-              aria-label="Send"
-            >
-              <Send className="h-4 w-4" />
-            </button>
+            <div className="flex items-center justify-between gap-2 px-1">
+              <div className="flex items-center gap-1.5 text-[10px] text-white/45">
+                <button
+                  type="button"
+                  onClick={() => { setModelOpen((o) => !o); setModeOpen(false); }}
+                  className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-white/70 hover:bg-white/[0.08]"
+                >
+                  <span className={`grid h-3 w-3 place-items-center rounded-sm text-[8px] font-black text-white ${model.color}`}>
+                    {model.badge}
+                  </span>
+                  {model.label}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setModeOpen((o) => !o); setModelOpen(false); }}
+                  className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-white/70 hover:bg-white/[0.08]"
+                >
+                  <Settings2 className="h-2.5 w-2.5" /> {mode.label}
+                </button>
+                <span className="hidden sm:inline text-white/30">·  Enter ↵ to send</span>
+              </div>
+              <button
+                type="submit"
+                disabled={streaming || !input.trim()}
+                className="group/btn relative grid h-9 w-9 place-items-center rounded-2xl text-white transition disabled:opacity-40"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgb(var(--polaris-accent)) 0%, rgba(var(--polaris-accent)/0.7) 100%)",
+                  boxShadow:
+                    "0 8px 24px -8px rgba(var(--polaris-accent)/0.75), inset 0 0 0 1px rgba(255,255,255,0.18)",
+                }}
+                aria-label="Send"
+              >
+                <Send className="h-4 w-4 transition group-hover/btn:translate-x-0.5" />
+              </button>
+            </div>
           </form>
           <div className="mx-auto mt-2 flex max-w-3xl items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-white/35">
             <Sparkles className="h-3 w-3" /> Polaris AI · multi-model assistant
@@ -601,27 +713,57 @@ function ModelGroup({
 
 function MessageBubble({ role, content, modelLabel }: { role: Role; content: string; modelLabel: string }) {
   const isUser = role === "user";
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {/* noop */}
+  }
   return (
-    <div className={`flex gap-3 animate-[fadeIn_220ms_ease] ${isUser ? "flex-row-reverse" : ""}`}>
+    <div className={`group flex gap-3 animate-[fadeIn_220ms_ease] ${isUser ? "flex-row-reverse" : ""}`}>
       <div
         className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
         style={{
-          background: isUser ? "rgb(var(--polaris-accent))" : "rgba(255,255,255,0.08)",
-          boxShadow: isUser ? "0 4px 16px -4px rgba(var(--polaris-accent)/0.6)" : undefined,
+          background: isUser
+            ? "linear-gradient(140deg, rgb(var(--polaris-accent)), rgba(var(--polaris-accent)/0.7))"
+            : "linear-gradient(140deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04))",
+          boxShadow: isUser
+            ? "0 8px 24px -8px rgba(var(--polaris-accent)/0.7), inset 0 0 0 1px rgba(255,255,255,0.18)"
+            : "inset 0 0 0 1px rgba(255,255,255,0.10)",
         }}
       >
         {isUser ? "Y" : <Bot className="h-4 w-4" />}
       </div>
-      <div
-        className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed text-white/95"
-        style={{
-          background: isUser ? "rgba(var(--polaris-accent)/0.12)" : "rgba(255,255,255,0.025)",
-          border: `1px solid rgba(var(--polaris-accent)/${isUser ? 0.55 : 0.28})`,
-          boxShadow: `0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px -12px rgba(var(--polaris-accent)/${isUser ? 0.35 : 0.18})`,
-        }}
-      >
-        {!isUser && <div className="mb-1 text-[10px] uppercase tracking-widest text-white/40">{modelLabel}</div>}
-        {content || <span className="text-white/40">…</span>}
+      <div className={`relative max-w-[82%] ${isUser ? "items-end" : "items-start"} flex flex-col`}>
+        {!isUser && (
+          <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+            {modelLabel}
+          </div>
+        )}
+        <div
+          className="relative whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed text-white/95 backdrop-blur-xl"
+          style={{
+            background: isUser
+              ? "linear-gradient(140deg, rgba(var(--polaris-accent)/0.22), rgba(var(--polaris-accent)/0.08))"
+              : "rgba(255,255,255,0.04)",
+            border: `1px solid rgba(var(--polaris-accent)/${isUser ? 0.55 : 0.22})`,
+            boxShadow: `0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 30px -16px rgba(var(--polaris-accent)/${isUser ? 0.45 : 0.22})`,
+          }}
+        >
+          {content || <span className="text-white/40">…</span>}
+        </div>
+        {!!content && (
+          <button
+            onClick={copy}
+            className="mt-1 flex items-center gap-1 self-start rounded-md px-1.5 py-0.5 text-[10px] text-white/40 opacity-0 transition hover:text-white/80 group-hover:opacity-100"
+            aria-label="Copy message"
+          >
+            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            {copied ? "Copied" : "Copy"}
+          </button>
+        )}
       </div>
     </div>
   );
