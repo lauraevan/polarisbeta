@@ -106,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: "That username is taken." };
       return { error: error.message };
     }
+    await supabase.auth.signInWithPassword({ email: toEmail(clean), password });
     return { error: null };
   }, []);
 
