@@ -13,7 +13,6 @@ import {
   Search,
   Send,
   Settings2,
-  Sparkles,
   Trash2,
   X,
   Zap,
