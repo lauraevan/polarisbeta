@@ -7,24 +7,30 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { WALLPAPERS, DEFAULT_WALLPAPER_ID, type Wallpaper } from "./wallpapers";
+import { WALLPAPERS, DEFAULT_WALLPAPER_ID, type Wallpaper, type Resolution } from "./wallpapers";
 
 type Ctx = {
   wallpaper: Wallpaper;
   setWallpaperId: (id: string) => void;
+  resolution: Resolution;
+  setResolution: (r: Resolution) => void;
   all: Wallpaper[];
 };
 
 const WallpaperCtx = createContext<Ctx | null>(null);
 const STORAGE_KEY = "polaris-wallpaper";
+const RES_KEY = "polaris-wallpaper-res";
 
 export function WallpaperProvider({ children }: { children: ReactNode }) {
   const [id, setId] = useState<string>(DEFAULT_WALLPAPER_ID);
+  const [resolution, setRes] = useState<Resolution>("540p");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = window.localStorage.getItem(STORAGE_KEY);
     if (saved && WALLPAPERS.some((w) => w.id === saved)) setId(saved);
+    const savedRes = window.localStorage.getItem(RES_KEY) as Resolution | null;
+    if (savedRes && ["540p", "1080p", "4k"].includes(savedRes)) setRes(savedRes);
   }, []);
 
   const wallpaper = useMemo(
@@ -42,9 +48,13 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
   }, [wallpaper]);
 
   const setWallpaperId = useCallback((next: string) => setId(next), []);
+  const setResolution = useCallback((r: Resolution) => {
+    setRes(r);
+    if (typeof window !== "undefined") window.localStorage.setItem(RES_KEY, r);
+  }, []);
 
   return (
-    <WallpaperCtx.Provider value={{ wallpaper, setWallpaperId, all: WALLPAPERS }}>
+    <WallpaperCtx.Provider value={{ wallpaper, setWallpaperId, resolution, setResolution, all: WALLPAPERS }}>
       {children}
     </WallpaperCtx.Provider>
   );
