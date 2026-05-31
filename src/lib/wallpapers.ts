@@ -20,13 +20,15 @@ const wp = (id: number, slug: string, posterPath: string, accent: string, name: 
 });
 
 export const WALLPAPERS: Wallpaper[] = [
-  wp(1922, "first-fall-day-in-forest", "/i/c/960x540/media/1922/first-fall-day-in-forest.jpg", "220 160 90", "First Fall Day in Forest"),
+  wp(1922, "first-fall-day-in-forest", "/i/c/960x540/media/1922/first-fall-day-in-forest.jpg", "230 150 80", "Autumn Leaves Forest"),
+  wp(7623, "rocks-glow-with-autumn-fire", "/i/c/960x540/media/7623/rocks-glow-with-autumn-fire.3840x2160.jpg", "255 140 60", "Autumn Fire Rocks"),
+  wp(758, "mountain-landscape-in-autumn", "/i/c/960x540/media/758/mountain-landscape-in-autumn.jpg", "230 150 70", "Autumn Mountains"),
+  wp(4295, "forest-sunset", "/i/c/960x540/media/4295/forest-sunset.jpg", "255 160 80", "Cozy Forest Sunset"),
+  wp(453, "cozy-bedroom-at-night", "/i/c/960x540/media/453/cozy-bedroom-at-night.jpg", "230 140 90", "Cozy Bedroom at Night"),
+  wp(9268, "minecraft-snowy-campfire", "/i/c/960x540/media/9268/minecraft-snowy-campfire.3840x2160.jpg", "255 170 90", "Snowy Campfire"),
   wp(5780, "marshland", "/i/c/960x540/media/5780/marshland.jpg", "180 210 130", "Marshland"),
   wp(1554, "pink-sakura-tree", "/i/c/960x540/media/1554/pink-sakura-tree.jpg", "255 170 200", "Pink Sakura Tree"),
-  wp(7623, "rocks-glow-with-autumn-fire", "/i/c/960x540/media/7623/rocks-glow-with-autumn-fire.3840x2160.jpg", "255 140 60", "Rocks Glow With Autumn Fire"),
   wp(6267, "gojo-manga", "/i/c/960x540/media/6267/gojo-manga.jpg", "180 200 255", "Gojo Manga"),
-  wp(4295, "forest-sunset", "/i/c/960x540/media/4295/forest-sunset.jpg", "255 160 80", "Forest Sunset"),
-  wp(758, "mountain-landscape-in-autumn", "/i/c/960x540/media/758/mountain-landscape-in-autumn.jpg", "230 150 70", "Mountain Landscape in Autumn"),
   wp(8677, "audi-on-frozen-lake", "/i/c/960x540/media/8677/audi-on-frozen-lake.3840x2160.jpg", "150 200 240", "Audi On Frozen Lake"),
   wp(5991, "fish-tank", "/i/c/960x540/media/5991/fish-tank.jpg", "120 200 220", "Fish Tank"),
   wp(2344, "girl-on-the-beach-at-night", "/i/c/960x540/media/2344/girl-on-the-beach-at-night.jpg", "140 160 230", "Girl on the Beach at Night"),
