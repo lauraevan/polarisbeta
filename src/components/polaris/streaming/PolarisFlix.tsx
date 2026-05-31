@@ -117,6 +117,15 @@ function FlixInner() {
   const homeAnime = useQuery({
     queryKey: ["home-anime"], queryFn: () => tmdbApi.animeTrending(), enabled: tab === "home",
   });
+  const hiddenGemsMovies = useQuery({
+    queryKey: ["hidden-gems-movies"], queryFn: () => tmdbApi.hiddenGems("movie"), enabled: tab === "home" || tab === "movies",
+  });
+  const indieCult = useQuery({
+    queryKey: ["indie-cult"], queryFn: () => tmdbApi.indieCult("movie"), enabled: tab === "home" || tab === "movies",
+  });
+  const a24 = useQuery({
+    queryKey: ["a24"], queryFn: () => tmdbApi.a24Style(), enabled: tab === "home" || tab === "movies",
+  });
 
   const trending = useQuery({
     queryKey: ["trending", tab],
@@ -362,6 +371,24 @@ function FlixInner() {
                   items={homeAnime.data ?? []}
                   loading={homeAnime.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "tv" })}
+                />
+                <Row
+                  title="Hidden Gems"
+                  items={hiddenGemsMovies.data ?? []}
+                  loading={hiddenGemsMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Indie & Cult"
+                  items={indieCult.data ?? []}
+                  loading={indieCult.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="A24 Picks"
+                  items={a24.data ?? []}
+                  loading={a24.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
                 />
               </>
             ) : (

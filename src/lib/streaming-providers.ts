@@ -69,3 +69,63 @@ export const PROVIDERS: Provider[] = [
         : `https://www.2embed.cc/embedtv/${id}&s=${s ?? 1}&e=${e ?? 1}`,
   },
 ];
+
+// Additional mirrors / niche-friendly providers
+PROVIDERS.push(
+  {
+    id: "vidsrc-to",
+    label: "VidSrc.to",
+    build: (kind, id, s, e) =>
+      kind === "movie"
+        ? `https://vidsrc.to/embed/movie/${id}`
+        : `https://vidsrc.to/embed/tv/${id}/${s ?? 1}/${e ?? 1}`,
+  },
+  {
+    id: "vidsrc-xyz",
+    label: "VidSrc.xyz",
+    build: (kind, id, s, e) =>
+      kind === "movie"
+        ? `https://vidsrc.xyz/embed/movie?tmdb=${id}`
+        : `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s ?? 1}&episode=${e ?? 1}`,
+  },
+  {
+    id: "vidsrc-cc",
+    label: "VidSrc.cc",
+    build: (kind, id, s, e) =>
+      kind === "movie"
+        ? `https://vidsrc.cc/v2/embed/movie/${id}`
+        : `https://vidsrc.cc/v2/embed/tv/${id}/${s ?? 1}/${e ?? 1}`,
+  },
+  {
+    id: "moviesapi",
+    label: "MoviesAPI",
+    build: (kind, id, s, e) =>
+      kind === "movie"
+        ? `https://moviesapi.club/movie/${id}`
+        : `https://moviesapi.club/tv/${id}-${s ?? 1}-${e ?? 1}`,
+  },
+  {
+    id: "primewire",
+    label: "Primewire",
+    build: (kind, id, s, e) =>
+      kind === "movie"
+        ? `https://www.primewire.tf/embed/movie?tmdb=${id}`
+        : `https://www.primewire.tf/embed/tv?tmdb=${id}&season=${s ?? 1}&episode=${e ?? 1}`,
+  },
+  {
+    id: "rivestream",
+    label: "RiveStream",
+    build: (kind, id, s, e) =>
+      kind === "movie"
+        ? `https://rivestream.live/embed?type=movie&id=${id}`
+        : `https://rivestream.live/embed?type=tv&id=${id}&season=${s ?? 1}&episode=${e ?? 1}`,
+  },
+  {
+    id: "warezcdn",
+    label: "WarezCDN",
+    build: (kind, id, s, e) =>
+      kind === "movie"
+        ? `https://embed.warezcdn.com/filme/${id}`
+        : `https://embed.warezcdn.com/serie/${id}/${s ?? 1}/${e ?? 1}`,
+  },
+);

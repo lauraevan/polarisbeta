@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search, Shield, Zap } from "lucide-react";
 import { getPolarisBrowserUrl, normalizeUrl, type ProxyEngine } from "@/lib/proxy-utils";
+import { useTheme } from "@/lib/theme-context";
 
 type Shortcut = { name: string; url: string; category: Category };
 type Category = "Popular" | "Games" | "AI Tools" | "Websites" | "Media" | "Apps";
@@ -26,7 +27,9 @@ const CATEGORIES: (Category | "Popular")[] = ["Popular", "Games", "AI Tools", "W
 
 export function Home() {
   const [active, setActive] = useState<(typeof CATEGORIES)[number]>("Popular");
-  const [engine, setEngine] = useState<ProxyEngine>("uv");
+  const { defaultEngine, setDefaultEngine, shortcutSize } = useTheme();
+  const engine = defaultEngine;
+  const setEngine = (e: ProxyEngine) => setDefaultEngine(e);
   const [query, setQuery] = useState("");
 
   const visible = SHORTCUTS.filter((s) =>
@@ -47,7 +50,7 @@ export function Home() {
           e.preventDefault();
           window.open(getPolarisBrowserUrl(engine, normalizeUrl(query)), "_blank", "noopener,noreferrer");
         }}
-        className="liquid-glass flex w-full max-w-xl items-center gap-3 rounded-2xl px-4 py-3 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.6),0_20px_50px_-20px_rgba(var(--polaris-accent)/0.45)]"
+        className="liquid-glass-ghost flex w-full max-w-xl items-center gap-3 rounded-2xl px-4 py-3 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.6),0_20px_50px_-20px_rgba(var(--polaris-accent)/0.45)]"
       >
         <Search className="h-4 w-4 text-white/60" />
         <input
@@ -59,7 +62,7 @@ export function Home() {
         <kbd className="hidden rounded-md border border-white/15 px-1.5 py-0.5 text-[10px] text-white/55 md:inline">↵</kbd>
       </form>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/20 p-1 text-xs font-bold">
+      <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/8 bg-black/15 p-1 text-xs font-bold">
         {(["uv", "scramjet"] as const).map((next) => (
           <button
             key={next}
@@ -105,7 +108,7 @@ export function Home() {
         <div
           className="grid w-full justify-center gap-3"
           style={{
-            gridTemplateColumns: "repeat(auto-fit, minmax(76px, 88px))",
+            gridTemplateColumns: `repeat(auto-fit, minmax(${Math.round(76 * shortcutSize)}px, ${Math.round(88 * shortcutSize)}px))`,
             justifyContent: "center",
           }}
         >
@@ -115,7 +118,7 @@ export function Home() {
               href={getPolarisBrowserUrl(engine, s.url)}
               target="_blank"
               rel="noreferrer"
-              className="liquid-glass shortcut-card group flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl p-2 text-center"
+              className="liquid-glass-ghost shortcut-card group flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl p-2 text-center"
             >
               <img
                 src={`https://www.google.com/s2/favicons?domain=${s.url}&sz=128`}
