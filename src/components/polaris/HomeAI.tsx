@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Send, Code2, GraduationCap, Calendar, Sparkles, Bot, Search } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
 import logo from "@/assets/polaris-logo.png";
 
 type ModeId = "default" | "code" | "tutor" | "creative" | "precise";
@@ -24,7 +23,6 @@ const STARTERS: Record<ModeId, string[]> = {
 };
 
 export function HomeAI() {
-  const navigate = useNavigate();
   const [mode, setMode] = useState<ModeId>("default");
   const [q, setQ] = useState("");
 
@@ -32,7 +30,8 @@ export function HomeAI() {
     const text = prompt.trim();
     const params = new URLSearchParams({ mode });
     if (text) params.set("q", text);
-    navigate({ to: "/ai", search: Object.fromEntries(params) as never });
+    // Plain assignment avoids strict-search typing on the /ai route
+    window.location.assign(`/ai?${params.toString()}`);
   }
 
   return (
