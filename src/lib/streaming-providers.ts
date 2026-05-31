@@ -19,7 +19,6 @@ const vidfast = (host: string): Provider => ({
 });
 
 export const PROVIDERS: Provider[] = [
-  ...VIDFAST_HOSTS.map(vidfast),
   {
     id: "vidlink",
     label: "VidLink",
@@ -28,6 +27,7 @@ export const PROVIDERS: Provider[] = [
         ? `https://vidlink.pro/movie/${id}`
         : `https://vidlink.pro/tv/${id}/${s ?? 1}/${e ?? 1}`,
   },
+  ...VIDFAST_HOSTS.map(vidfast),
   {
     id: "vidking",
     label: "VidKing",
