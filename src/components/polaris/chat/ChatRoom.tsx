@@ -326,6 +326,23 @@ export function ChatRoom() {
   );
 }
 
+function PreviewBubble({ name, color, text }: { name: string; color: string; text: string }) {
+  return (
+    <div className="flex gap-3">
+      <div
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-sm font-black text-white"
+        style={{ background: `rgba(${color}/0.35)`, boxShadow: `inset 0 0 0 1px rgba(${color}/0.65)` }}
+      >
+        {name.slice(0, 1)}
+      </div>
+      <div className="min-w-0 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left">
+        <div className="text-xs font-black" style={{ color: `rgb(${color})` }}>{name}</div>
+        <div className="mt-1 text-sm leading-5 text-white/72">{text}</div>
+      </div>
+    </div>
+  );
+}
+
 function MessageBubble({ m, prevSame }: { m: Message; prevSame: boolean }) {
   const time = new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   return (
