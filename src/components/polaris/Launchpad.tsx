@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { getProxyUrl } from "@/lib/proxy-utils";
 
 type App = { name: string; url: string };
 
@@ -54,7 +55,7 @@ export function Launchpad({ open, onClose }: { open: boolean; onClose: () => voi
           {APPS.map((a) => (
             <a
               key={a.name}
-              href={`https://${a.url}`}
+              href={getProxyUrl("uv", a.url)}
               target="_blank"
               rel="noreferrer"
               className="group flex flex-col items-center gap-2"
