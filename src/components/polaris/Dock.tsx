@@ -3,10 +3,25 @@ import { Compass, SlidersHorizontal, Signal, Wifi, LayoutGrid } from "lucide-rea
 import logo from "@/assets/polaris-logo.png";
 import { Launchpad } from "./Launchpad";
 import { Link } from "@tanstack/react-router";
+import { useTheme } from "@/lib/theme-context";
+import { getPolarisBrowserUrl } from "@/lib/proxy-utils";
+
+// Mirror of the launcher catalog — keep in sync with Launchpad
+const PIN_CATALOG: Record<string, string> = {
+  YouTube: "youtube.com", Reddit: "reddit.com", Google: "google.com", TikTok: "tiktok.com",
+  Instagram: "instagram.com", "Twitter / X": "x.com", Snapchat: "web.snapchat.com",
+  Spotify: "spotify.com", SoundCloud: "soundcloud.com", Discord: "discord.com",
+  Gemini: "gemini.google.com", ChatGPT: "chatgpt.com", Claude: "claude.ai",
+  Perplexity: "perplexity.ai", Roblox: "roblox.com", "Now.gg": "now.gg",
+  Poki: "poki.com", CrazyGames: "crazygames.com", GitHub: "github.com",
+  Notion: "notion.so", Drive: "drive.google.com", Gmail: "mail.google.com",
+  Twitch: "twitch.tv", Netflix: "netflix.com",
+};
 
 export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
   const [now, setNow] = useState<Date | null>(null);
   const [launchpadOpen, setLaunchpadOpen] = useState(false);
+  const { dockSize, dockPins, defaultEngine } = useTheme();
 
   useEffect(() => {
     // Only run on the client to avoid SSR/CSR hydration mismatch.
@@ -26,7 +41,10 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
     <>
       <Launchpad open={launchpadOpen} onClose={() => setLaunchpadOpen(false)} />
       <div className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
-        <div className="liquid-glass-themed pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-3 overflow-x-auto rounded-2xl px-3 py-2 sm:gap-4 sm:px-4">
+        <div
+          className="liquid-glass-themed pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-3 overflow-x-auto rounded-2xl px-3 py-2 sm:gap-4 sm:px-4"
+          style={{ transform: `scale(${dockSize})`, transformOrigin: "bottom center" }}
+        >
         {/* Brand */}
         <div className="flex items-center gap-2 pr-1 sm:pr-2">
           <img src={logo} alt="Polaris One" className="h-7 w-7 rounded-lg object-contain" />
@@ -52,6 +70,29 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
         <button onClick={onOpenWallpaper} className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Change wallpaper">
           <SlidersHorizontal className="h-4 w-4" />
         </button>
+
+        {/* Pinned shortcuts */}
+        {dockPins.length > 0 && <span className="h-6 w-px bg-white/15" />}
+        {dockPins.map((name) => {
+          const url = PIN_CATALOG[name];
+          if (!url) return null;
+          return (
+            <a
+              key={name}
+              href={getPolarisBrowserUrl(defaultEngine, url)}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg p-1 text-white/80 transition hover:bg-white/10"
+              title={name}
+            >
+              <img
+                src={`https://www.google.com/s2/favicons?domain=${url}&sz=64`}
+                alt={name}
+                className="h-5 w-5 rounded"
+              />
+            </a>
+          );
+        })}
 
         {/* Network */}
         <div className="hidden items-center gap-1.5 text-white/85 sm:flex">
