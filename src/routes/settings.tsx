@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2 } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
@@ -15,6 +15,39 @@ const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Indigo",   rgb: "140 150 240", hex: "#8c96f0" },
   { label: "Forest",   rgb: "160 220 160", hex: "#a0dca0" },
   { label: "Crimson",  rgb: "230 80 90",   hex: "#e6505a" },
+  { label: "Ocean",    rgb: "90 170 240",  hex: "#5aaaf0" },
+  { label: "Mint",     rgb: "120 230 180", hex: "#78e6b4" },
+  { label: "Violet",   rgb: "180 130 240", hex: "#b482f0" },
+  { label: "Coral",    rgb: "255 120 140", hex: "#ff788c" },
+  { label: "Lemon",    rgb: "250 230 110", hex: "#fae66e" },
+  { label: "Slate",    rgb: "150 165 180", hex: "#96a5b4" },
+  { label: "Magenta",  rgb: "230 90 200",  hex: "#e65ac8" },
+  { label: "Cyan",     rgb: "80 210 230",  hex: "#50d2e6" },
+];
+
+type ThemePreset = {
+  id: string;
+  label: string;
+  desc: string;
+  ui: "dark" | "light";
+  glass: boolean;
+  accent: string; // rgb triplet
+  swatch: string; // gradient css
+};
+
+const THEME_PRESETS: ThemePreset[] = [
+  { id: "midnight",  label: "Midnight",    desc: "Deep dark + ember glow",      ui: "dark",  glass: true,  accent: "255 140 80",  swatch: "linear-gradient(135deg,#0a0910,#ff8c50)" },
+  { id: "aurora",    label: "Aurora",      desc: "Glassy mint over night sky",   ui: "dark",  glass: true,  accent: "140 220 200", swatch: "linear-gradient(135deg,#0b1a1f,#8cdcc8)" },
+  { id: "sakura",    label: "Sakura",      desc: "Soft pink dusk",               ui: "dark",  glass: true,  accent: "240 150 200", swatch: "linear-gradient(135deg,#1a0d18,#f096c8)" },
+  { id: "indigo",    label: "Indigo Dream",desc: "Cozy indigo + glass",          ui: "dark",  glass: true,  accent: "140 150 240", swatch: "linear-gradient(135deg,#0e0d22,#8c96f0)" },
+  { id: "forest",    label: "Forest",      desc: "Mossy green calm",             ui: "dark",  glass: true,  accent: "160 220 160", swatch: "linear-gradient(135deg,#0a1410,#a0dca0)" },
+  { id: "ocean",     label: "Ocean",       desc: "Deep blue, cool glass",        ui: "dark",  glass: true,  accent: "90 170 240",  swatch: "linear-gradient(135deg,#06101f,#5aaaf0)" },
+  { id: "sunrise",   label: "Sunrise",     desc: "Light UI + warm gold",         ui: "light", glass: true,  accent: "240 200 100", swatch: "linear-gradient(135deg,#fff3df,#f0c864)" },
+  { id: "paper",     label: "Paper",       desc: "Clean light, no glass",        ui: "light", glass: false, accent: "150 165 180", swatch: "linear-gradient(135deg,#f5f3ee,#96a5b4)" },
+  { id: "mono",      label: "Mono",        desc: "Flat dark, no glass",          ui: "dark",  glass: false, accent: "230 230 235", swatch: "linear-gradient(135deg,#0a0a0a,#e6e6eb)" },
+  { id: "vapor",     label: "Vapor",       desc: "Violet + magenta y2k",         ui: "dark",  glass: true,  accent: "230 90 200",  swatch: "linear-gradient(135deg,#1a0a22,#e65ac8)" },
+  { id: "coral",     label: "Coral",       desc: "Warm coral pop",               ui: "dark",  glass: true,  accent: "255 120 140", swatch: "linear-gradient(135deg,#1a0a10,#ff788c)" },
+  { id: "cyber",     label: "Cyber",       desc: "Neon cyan on black",           ui: "dark",  glass: true,  accent: "80 210 230",  swatch: "linear-gradient(135deg,#000814,#50d2e6)" },
 ];
 
 const DOCK_APP_CHOICES = [
@@ -43,6 +76,16 @@ function SettingsPage() {
   const { cloak, setCloakId, cloaks } = useTabCloak();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
 
+  function applyPreset(p: ThemePreset) {
+    setUITheme(p.ui);
+    setLiquidGlass(p.glass);
+    setCustomAccent(p.accent);
+  }
+
+  const activePresetId = THEME_PRESETS.find(
+    (p) => p.ui === uiTheme && p.glass === liquidGlass && p.accent === customAccent,
+  )?.id;
+
   return (
     <div className="min-h-screen px-4 pb-32 pt-8 sm:px-8">
       <div className="mx-auto max-w-4xl space-y-8">
@@ -55,6 +98,43 @@ function SettingsPage() {
             Personalize Polaris — theme, wallpaper, and accent.
           </p>
         </header>
+
+        {/* Theme presets */}
+        <section className="liquid-glass-themed rounded-2xl p-5">
+          <SectionTitle icon={Wand2} title="Theme presets" subtitle="One-tap looks — sets light/dark, glass, and accent" />
+          <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
+            {THEME_PRESETS.map((p) => {
+              const active = activePresetId === p.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => applyPreset(p)}
+                  className={`group relative overflow-hidden rounded-xl border p-0 text-left transition ${
+                    active ? "border-white scale-[1.02] shadow-lg" : "border-white/10 hover:border-white/30"
+                  }`}
+                >
+                  <div className="h-16 w-full" style={{ background: p.swatch }} />
+                  <div className="flex items-center justify-between gap-2 px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="truncate text-[12px] font-bold text-white">{p.label}</div>
+                      <div className="truncate text-[10px] text-white/55">{p.desc}</div>
+                    </div>
+                    <span
+                      className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold"
+                      style={{
+                        background: p.ui === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)",
+                        color: p.ui === "dark" ? "#fff" : "#000",
+                      }}
+                      title={p.ui === "dark" ? "Dark" : "Light"}
+                    >
+                      {p.ui === "dark" ? "D" : "L"}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         {/* Background Mode */}
         <section className="liquid-glass-themed rounded-2xl p-5">
