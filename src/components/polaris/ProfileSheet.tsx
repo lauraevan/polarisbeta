@@ -17,7 +17,7 @@ const PRESET_COLORS: { label: string; rgb: string }[] = [
 
 const PRESET_EMOJI = ["✨","🔥","🌙","🌸","🍂","☕️","🎮","🎬","🦊","🐉","💎","🌊"];
 // Lightweight roles the user can self-toggle. Real "official" roles are admin-only.
-const PRESET_ROLES = ["Cinephile","Gamer","Night Owl","Explorer","Cozy","Lurker","Caffeinated","Bookworm"];
+const PRESET_ROLES = ["Member","Gamer","Movies","Anime","Music","Chill","Lurker","Mod"];
 
 export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onClose: () => void; viewUserId?: string | null }) {
   const { profile, updateProfile, signOut } = useAuth();
@@ -269,7 +269,7 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
             <p className="mt-1.5 text-[10px] text-white/40">A little label that shows under your name. Official roles are handed out by the founder.</p>
           </Field>
 
-          <Field label="Vibe badges">
+          <Field label="Roles">
             <div className="flex flex-wrap gap-1.5">
               {PRESET_ROLES.map((r) => {
                 const on = (merged.roles ?? []).includes(r);
