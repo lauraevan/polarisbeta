@@ -38,7 +38,7 @@ export function PolarisBrowser() {
 
   function launch() {
     if (!ready) return;
-    setActiveSrc(src);
+    window.open(src, "_blank", "noopener,noreferrer");
   }
 
   return (
