@@ -473,6 +473,12 @@ function FlixInner() {
                   loading={trendingAll.isLoading}
                   onSelect={(item) => setSelected({ item, kind: inferKind(item) })}
                 />
+                <Row
+                  title="Just Added"
+                  items={latestMovies.data ?? []}
+                  loading={latestMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
                 {myListForTab.length > 0 && (
                   <Row
                     title="My List"
@@ -550,6 +556,15 @@ function FlixInner() {
               loading={trending.isLoading}
               onSelect={(item) => setSelected({ item, kind })}
             />
+
+            {tab !== "anime" && (
+              <Row
+                title="Just Added"
+                items={(tab === "movies" ? latestMovies.data : latestShows.data) ?? []}
+                loading={tab === "movies" ? latestMovies.isLoading : latestShows.isLoading}
+                onSelect={(item) => setSelected({ item, kind })}
+              />
+            )}
 
             {myListForTab.length > 0 && (
               <Row
