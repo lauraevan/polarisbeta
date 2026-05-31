@@ -3,7 +3,7 @@ import { Send, Code2, GraduationCap, Calendar, Sparkles, Bot, Search } from "luc
 import { useNavigate } from "@tanstack/react-router";
 import logo from "@/assets/polaris-logo.png";
 
-type ModeId = "default" | "code" | "tutor" | "planner" | "creative" | "precise";
+type ModeId = "default" | "code" | "tutor" | "creative" | "precise";
 type ModeTile = { id: ModeId; label: string; blurb: string; icon: React.ComponentType<{ className?: string }> };
 
 // Maps to PolarisAI's MODES (planner reuses "precise" if needed — keep ids in sync).
@@ -21,7 +21,6 @@ const STARTERS: Record<ModeId, string[]> = {
   tutor: ["Explain like I'm 12:", "Quiz me on…"],
   precise: ["Plan my week to…", "List the steps to…"],
   creative: ["Write a short story about…", "Brainstorm names for…"],
-  planner: ["Plan my week to…", "Outline steps for…"],
 };
 
 export function HomeAI() {
