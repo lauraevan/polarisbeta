@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
@@ -17,6 +17,12 @@ const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Crimson",  rgb: "230 80 90",   hex: "#e6505a" },
 ];
 
+const DOCK_APP_CHOICES = [
+  "YouTube", "Spotify", "Discord", "Reddit", "TikTok", "Instagram",
+  "Twitter / X", "ChatGPT", "Claude", "Gemini", "GitHub", "Netflix",
+  "Twitch", "Notion", "Drive", "Gmail", "Roblox", "Now.gg",
+];
+
 function hexToRgbTriplet(hex: string): string {
   const m = hex.replace("#", "");
   const n = m.length === 3 ? m.split("").map((c) => c + c).join("") : m;
@@ -27,7 +33,11 @@ function hexToRgbTriplet(hex: string): string {
 }
 
 function SettingsPage() {
-  const { mode, setMode, customAccent, setCustomAccent, outlineColor, setOutlineColor } = useTheme();
+  const {
+    mode, setMode, customAccent, setCustomAccent, outlineColor, setOutlineColor,
+    dockSize, setDockSize, shortcutSize, setShortcutSize, dockPins, setDockPins,
+    defaultEngine, setDefaultEngine,
+  } = useTheme();
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const { cloak, setCloakId, cloaks } = useTabCloak();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
@@ -201,6 +211,82 @@ function SettingsPage() {
                 </button>
               );
             })}
+          </div>
+        </section>
+
+        {/* Dock & shortcuts */}
+        <section className="liquid-glass-themed rounded-2xl p-5">
+          <SectionTitle icon={LayoutGrid} title="Dock & shortcuts" subtitle="Resize and personalize the dock" />
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-semibold text-white/80">Dock size</span>
+                <span className="text-[11px] tabular-nums text-white/45">{Math.round(dockSize * 100)}%</span>
+              </div>
+              <input
+                type="range" min={0.75} max={1.4} step={0.05}
+                value={dockSize}
+                onChange={(e) => setDockSize(parseFloat(e.target.value))}
+                className="w-full accent-white"
+              />
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-semibold text-white/80">Shortcut size</span>
+                <span className="text-[11px] tabular-nums text-white/45">{Math.round(shortcutSize * 100)}%</span>
+              </div>
+              <input
+                type="range" min={0.75} max={1.4} step={0.05}
+                value={shortcutSize}
+                onChange={(e) => setShortcutSize(parseFloat(e.target.value))}
+                className="w-full accent-white"
+              />
+            </div>
+          </div>
+          <div className="mt-5">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-white/80">
+              <Pin className="h-3.5 w-3.5" /> Pinned dock apps
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {DOCK_APP_CHOICES.map((name) => {
+                const on = dockPins.includes(name);
+                return (
+                  <button
+                    key={name}
+                    onClick={() =>
+                      setDockPins(on ? dockPins.filter((n) => n !== name) : [...dockPins, name])
+                    }
+                    className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${
+                      on
+                        ? "bg-white text-black"
+                        : "border border-white/10 bg-white/[0.04] text-white/65 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Proxy engine */}
+        <section className="liquid-glass-themed rounded-2xl p-5">
+          <SectionTitle icon={Shield} title="Default proxy" subtitle="Used by dock + Apps shortcuts" />
+          <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/20 p-1 text-xs font-bold">
+            {(["uv", "scramjet"] as const).map((e) => (
+              <button
+                key={e}
+                onClick={() => setDefaultEngine(e)}
+                className={`rounded-xl px-4 py-2 ${
+                  defaultEngine === e
+                    ? "bg-white text-black"
+                    : "text-white/65 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {e === "uv" ? "Ultraviolet" : "Scramjet"}
+              </button>
+            ))}
           </div>
         </section>
       </div>
