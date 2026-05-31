@@ -106,8 +106,10 @@ export type Database = {
           about_me: string | null
           accent_color: string
           avatar_emoji: string | null
+          avatar_url: string | null
           banner_color: string
           created_at: string
+          custom_role: string | null
           description: string | null
           display_name: string | null
           fav_game_tags: string[]
@@ -124,8 +126,10 @@ export type Database = {
           about_me?: string | null
           accent_color?: string
           avatar_emoji?: string | null
+          avatar_url?: string | null
           banner_color?: string
           created_at?: string
+          custom_role?: string | null
           description?: string | null
           display_name?: string | null
           fav_game_tags?: string[]
@@ -142,8 +146,10 @@ export type Database = {
           about_me?: string | null
           accent_color?: string
           avatar_emoji?: string | null
+          avatar_url?: string | null
           banner_color?: string
           created_at?: string
+          custom_role?: string | null
           description?: string | null
           display_name?: string | null
           fav_game_tags?: string[]
