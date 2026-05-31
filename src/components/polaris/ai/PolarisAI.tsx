@@ -65,6 +65,31 @@ const STARTERS = [
 ];
 
 const STORAGE_KEY = "polaris-ai-chats-v1";
+const LIMIT_KEY = "polaris-ai-limits-v1";
+const DAILY_LIMITS: Record<ModelTier, number> = { free: 25, premium: 8 };
+const COOLDOWN_MS = 2500;
+
+type LimitState = { day: string; free: number; premium: number; lastAt: number };
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadLimits(): LimitState {
+  if (typeof window === "undefined") return { day: todayKey(), free: 0, premium: 0, lastAt: 0 };
+  try {
+    const raw = localStorage.getItem(LIMIT_KEY);
+    const parsed = raw ? (JSON.parse(raw) as LimitState) : null;
+    if (!parsed || parsed.day !== todayKey()) return { day: todayKey(), free: 0, premium: 0, lastAt: 0 };
+    return parsed;
+  } catch {
+    return { day: todayKey(), free: 0, premium: 0, lastAt: 0 };
+  }
+}
+
+function saveLimits(s: LimitState) {
+  try { localStorage.setItem(LIMIT_KEY, JSON.stringify(s)); } catch { /* noop */ }
+}
 
 function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
