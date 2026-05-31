@@ -32,20 +32,23 @@ type Model = {
 const MODELS: Model[] = [
   // FREE
   { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash", blurb: "Fast · default", tier: "free", badge: "G", color: "bg-emerald-500" },
+  { id: "google/gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash Lite", blurb: "Cheap · quick", tier: "free", badge: "G", color: "bg-emerald-600" },
   { id: "openai/gpt-5-nano", label: "GPT-5 Nano", blurb: "Fast · light", tier: "free", badge: "5", color: "bg-zinc-700" },
   { id: "openai/gpt-5-mini", label: "GPT-5 Mini", blurb: "Smart · balanced", tier: "free", badge: "5", color: "bg-zinc-800" },
+  { id: "openai/gpt-5.4-nano", label: "GPT-5.4 Nano", blurb: "Reasoning · fast", tier: "free", badge: "5", color: "bg-zinc-700" },
   { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash", blurb: "Efficient", tier: "free", badge: "G", color: "bg-sky-500" },
   { id: "google/gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite", blurb: "Cheap · fast", tier: "free", badge: "G", color: "bg-sky-400" },
   // PREMIUM
   { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro", blurb: "Most capable", tier: "premium", badge: "G", color: "bg-indigo-500" },
+  { id: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", blurb: "Next-gen reasoning", tier: "premium", badge: "G", color: "bg-indigo-600" },
+  { id: "google/gemini-3.5-flash", label: "Gemini 3.5 Flash", blurb: "Agentic · fast", tier: "premium", badge: "G", color: "bg-sky-600" },
   { id: "openai/gpt-5", label: "GPT-5", blurb: "Frontier", tier: "premium", badge: "5", color: "bg-black" },
-  { id: "openai/gpt-5-mini", label: "GPT-5 Smart", blurb: "Balanced reasoning", tier: "premium", badge: "5", color: "bg-zinc-900" },
-  { id: "openai/gpt-5.4", label: "GPT-5.4", blurb: "Advanced reasoning", tier: "premium", badge: "5", color: "bg-zinc-900" },
+  { id: "openai/gpt-5.2", label: "GPT-5.2", blurb: "Enhanced reasoning", tier: "premium", badge: "5", color: "bg-zinc-900" },
+  { id: "openai/gpt-5.4", label: "GPT-5.4 (GN Maths)", blurb: "Advanced reasoning", tier: "premium", badge: "5", color: "bg-zinc-900" },
+  { id: "openai/gpt-5.4-mini", label: "GPT-5.4 Mini", blurb: "Balanced · cheap", tier: "premium", badge: "5", color: "bg-zinc-800" },
+  { id: "openai/gpt-5.4-pro", label: "GPT-5.4 Pro", blurb: "Premium reasoning", tier: "premium", badge: "5", color: "bg-zinc-950" },
   { id: "openai/gpt-5.5", label: "GPT-5.5", blurb: "State of the art", tier: "premium", badge: "5", color: "bg-zinc-950" },
-  { id: "deepseek/deepseek-chat", label: "DeepSeek V3", blurb: "Open · reasoning", tier: "premium", badge: "D", color: "bg-blue-600" },
-  { id: "deepseek/deepseek-r1", label: "DeepSeek R1", blurb: "Open · deep think", tier: "premium", badge: "D", color: "bg-blue-700" },
-  { id: "meta-llama/llama-3.3-70b", label: "Llama 3.3 70B", blurb: "Open · Meta", tier: "premium", badge: "L", color: "bg-orange-500" },
-  { id: "meta-llama/llama-3.1-405b", label: "Llama 3.1 405B", blurb: "Open · largest", tier: "premium", badge: "L", color: "bg-orange-600" },
+  { id: "openai/gpt-5.5-pro", label: "GPT-5.5 Pro", blurb: "Hardest problems", tier: "premium", badge: "5", color: "bg-black" },
 ];
 
 type Mode = { id: string; label: string; system: string };
@@ -66,8 +69,8 @@ const STARTERS = [
 
 const STORAGE_KEY = "polaris-ai-chats-v1";
 const LIMIT_KEY = "polaris-ai-limits-v1";
-const DAILY_LIMITS: Record<ModelTier, number> = { free: 25, premium: 8 };
-const COOLDOWN_MS = 2500;
+const DAILY_LIMITS: Record<ModelTier, number> = { free: 120, premium: 40 };
+const COOLDOWN_MS = 1200;
 
 type LimitState = { day: string; free: number; premium: number; lastAt: number };
 
