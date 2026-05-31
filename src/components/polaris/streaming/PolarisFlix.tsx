@@ -318,7 +318,7 @@ function FlixInner() {
           className="pointer-events-none absolute inset-0 -z-10"
           style={{
             background:
-              "radial-gradient(120% 60% at 50% 0%, rgba(255,140,40,0.18) 0%, rgba(180,60,20,0.10) 35%, rgba(0,0,0,0) 70%), linear-gradient(180deg, rgba(20,8,2,0.55) 0%, rgba(10,4,2,0.85) 100%)",
+              "radial-gradient(120% 60% at 50% 0%, rgba(255,150,55,0.26) 0%, rgba(200,70,25,0.14) 38%, rgba(0,0,0,0) 72%), radial-gradient(80% 50% at 100% 100%, rgba(255,90,40,0.18) 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg, rgba(24,10,4,0.6) 0%, rgba(10,4,2,0.9) 100%)",
           }}
         />
         {/* Top bar */}
