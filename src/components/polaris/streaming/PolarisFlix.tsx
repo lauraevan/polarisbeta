@@ -93,22 +93,24 @@ function Hero({
         <div className="mt-5 flex items-center gap-2.5">
           <button
             onClick={() => onPlay(item)}
-            className="flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-base font-bold text-black shadow-lg hover:bg-white/90"
+            className="flex items-center gap-2 rounded-xl px-7 py-3 text-base font-bold text-black shadow-lg transition hover:brightness-110"
+            style={{ backgroundColor: "rgb(var(--polaris-accent))", boxShadow: "0 10px 30px -10px rgb(var(--polaris-accent) / 0.6)" }}
           >
-            <Play className="h-5 w-5 fill-black" /> Play
+            <Play className="h-5 w-5 fill-black" /> Watch Now
           </button>
           <button
             onClick={() => onInfo(item)}
             className="liquid-glass flex items-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-white"
           >
-            <Info className="h-5 w-5" /> More info
+            <Info className="h-5 w-5" /> More Info
           </button>
           <div className="ml-3 hidden gap-1.5 sm:flex">
             {items.slice(0, 5).map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setI(idx)}
-                className={`h-1.5 rounded-full transition-all ${idx === i ? "w-8 bg-white" : "w-1.5 bg-white/40 hover:bg-white/70"}`}
+                className={`h-1.5 rounded-full transition-all ${idx === i ? "w-8" : "w-1.5 bg-white/40 hover:bg-white/70"}`}
+                style={idx === i ? { backgroundColor: "rgb(var(--polaris-accent))" } : undefined}
               />
             ))}
           </div>
