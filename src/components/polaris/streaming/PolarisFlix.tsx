@@ -203,6 +203,18 @@ function FlixInner() {
   const a24 = useQuery({
     queryKey: ["a24"], queryFn: () => tmdbApi.a24Style(), enabled: tab === "home" || tab === "movies",
   });
+  const blockbustersMovies = useQuery({
+    queryKey: ["blockbusters-movies"], queryFn: () => tmdbApi.blockbusters("movie"), enabled: tab === "home" || tab === "movies",
+  });
+  const acclaimedMovies = useQuery({
+    queryKey: ["acclaimed-movies"], queryFn: () => tmdbApi.criticallyAcclaimed("movie"), enabled: tab === "home" || tab === "movies",
+  });
+  const familyMovies = useQuery({
+    queryKey: ["family-movies"], queryFn: () => tmdbApi.familyNight(), enabled: tab === "home" || tab === "movies",
+  });
+  const thisYearMovies = useQuery({
+    queryKey: ["thisyear-movies"], queryFn: () => tmdbApi.thisYear("movie"), enabled: tab === "home" || tab === "movies",
+  });
 
   const trending = useQuery({
     queryKey: ["trending", tab],
@@ -278,7 +290,16 @@ function FlixInner() {
         />
       )}
 
-      <div className="min-h-screen pb-32">
+      <div className="relative min-h-screen pb-32">
+        {/* Warm autumn overlay so the wallpaper feels cinematic */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(120% 60% at 50% 0%, rgba(255,140,40,0.18) 0%, rgba(180,60,20,0.10) 35%, rgba(0,0,0,0) 70%), linear-gradient(180deg, rgba(20,8,2,0.55) 0%, rgba(10,4,2,0.85) 100%)",
+          }}
+        />
         {/* Top bar */}
         <header className="sticky top-0 z-30 flex items-center gap-3 px-4 pt-4 pb-3 sm:px-6">
           <div className="liquid-glass-themed flex w-full items-center gap-2 rounded-2xl px-3 py-2">
@@ -472,6 +493,30 @@ function FlixInner() {
                   title="A24 Picks"
                   items={a24.data ?? []}
                   loading={a24.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Blockbuster Hits"
+                  items={blockbustersMovies.data ?? []}
+                  loading={blockbustersMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Critically Acclaimed"
+                  items={acclaimedMovies.data ?? []}
+                  loading={acclaimedMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title="Family Night"
+                  items={familyMovies.data ?? []}
+                  loading={familyMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <Row
+                  title={`New in ${new Date().getFullYear()}`}
+                  items={thisYearMovies.data ?? []}
+                  loading={thisYearMovies.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
                 />
               </>
