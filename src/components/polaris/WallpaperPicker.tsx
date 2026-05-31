@@ -30,7 +30,7 @@ export function WallpaperPicker({
     <>
       {!hideLauncher && (
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(!open)}
         className="liquid-glass fixed right-5 top-5 z-30 flex items-center gap-2 rounded-full px-3.5 py-2 text-xs text-white/90 hover:text-white"
         style={{
           boxShadow: `0 10px 30px -10px rgba(var(--polaris-accent)/0.6), inset 0 0 0 1px rgba(var(--polaris-accent)/0.35)`,
