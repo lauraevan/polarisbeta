@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_channels: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          emoji: string | null
+          id: string
+          name: string
+          slug: string
+          topic: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          name: string
+          slug: string
+          topic?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          topic?: string | null
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          accent_color: string | null
+          attachments: Json
+          avatar_emoji: string | null
+          channel_id: string
+          content: string | null
+          created_at: string
+          id: string
+          reply_to: string | null
+          user_id: string
+          username: string
+        }
+        Insert: {
+          accent_color?: string | null
+          attachments?: Json
+          avatar_emoji?: string | null
+          channel_id: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          reply_to?: string | null
+          user_id: string
+          username: string
+        }
+        Update: {
+          accent_color?: string | null
+          attachments?: Json
+          avatar_emoji?: string | null
+          channel_id?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          reply_to?: string | null
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           about_me: string | null
