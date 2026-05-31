@@ -143,6 +143,27 @@ export function PolarisAI() {
     if (loaded.length) setActiveId(loaded[0].id);
   }, []);
 
+  // Hydrate ?mode=X&q=... so the homepage AI launcher can route into a
+  // specific mode (Coding / Learning / Planning…) with an initial prompt.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const modeId = params.get("mode");
+    if (modeId) {
+      const m = MODES.find((x) => x.id === modeId);
+      if (m) setMode(m);
+    }
+    const q = params.get("q");
+    if (q) {
+      // small delay so the chat list is hydrated first
+      const t = setTimeout(() => send(q), 50);
+      // strip the params so refresh doesn't re-send
+      window.history.replaceState({}, "", window.location.pathname);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (chats.length) saveChats(chats);
   }, [chats]);
