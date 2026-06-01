@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Coins, Flame, Sparkles, Check, Lock, Gift, Trophy, ShoppingBag } from "lucide-react";
+import { Coins, Flame, Sparkles, Check, Lock, Gift, Trophy, ShoppingBag, Palette, Stars, Award, Crown } from "lucide-react";
 import { getShopState, purchaseItem, claimQuest } from "@/lib/shop.functions";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 
 type Tab = "shop" | "quests";
+type ShopFilter = "all" | "bundle" | "theme" | "accessory" | "badge";
+type ShopSort = "featured" | "price-asc" | "price-desc" | "name";
 
 export function Shop() {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("shop");
+  const [filter, setFilter] = useState<ShopFilter>("all");
+  const [sort, setSort] = useState<ShopSort>("featured");
   const fetchState = useServerFn(getShopState);
   const buyFn = useServerFn(purchaseItem);
   const claimFn = useServerFn(claimQuest);
@@ -53,6 +57,15 @@ export function Shop() {
   const themes = items.filter((i) => i.kind === "theme");
   const accessories = items.filter((i) => i.kind === "accessory");
   const credItems = items.filter((i) => i.kind === "badge" || i.kind === "icon");
+
+  const sortItems = (list: Item[]) => {
+    const arr = [...list];
+    if (sort === "price-asc") arr.sort((a, b) => (a.price_coins ?? a.price_basic_credits ?? 0) - (b.price_coins ?? b.price_basic_credits ?? 0));
+    else if (sort === "price-desc") arr.sort((a, b) => (b.price_coins ?? b.price_basic_credits ?? 0) - (a.price_coins ?? a.price_basic_credits ?? 0));
+    else if (sort === "name") arr.sort((a, b) => a.name.localeCompare(b.name));
+    return arr;
+  };
+  const show = (k: ShopFilter) => filter === "all" || filter === k;
 
   return (
     <div
@@ -101,34 +114,73 @@ export function Shop() {
         ) : tab === "shop" ? (
           <>
             <FeaturedBanner />
+
+            {/* Customization toolbar */}
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/80">Filter</span>
+              {(["all", "bundle", "theme", "accessory", "badge"] as ShopFilter[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-bold capitalize transition ${
+                    filter === f
+                      ? "bg-amber-300 text-stone-900 shadow"
+                      : "bg-black/40 text-amber-100/80 ring-1 ring-amber-200/20 hover:bg-black/60"
+                  }`}
+                >
+                  {f === "all" ? "All" : f === "accessory" ? "Accessories" : `${f}s`}
+                </button>
+              ))}
+              <span className="mx-1 h-4 w-px self-center bg-white/15" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/80">Sort</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as ShopSort)}
+                className="rounded-full bg-black/40 px-3 py-1 text-[11px] font-bold text-amber-100/90 ring-1 ring-amber-200/20 focus:outline-none"
+              >
+                <option value="featured" className="bg-stone-950">Featured</option>
+                <option value="price-asc" className="bg-stone-950">Price: Low → High</option>
+                <option value="price-desc" className="bg-stone-950">Price: High → Low</option>
+                <option value="name" className="bg-stone-950">Name (A–Z)</option>
+              </select>
+            </div>
+
+            {show("bundle") && (
             <Section title="Featured Bundles" subtitle="Save coins with curated packs">
               <Grid cards={3}>
-                {bundles.map((b) => (
+                {sortItems(bundles).map((b) => (
                   <BundleCard key={b.id} item={b} owned={ownedSet.has(b.id)} onBuy={() => buy.mutate(b.id)} busy={buy.isPending} />
                 ))}
               </Grid>
             </Section>
+            )}
+            {show("theme") && (
             <Section title="Themes" subtitle="Warm palettes for chat surfaces" icon={<Flame className="h-4 w-4 text-amber-300" />}>
               <Grid cards={4}>
-                {themes.map((i) => (
+                {sortItems(themes).map((i) => (
                   <ItemCard key={i.id} item={i} owned={ownedSet.has(i.id)} onBuy={() => buy.mutate(i.id)} busy={buy.isPending} />
                 ))}
               </Grid>
             </Section>
+            )}
+            {show("accessory") && (
             <Section title="Banner Accessories" subtitle="Animated touches for your profile">
               <Grid cards={4}>
-                {accessories.map((i) => (
+                {sortItems(accessories).map((i) => (
                   <ItemCard key={i.id} item={i} owned={ownedSet.has(i.id)} onBuy={() => buy.mutate(i.id)} busy={buy.isPending} />
                 ))}
               </Grid>
             </Section>
+            )}
+            {show("badge") && (
             <Section title="Badges & Frames" subtitle="Earned with credits, not coins" icon={<Trophy className="h-4 w-4 text-amber-300" />}>
               <Grid cards={4}>
-                {credItems.map((i) => (
+                {sortItems(credItems).map((i) => (
                   <ItemCard key={i.id} item={i} owned={ownedSet.has(i.id)} onBuy={() => buy.mutate(i.id)} busy={buy.isPending} credits />
                 ))}
               </Grid>
             </Section>
+            )}
           </>
         ) : (
           <QuestsPanel
@@ -260,6 +312,23 @@ function ItemCard({ item, owned, onBuy, busy, credits }: { item: Item; owned: bo
 }
 
 function BundleCard({ item, owned, onBuy, busy }: { item: Item; owned: boolean; onBuy: () => void; busy: boolean }) {
+  // Map bundle_contents prefixes -> icon + label so the cover reflects what's inside
+  const contentSummary = (() => {
+    const counts = { theme: 0, accessory: 0, badge: 0, icon: 0 } as Record<string, number>;
+    for (const c of item.bundle_contents) {
+      if (c.startsWith("theme.")) counts.theme++;
+      else if (c.startsWith("acc.")) counts.accessory++;
+      else if (c.startsWith("badge.")) counts.badge++;
+      else if (c.startsWith("icon.")) counts.icon++;
+    }
+    return [
+      { key: "theme", n: counts.theme, Icon: Palette, label: "Themes", tint: "from-rose-400 to-amber-500" },
+      { key: "accessory", n: counts.accessory, Icon: Stars, label: "Accessories", tint: "from-amber-300 to-orange-500" },
+      { key: "badge", n: counts.badge, Icon: Award, label: "Badges", tint: "from-emerald-400 to-amber-500" },
+      { key: "icon", n: counts.icon, Icon: Crown, label: "Icons", tint: "from-violet-400 to-amber-500" },
+    ].filter((x) => x.n > 0);
+  })();
+
   return (
     <div
       className="group relative overflow-hidden rounded-2xl border border-amber-200/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-15px_rgba(255,170,90,0.55)]"
@@ -273,9 +342,32 @@ function BundleCard({ item, owned, onBuy, busy }: { item: Item; owned: boolean; 
         <div className="mb-3 flex items-center gap-2">
           <Gift className="h-4 w-4 text-amber-200" />
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-100/85">Bundle</span>
+          <span className="ml-auto rounded-full bg-black/35 px-2 py-0.5 text-[9px] font-bold text-amber-100/90 ring-1 ring-amber-200/25">
+            {item.bundle_contents.length} items
+          </span>
         </div>
         <h4 className="text-lg font-black text-amber-50 drop-shadow">{item.name}</h4>
         <p className="mt-1 text-xs text-amber-100/75">{item.description}</p>
+
+        {/* Icon summary of bundle contents */}
+        {contentSummary.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {contentSummary.map(({ key, n, Icon, label, tint }) => (
+              <div
+                key={key}
+                className="flex items-center gap-1.5 rounded-lg bg-black/40 px-2 py-1 ring-1 ring-amber-200/20"
+                title={`${n} ${label}`}
+              >
+                <span className={`grid h-5 w-5 place-items-center rounded-md bg-gradient-to-br ${tint} text-stone-950 shadow-[0_2px_8px_rgba(255,170,80,0.45)]`}>
+                  <Icon className="h-3 w-3" strokeWidth={2.5} />
+                </span>
+                <span className="text-[10px] font-bold text-amber-50">×{n}</span>
+                <span className="text-[10px] text-amber-100/70">{label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="mt-3 flex flex-wrap gap-1">
           {item.bundle_contents.map((c) => (
             <span key={c} className="rounded-md bg-black/35 px-1.5 py-0.5 text-[10px] font-semibold text-amber-100/90 ring-1 ring-amber-200/20">
