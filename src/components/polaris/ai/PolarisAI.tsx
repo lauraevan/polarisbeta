@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Copy,
   Code2,
+  Coins,
   GraduationCap,
   Lightbulb,
   PencilLine,
@@ -13,12 +14,15 @@ import {
   Search,
   Send,
   Settings2,
+  Sparkles,
   Trash2,
   X,
   Zap,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useAuth } from "@/lib/auth-context";
+import { useServerFn } from "@tanstack/react-start";
+import { getAiWallet, exchangeCoinsForCredits, consumeAiCredit } from "@/lib/shop.functions";
 
 type Role = "user" | "assistant";
 type ChatMessage = { id: string; role: Role; content: string };
@@ -137,8 +141,33 @@ export function PolarisAI() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
+  const [walletOpen, setWalletOpen] = useState(false);
+  const [wallet, setWallet] = useState<{ coins: number; basic_credits: number; premium_credits: number } | null>(null);
+  const [exchanging, setExchanging] = useState<"basic" | "premium" | null>(null);
   const [search, setSearch] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const fetchWallet = useServerFn(getAiWallet);
+  const doExchange = useServerFn(exchangeCoinsForCredits);
+  const doConsume = useServerFn(consumeAiCredit);
+
+  useEffect(() => {
+    if (!isSignedIn) { setWallet(null); return; }
+    fetchWallet().then(setWallet).catch(() => {/* noop */});
+  }, [isSignedIn, fetchWallet]);
+
+  async function exchange(tier: "basic" | "premium") {
+    if (!isSignedIn) return;
+    setExchanging(tier);
+    try {
+      const next = await doExchange({ data: { tier, amount: 1 } });
+      setWallet({ coins: next.coins, basic_credits: next.basic_credits, premium_credits: next.premium_credits });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Exchange failed");
+    } finally {
+      setExchanging(null);
+    }
+  }
 
   // hydrate
   useEffect(() => {
@@ -213,12 +242,24 @@ export function PolarisAI() {
       return;
     }
     if (used >= cap) {
-      setError(
-        isSignedIn
-          ? `Daily ${model.tier} limit reached (${cap}/day). Try again tomorrow.`
-          : `Guest limit reached (${cap}/day). Sign in for ${DAILY_LIMITS_USER.free}/day + premium models.`,
-      );
-      return;
+      // Daily quota exhausted — try spending a banked AI credit.
+      const tier = model.tier === "premium" ? "premium" : "basic";
+      const have = tier === "premium" ? (wallet?.premium_credits ?? 0) : (wallet?.basic_credits ?? 0);
+      if (!isSignedIn || have < 1) {
+        setError(
+          isSignedIn
+            ? `Daily ${model.tier} limit reached. Trade coins for ${tier} credits to keep chatting.`
+            : `Guest limit reached (${cap}/day). Sign in to bank credits and unlock premium.`,
+        );
+        return;
+      }
+      try {
+        const next = await doConsume({ data: { tier } });
+        setWallet({ coins: next.coins, basic_credits: next.basic_credits, premium_credits: next.premium_credits });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Credit spend failed");
+        return;
+      }
     }
     saveLimits({
       day: todayKey(),
