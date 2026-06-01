@@ -63,7 +63,12 @@ function iconForChannel(slug: string) {
   return Hash;
 }
 
-type Channel = { id: string; slug: string; name: string; description: string | null; emoji: string | null };
+type Channel = {
+  id: string; slug: string; name: string;
+  description: string | null; emoji: string | null;
+  filter_enabled?: boolean | null;
+  allowed_role?: string | null;
+};
 type Attachment = { kind: "image" | "gif" | "drawing" | "link"; url: string };
 type Message = {
   id: string;
@@ -120,7 +125,12 @@ export function ChatRoom() {
   useEffect(() => {
     if (!user) return;
     supabase.from("chat_channels").select("*").order("created_at", { ascending: true }).then(({ data }) => {
-      const list = (data || []) as Channel[];
+      const raw = (data || []) as Channel[];
+      const role = profile?.custom_role ?? null;
+      const isOwner = !!(profile as { is_owner?: boolean } | null)?.is_owner;
+      const list = raw.filter((c) =>
+        isOwner || !c.allowed_role || c.allowed_role === role,
+      );
       setChannels(list);
       if (!activeId && list[0]) setActiveId(list[0].id);
     });
@@ -132,7 +142,7 @@ export function ChatRoom() {
       .subscribe();
     return () => { sub.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, profile?.custom_role, (profile as { is_owner?: boolean } | null)?.is_owner]);
 
   // Load messages + subscribe per channel
   useEffect(() => {
@@ -317,6 +327,21 @@ export function ChatRoom() {
     async (content: string | null, attachments: Attachment[] = []) => {
       if (!user || !profile || !activeId) return;
       if (!content?.trim() && attachments.length === 0) return;
+      // Channel-level role restriction & basic filter (server is the source of
+      // truth; this is a UX guard so banned text never round-trips).
+      const ch = channels.find((c) => c.id === activeId);
+      const isOwner = !!(profile as { is_owner?: boolean } | null)?.is_owner;
+      if (ch?.allowed_role && !isOwner && profile.custom_role !== ch.allowed_role) {
+        setDmWarning(`#${ch.name} is restricted to ${ch.allowed_role}.`);
+        return;
+      }
+      if (ch?.filter_enabled && content) {
+        const bad = /\b(fuck|shit|bitch|nigger|faggot|retard|cunt|slur)\b/i;
+        if (bad.test(content)) {
+          setDmWarning(`Filter is on in #${ch.name} — message blocked.`);
+          return;
+        }
+      }
       setSending(true);
       const { error } = await supabase.from("chat_messages").insert({
         channel_id: activeId,
@@ -331,7 +356,7 @@ export function ChatRoom() {
       setSending(false);
       if (!error) setText("");
     },
-    [user, profile, activeId],
+    [user, profile, activeId, channels],
   );
 
   const sendGartic = useCallback(async () => {

@@ -130,8 +130,9 @@ PROVIDERS.push(
   },
 );
 
-// StreameX — community-requested. Primary embed pattern.
-PROVIDERS.unshift(
+// StreameX — kept as a fallback mirror (append, NOT first). VidLink is the
+// primary movie/TV source.
+PROVIDERS.push(
   {
     id: "streamex",
     label: "StreameX",
