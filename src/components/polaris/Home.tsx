@@ -104,6 +104,7 @@ function HomeWeb() {
     <div className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex-col items-center justify-center px-5 py-10 lg:py-16">
       {/* Compact title */}
       <div className="mb-6 lg:mb-10 text-center">
+        <DateStamp />
         <div className="text-[10px] lg:text-xs uppercase tracking-[0.32em] text-white/70">Polaris One</div>
         <div className="mt-1 text-[11px] lg:text-sm text-white/45">Your warm cinematic web hub</div>
       </div>
@@ -200,6 +201,24 @@ function HomeWeb() {
           Support T9 at t9os.space — our partner OS
         </a>
       </div>
+    </div>
+  );
+}
+
+function DateStamp() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const label = now.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  return (
+    <div className="mb-1 text-[10px] lg:text-[11px] font-medium tracking-wide text-white/50">
+      {label}
     </div>
   );
 }
