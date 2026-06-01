@@ -11,6 +11,7 @@ import { tenorSearch, type TenorGif } from "@/lib/tenor";
 import { DrawingCanvas } from "./DrawingCanvas";
 import { AuthDialog } from "../AuthDialog";
 import { ProfileSheet } from "../ProfileSheet";
+import { checkDmSafety } from "@/lib/dm-filter";
 import logo from "@/assets/polaris-logo.png";
 
 type Tab = "global" | "dms" | "notifs";
@@ -86,6 +87,10 @@ export function ChatRoom() {
   const [tab, setTab] = useState<Tab>("global");
   const [channels, setChannels] = useState<Channel[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Recently opened channels (most recent first), used to render the tabs strip
+  // at the top of the chat — quick switching without going back to the sidebar.
+  const [openTabs, setOpenTabs] = useState<string[]>([]);
+  const [dmWarning, setDmWarning] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -160,6 +165,22 @@ export function ChatRoom() {
   }, [activeId, user]);
 
   const active = useMemo(() => channels.find((c) => c.id === activeId) ?? null, [channels, activeId]);
+
+  // Maintain the recently-opened channel tab strip whenever a new channel becomes active.
+  useEffect(() => {
+    if (!activeId) return;
+    setOpenTabs((prev) => {
+      const next = [activeId, ...prev.filter((id) => id !== activeId)];
+      return next.slice(0, 6);
+    });
+  }, [activeId]);
+  const closeTab = useCallback((id: string) => {
+    setOpenTabs((prev) => {
+      const next = prev.filter((t) => t !== id);
+      if (id === activeId && next.length > 0) setActiveId(next[0]);
+      return next;
+    });
+  }, [activeId]);
 
   // ===== DMs: load partner list & subscribe =====
   useEffect(() => {
@@ -247,6 +268,22 @@ export function ChatRoom() {
   const sendDM = useCallback(async () => {
     if (!user || !profile || !dmActiveUserId || !dmText.trim()) return;
     const body = dmText.trim();
+    const safety = checkDmSafety(body);
+    if (!safety.ok) {
+      setDmWarning(safety.reason);
+      // Log silently for moderation review. Best effort — never blocks UX.
+      try {
+        await supabase.from("dm_moderation_flags").insert({
+          sender_id: user.id,
+          recipient_id: dmActiveUserId,
+          blocked_content: body.slice(0, 500),
+          matched_terms: safety.matched,
+          severity: "high",
+        });
+      } catch { /* ignore log failure */ }
+      return;
+    }
+    setDmWarning(null);
     setDmText("");
     await supabase.from("direct_messages").insert({
       sender_id: user.id,
