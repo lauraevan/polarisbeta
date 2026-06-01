@@ -460,6 +460,10 @@ function FlixInner() {
 
         {!searchOpen && (
           <>
+            {tab === "live" ? (
+              <LiveTV />
+            ) : (
+            <>
             {heroItems.length > 0 && (
               <Hero
                 items={heroItems}
@@ -651,6 +655,8 @@ function FlixInner() {
                 onSelect={(item) => setSelected({ item, kind })}
               />
             ))}
+            </>
+            )}
             </>
             )}
           </>
