@@ -27,7 +27,7 @@ type AdminUser = {
 type AdminChannel = { id: string; slug: string; name: string; emoji: string | null };
 
 function AdminPage() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
   const { isAdmin, lock } = useAdmin();
   const navigate = useNavigate();
 
@@ -68,10 +68,17 @@ function AdminPage() {
     }
   };
 
+  // Ensure we have the freshest profile (is_owner may have just been granted).
+  useEffect(() => { if (user) refreshProfile(); /* eslint-disable-next-line */ }, [user]);
   useEffect(() => { if (isAdmin) refresh(); /* eslint-disable-next-line */ }, [isAdmin]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/" />;
+  // Wait for profile to hydrate before deciding to bounce — otherwise the
+  // admin route flashes a redirect before is_owner has loaded.
+  if (!profile) {
+    return <div className="fixed inset-0 grid place-items-center bg-[#06060a] text-white/60 text-sm">Loading admin…</div>;
+  }
   if (!isAdmin) return <Navigate to="/settings" />;
 
   async function run(fn: () => Promise<unknown>, ok: string) {

@@ -6,6 +6,7 @@ import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
 import { useTabCloak } from "@/lib/tab-cloaker";
 import { useAdmin } from "@/lib/admin-context";
+import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
 import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
@@ -91,6 +92,7 @@ function SettingsPage() {
   const { cloak, setCloakId, cloaks } = useTabCloak();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
   const { isAdmin, isOwner, unlock, lock } = useAdmin();
+  const { refreshProfile } = useAuth();
   const verify = useServerFn(verifyAdminKey);
   const [adminKey, setAdminKey] = useState("");
   const [adminMsg, setAdminMsg] = useState<string | null>(null);
@@ -102,6 +104,7 @@ function SettingsPage() {
     try {
       await verify({ data: { key: adminKey } });
       unlock();
+      await refreshProfile();
       setAdminKey("");
       setAdminMsg("Access granted. Open the admin panel above.");
     } catch (e) {
