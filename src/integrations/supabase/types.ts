@@ -450,6 +450,8 @@ export type Database = {
         | "customize_profile"
         | "try_wallpaper"
         | "daily_login"
+        | "shop_visit"
+        | "shop_purchase"
       shop_item_kind: "theme" | "accessory" | "badge" | "icon" | "bundle"
     }
     CompositeTypes: {
@@ -592,6 +594,8 @@ export const Constants = {
         "customize_profile",
         "try_wallpaper",
         "daily_login",
+        "shop_visit",
+        "shop_purchase",
       ],
       shop_item_kind: ["theme", "accessory", "badge", "icon", "bundle"],
     },
