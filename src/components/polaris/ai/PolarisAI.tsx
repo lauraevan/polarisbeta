@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Copy,
   Code2,
+  Coins,
   GraduationCap,
   Lightbulb,
   PencilLine,
@@ -13,12 +14,15 @@ import {
   Search,
   Send,
   Settings2,
+  Sparkles,
   Trash2,
   X,
   Zap,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useAuth } from "@/lib/auth-context";
+import { useServerFn } from "@tanstack/react-start";
+import { getAiWallet, exchangeCoinsForCredits, consumeAiCredit } from "@/lib/shop.functions";
 
 type Role = "user" | "assistant";
 type ChatMessage = { id: string; role: Role; content: string };
@@ -137,8 +141,33 @@ export function PolarisAI() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
+  const [walletOpen, setWalletOpen] = useState(false);
+  const [wallet, setWallet] = useState<{ coins: number; basic_credits: number; premium_credits: number } | null>(null);
+  const [exchanging, setExchanging] = useState<"basic" | "premium" | null>(null);
   const [search, setSearch] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const fetchWallet = useServerFn(getAiWallet);
+  const doExchange = useServerFn(exchangeCoinsForCredits);
+  const doConsume = useServerFn(consumeAiCredit);
+
+  useEffect(() => {
+    if (!isSignedIn) { setWallet(null); return; }
+    fetchWallet().then(setWallet).catch(() => {/* noop */});
+  }, [isSignedIn, fetchWallet]);
+
+  async function exchange(tier: "basic" | "premium") {
+    if (!isSignedIn) return;
+    setExchanging(tier);
+    try {
+      const next = await doExchange({ data: { tier, amount: 1 } });
+      setWallet({ coins: next.coins, basic_credits: next.basic_credits, premium_credits: next.premium_credits });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Exchange failed");
+    } finally {
+      setExchanging(null);
+    }
+  }
 
   // hydrate
   useEffect(() => {
@@ -213,12 +242,24 @@ export function PolarisAI() {
       return;
     }
     if (used >= cap) {
-      setError(
-        isSignedIn
-          ? `Daily ${model.tier} limit reached (${cap}/day). Try again tomorrow.`
-          : `Guest limit reached (${cap}/day). Sign in for ${DAILY_LIMITS_USER.free}/day + premium models.`,
-      );
-      return;
+      // Daily quota exhausted — try spending a banked AI credit.
+      const tier = model.tier === "premium" ? "premium" : "basic";
+      const have = tier === "premium" ? (wallet?.premium_credits ?? 0) : (wallet?.basic_credits ?? 0);
+      if (!isSignedIn || have < 1) {
+        setError(
+          isSignedIn
+            ? `Daily ${model.tier} limit reached. Trade coins for ${tier} credits to keep chatting.`
+            : `Guest limit reached (${cap}/day). Sign in to bank credits and unlock premium.`,
+        );
+        return;
+      }
+      try {
+        const next = await doConsume({ data: { tier } });
+        setWallet({ coins: next.coins, basic_credits: next.basic_credits, premium_credits: next.premium_credits });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Credit spend failed");
+        return;
+      }
     }
     saveLimits({
       day: todayKey(),
@@ -478,6 +519,67 @@ export function PolarisAI() {
             >
               <Plus className="h-5 w-5" />
             </button>
+
+            {isSignedIn && (
+              <div className="relative">
+                <button
+                  onClick={() => { setWalletOpen((o) => !o); setModelOpen(false); setModeOpen(false); }}
+                  className="flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-amber-500/10 px-2.5 py-1.5 text-xs font-semibold text-amber-100 hover:bg-amber-500/20"
+                  title="Coins & AI credits"
+                >
+                  <Coins className="h-3.5 w-3.5" />
+                  {wallet?.coins ?? 0}
+                  <span className="hidden text-amber-200/70 sm:inline">·</span>
+                  <span className="hidden text-amber-200/90 sm:inline">{(wallet?.basic_credits ?? 0)}b / {(wallet?.premium_credits ?? 0)}p</span>
+                </button>
+                {walletOpen && (
+                  <div className="liquid-glass-strong absolute right-0 top-[calc(100%+8px)] z-40 w-[280px] overflow-hidden rounded-2xl border border-white/10 p-3">
+                    <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/80">Polaris Wallet</div>
+                    <div className="mb-3 grid grid-cols-3 gap-2 text-center">
+                      <div className="rounded-xl bg-amber-500/15 p-2">
+                        <div className="text-base font-black text-amber-100">{wallet?.coins ?? 0}</div>
+                        <div className="text-[9px] uppercase tracking-wider text-amber-200/70">Coins</div>
+                      </div>
+                      <div className="rounded-xl bg-emerald-500/15 p-2">
+                        <div className="text-base font-black text-emerald-100">{wallet?.basic_credits ?? 0}</div>
+                        <div className="text-[9px] uppercase tracking-wider text-emerald-200/70">Basic</div>
+                      </div>
+                      <div className="rounded-xl bg-indigo-500/15 p-2">
+                        <div className="text-base font-black text-indigo-100">{wallet?.premium_credits ?? 0}</div>
+                        <div className="text-[9px] uppercase tracking-wider text-indigo-200/70">Premium</div>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <button
+                        onClick={() => exchange("basic")}
+                        disabled={exchanging !== null || (wallet?.coins ?? 0) < 25}
+                        className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-xs hover:bg-white/10 disabled:opacity-50"
+                      >
+                        <span className="flex items-center gap-2 text-white">
+                          <Sparkles className="h-3.5 w-3.5 text-emerald-300" />
+                          Trade <b>25 coins</b> → <b>1 basic credit</b>
+                        </span>
+                        <span className="text-emerald-200/80">+1</span>
+                      </button>
+                      <button
+                        onClick={() => exchange("premium")}
+                        disabled={exchanging !== null || (wallet?.coins ?? 0) < 50}
+                        className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-xs hover:bg-white/10 disabled:opacity-50"
+                      >
+                        <span className="flex items-center gap-2 text-white">
+                          <Sparkles className="h-3.5 w-3.5 text-indigo-300" />
+                          Trade <b>50 coins</b> → <b>1 premium credit</b>
+                        </span>
+                        <span className="text-indigo-200/80">+1</span>
+                      </button>
+                    </div>
+                    <div className="mt-3 text-[10px] leading-relaxed text-white/45">
+                      Credits unlock extra AI messages past your daily quota. They can't buy items — coins do that in the Shop.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </header>
 
