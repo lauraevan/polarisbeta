@@ -641,24 +641,56 @@ export function ChatRoom() {
       <main className="flex h-full min-w-0 flex-1 flex-col">
         {/* Header */}
         <header
-          className="flex items-center gap-3 border-b border-white/10 px-4 py-3 sm:px-6"
+          className="flex flex-col gap-2 border-b border-white/10 px-4 py-3 sm:px-6"
           style={{ background: "rgba(20,12,10,0.55)", backdropFilter: "blur(20px) saturate(160%)" }}
         >
-          <Hash className="h-4 w-4 text-white/40" />
-          <div className="min-w-0">
-            <div className="truncate text-sm font-bold text-white">{active?.name || "Chat"}</div>
-            {active?.description && (
-              <div className="truncate text-[11px] text-white/45">{active.description}</div>
-            )}
+          <div className="flex items-center gap-3">
+            <Hash className="h-4 w-4 text-white/40" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-bold text-white">{active?.name || "Chat"}</div>
+              {active?.description && (
+                <div className="truncate text-[11px] text-white/45">{active.description}</div>
+              )}
+            </div>
+            <select
+              className="sm:hidden rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+              value={activeId ?? ""}
+              onChange={(e) => setActiveId(e.target.value)}
+            >
+              {channels.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
+            </select>
           </div>
-          {/* mobile channel picker */}
-          <select
-            className="sm:hidden ml-auto rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
-            value={activeId ?? ""}
-            onChange={(e) => setActiveId(e.target.value)}
-          >
-            {channels.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
-          </select>
+          {openTabs.length > 1 && (
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {openTabs.map((id) => {
+                const ch = channels.find((c) => c.id === id);
+                if (!ch) return null;
+                const isActive = id === activeId;
+                return (
+                  <div
+                    key={id}
+                    className={`group flex shrink-0 items-center gap-1 rounded-t-lg border border-b-0 px-2.5 py-1 text-[11px] font-semibold transition ${
+                      isActive
+                        ? "border-white/25 bg-white/12 text-white"
+                        : "border-white/10 bg-white/[0.04] text-white/55 hover:bg-white/8"
+                    }`}
+                  >
+                    <button onClick={() => setActiveId(id)} className="flex items-center gap-1">
+                      <Hash className="h-3 w-3 opacity-60" />
+                      <span>{ch.name}</span>
+                    </button>
+                    <button
+                      onClick={() => closeTab(id)}
+                      className="ml-0.5 rounded p-0.5 text-white/40 opacity-0 hover:bg-white/15 hover:text-white group-hover:opacity-100"
+                      title="Close tab"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </header>
 
         {/* Messages */}
