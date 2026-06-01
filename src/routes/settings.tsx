@@ -93,12 +93,11 @@ function SettingsPage() {
   const { cloak, setCloakId, cloaks } = useTabCloak();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
   const { isAdmin, isOwner, unlock, lock } = useAdmin();
-  const { refreshProfile } = useAuth();
+  const { refreshProfile, user, profile, updateProfile } = useAuth();
   const verify = useServerFn(verifyAdminKey);
   const [adminKey, setAdminKey] = useState("");
   const [adminMsg, setAdminMsg] = useState<string | null>(null);
   const [adminLoading, setAdminLoading] = useState(false);
-  const { user, profile, updateProfile } = useAuth();
   type OwnedTheme = { id: string; name: string; kind: string; accent: string; banner: string; bundle?: string | null };
   const [ownedThemes, setOwnedThemes] = useState<OwnedTheme[]>([]);
 
