@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Save, LogOut, Loader2, Camera, Trash2, Sparkles, ImagePlus } from "lucide-react";
+import { X, Save, LogOut, Loader2, Camera, Trash2, Sparkles, ImagePlus, UserPlus, UserCheck, UserX, Users, Check } from "lucide-react";
 import { useAuth, type Profile } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  sendFriendRequest, acceptFriendRequest, removeFriend, listFriends, getFriendStatus,
+  type FriendEdge,
+} from "@/lib/friends.functions";
 
 const PRESET_COLORS: { label: string; rgb: string }[] = [
   { label: "Ember",  rgb: "255 140 80" },
