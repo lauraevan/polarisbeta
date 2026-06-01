@@ -6,7 +6,6 @@ import { GnMathCollection } from "./GnMathCollection";
 import { HydraCatalog } from "./HydraCatalog";
 import { GameTile } from "./GameTile";
 import { SteamSplash } from "./SteamSplash";
-import { ProfileSplash } from "@/components/polaris/ProfileSplash";
 import { POLARIS_GAMES } from "@/lib/polaris-games";
 import { hydraSearch, hydraFeatured, steamHeader, type HydraEdge, type HydraFeatured } from "@/lib/hydra-api";
 
@@ -252,7 +251,6 @@ export function GamesHub() {
         }}
       />
       <SteamSplash />
-      <ProfileSplash tag="games" />
       <div className="mx-auto flex max-w-[1600px] gap-6 px-4 py-6 pb-32 sm:px-6">
         {/* Icon rail — wallpaper bleeds behind */}
         <aside className="liquid-glass-themed sticky top-6 hidden h-fit w-16 shrink-0 self-start rounded-2xl p-2 md:block">

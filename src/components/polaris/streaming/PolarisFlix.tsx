@@ -8,7 +8,6 @@ import { Player } from "./Player";
 import { PolarisFlixSplash } from "./Splash";
 import { LiveTV } from "./LiveTV";
 import { MyListProvider, useMyList } from "@/lib/mylist-context";
-import { ProfileSplash } from "@/components/polaris/ProfileSplash";
 import polarisLogo from "@/assets/polaris-logo.png";
 
 type Tab = "home" | "movies" | "shows" | "anime" | "live";
@@ -162,11 +161,7 @@ function WhosWatching({ onPick }: { onPick: (v: ViewerProfile) => void }) {
 function FlixInner() {
   const [splash, setSplash] = useState(true);
   const [tab, setTab] = useState<Tab>("home");
-  const [viewer, setViewer] = useState<ViewerProfile | null>(() => {
-    if (typeof window === "undefined") return null;
-    const saved = sessionStorage.getItem(VIEWER_KEY);
-    return VIEWERS.find((v) => v.id === saved) ?? null;
-  });
+  // Viewer selection ("who's watching") removed — go straight into Polaris.
   const [selected, setSelected] = useState<{ item: TmdbItem; kind: MediaKind } | null>(null);
   const [playing, setPlaying] = useState<{ item: TmdbItem; kind: MediaKind } | null>(null);
   const [query, setQuery] = useState("");
@@ -305,15 +300,6 @@ function FlixInner() {
   return (
     <>
       {splash && <PolarisFlixSplash onDone={() => setSplash(false)} />}
-      <ProfileSplash tag="media" />
-      {!splash && !viewer && (
-        <WhosWatching
-          onPick={(v) => {
-            setViewer(v);
-            try { sessionStorage.setItem(VIEWER_KEY, v.id); } catch { /* noop */ }
-          }}
-        />
-      )}
 
       <div className="relative min-h-screen pb-32">
         {/* Warm autumn overlay so the wallpaper feels cinematic */}

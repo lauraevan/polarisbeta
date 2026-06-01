@@ -3,10 +3,79 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+/**
+ * Derive quest completion from real data and upsert into user_quest_progress.
+ * Called by Shop on open so achievements actually reflect activity instead of
+ * sitting at "in progress" forever.
+ */
+async function evaluateQuestProgress(userId: string) {
+  const { data: quests } = await supabaseAdmin
+    .from("quests").select("*").eq("is_active", true);
+  if (!quests?.length) return;
+
+  const { data: progressRows } = await supabaseAdmin
+    .from("user_quest_progress").select("*").eq("user_id", userId);
+  const progress = new Map((progressRows ?? []).map((p) => [p.quest_id, p]));
+
+  // Pull the few metrics we need once.
+  const [{ count: chatCount }, { data: profile }, { count: inventoryCount }] = await Promise.all([
+    supabaseAdmin.from("chat_messages").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    supabaseAdmin.from("profiles").select("display_name, about_me, avatar_emoji, avatar_url").eq("id", userId).maybeSingle(),
+    supabaseAdmin.from("user_inventory").select("id", { count: "exact", head: true }).eq("user_id", userId),
+  ]);
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  for (const q of quests) {
+    const existing = progress.get(q.id);
+    // For repeatable quests, if already claimed today skip re-marking complete.
+    if (q.repeatable && existing?.claimed_at && existing.claimed_at.slice(0, 10) === today) continue;
+    // For non-repeatable claimed quests, skip.
+    if (!q.repeatable && existing?.claimed) continue;
+
+    let completed = false;
+    const target = (q.target ?? {}) as { count?: number };
+    switch (q.kind) {
+      case "daily_login":
+      case "shop_visit":
+        completed = true; // visiting the shop counts.
+        break;
+      case "chat_messages":
+        completed = (chatCount ?? 0) >= (target.count ?? 10);
+        break;
+      case "customize_profile":
+        completed = !!(profile && (profile.avatar_url || (profile.about_me && profile.about_me.length > 0) || (profile.display_name && profile.display_name.length > 0)));
+        break;
+      case "shop_purchase":
+        completed = (inventoryCount ?? 0) > 0;
+        break;
+      // watch / play / wallpaper quests still need their dedicated trackers
+      default:
+        completed = existing?.completed ?? false;
+    }
+
+    const payload = {
+      user_id: userId,
+      quest_id: q.id,
+      completed,
+      completed_at: completed ? (existing?.completed_at ?? new Date().toISOString()) : null,
+      progress: existing?.progress ?? {},
+      claimed: existing?.claimed ?? false,
+      claimed_at: existing?.claimed_at ?? null,
+      updated_at: new Date().toISOString(),
+    };
+    await supabaseAdmin.from("user_quest_progress").upsert(payload, { onConflict: "user_id,quest_id" } as never);
+  }
+}
+
 export const getShopState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context;
+    // Refresh achievement progress every time the shop opens so claimable
+    // quests light up as soon as the underlying metric is met.
+    try { await evaluateQuestProgress(userId); } catch (e) { console.error("quest eval", e); }
+
     const [items, wallet, inv, quests, progress] = await Promise.all([
       supabaseAdmin.from("shop_items").select("*").eq("is_active", true).order("sort_order"),
       supabaseAdmin.from("user_wallet").select("*").eq("user_id", userId).maybeSingle(),
@@ -71,6 +140,10 @@ export const claimQuest = createServerFn({ method: "POST" })
     const { data: quest } = await supabaseAdmin.from("quests")
       .select("*").eq("id", data.questId).eq("is_active", true).maybeSingle();
     if (!quest) throw new Error("Quest not found");
+
+    // Re-evaluate first so manual claim attempts succeed when the user just
+    // crossed the threshold but the cached progress row was stale.
+    await evaluateQuestProgress(userId);
 
     const { data: prog } = await supabaseAdmin.from("user_quest_progress")
       .select("*").eq("user_id", userId).eq("quest_id", quest.id).maybeSingle();
