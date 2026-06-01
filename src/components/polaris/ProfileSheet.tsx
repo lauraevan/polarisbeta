@@ -679,3 +679,208 @@ function Input({ accent, ...props }: React.InputHTMLAttributes<HTMLInputElement>
     />
   );
 }
+
+function FriendButton({ otherId, accent }: { otherId: string; accent: string }) {
+  const getStatus = useServerFn(getFriendStatus);
+  const sendReq = useServerFn(sendFriendRequest);
+  const accept = useServerFn(acceptFriendRequest);
+  const remove = useServerFn(removeFriend);
+  const [state, setState] = useState<"loading" | "none" | "outgoing" | "incoming" | "friends" | "self">("loading");
+  const [edgeId, setEdgeId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    const r = await getStatus({ data: { otherId } });
+    setState(r.state);
+    setEdgeId(r.id);
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [otherId]);
+
+  if (state === "self") return null;
+  const accentRgb = `rgb(${accent})`;
+  const ring = `rgba(${accent} / 0.4)`;
+
+  const action = async (fn: () => Promise<unknown>) => {
+    setBusy(true);
+    try { await fn(); await load(); } catch (e) { console.error(e); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <Section label="Friend" accent={accent}>
+      <div className="flex flex-wrap gap-2">
+        {state === "loading" && <Loader2 className="h-4 w-4 animate-spin text-white/50" />}
+        {state === "none" && (
+          <button disabled={busy} onClick={() => action(() => sendReq({ data: { username: "" } /* unused */ }).catch(async () => {
+            // fallback: we need username; fetch from profile we already loaded via parent? simpler: send by username via id-based fn
+          }))} className="hidden" />
+        )}
+        {state === "none" && (
+          <FriendByIdButton otherId={otherId} accentRgb={accentRgb} ring={ring} onDone={load} />
+        )}
+        {state === "outgoing" && (
+          <button disabled={busy} onClick={() => action(() => remove({ data: { otherId } }))}
+            className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white/80 hover:text-white"
+            style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${ring}` }}>
+            <UserX className="h-3.5 w-3.5" /> Cancel request
+          </button>
+        )}
+        {state === "incoming" && edgeId && (
+          <>
+            <button disabled={busy} onClick={() => action(() => accept({ data: { friendshipId: edgeId } }))}
+              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold"
+              style={{ background: accentRgb, color: "#0a0a0a" }}>
+              <Check className="h-3.5 w-3.5" /> Accept
+            </button>
+            <button disabled={busy} onClick={() => action(() => remove({ data: { otherId } }))}
+              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white/80"
+              style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${ring}` }}>
+              <UserX className="h-3.5 w-3.5" /> Decline
+            </button>
+          </>
+        )}
+        {state === "friends" && (
+          <>
+            <span className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold"
+              style={{ background: accentRgb, color: "#0a0a0a" }}>
+              <UserCheck className="h-3.5 w-3.5" /> Friends
+            </span>
+            <button disabled={busy} onClick={() => action(() => remove({ data: { otherId } }))}
+              className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white/80"
+              style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${ring}` }}>
+              <UserX className="h-3.5 w-3.5" /> Unfriend
+            </button>
+          </>
+        )}
+      </div>
+    </Section>
+  );
+}
+
+function FriendByIdButton({ otherId, accentRgb, ring, onDone }: { otherId: string; accentRgb: string; ring: string; onDone: () => void }) {
+  const sendReq = useServerFn(sendFriendRequest);
+  const [busy, setBusy] = useState(false);
+  const click = async () => {
+    setBusy(true);
+    try {
+      const { data: p } = await supabase.from("profiles").select("username").eq("id", otherId).maybeSingle();
+      if (p?.username) await sendReq({ data: { username: p.username } });
+      onDone();
+    } catch (e) { console.error(e); }
+    finally { setBusy(false); }
+  };
+  return (
+    <button disabled={busy} onClick={click}
+      className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold"
+      style={{ background: accentRgb, color: "#0a0a0a", boxShadow: `0 8px 22px -10px ${ring}` }}>
+      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
+      Add Friend
+    </button>
+  );
+}
+
+function FriendsPanel({ accent }: { accent: string }) {
+  const list = useServerFn(listFriends);
+  const accept = useServerFn(acceptFriendRequest);
+  const remove = useServerFn(removeFriend);
+  const [edges, setEdges] = useState<FriendEdge[] | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    try { const r = await list(); setEdges(r.edges); } catch { setEdges([]); }
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const action = async (fn: () => Promise<unknown>) => {
+    setBusy(true); try { await fn(); await load(); } finally { setBusy(false); }
+  };
+
+  const accentRgb = `rgb(${accent})`;
+  const ring = `rgba(${accent} / 0.25)`;
+  const friends = edges?.filter((e) => e.status === "accepted") ?? [];
+  const incoming = edges?.filter((e) => e.direction === "incoming") ?? [];
+  const outgoing = edges?.filter((e) => e.direction === "outgoing") ?? [];
+
+  return (
+    <Section label="Friends" accent={accent}>
+      {edges === null ? (
+        <Loader2 className="h-4 w-4 animate-spin text-white/50" />
+      ) : edges.length === 0 ? (
+        <p className="text-sm italic text-white/40">No friends yet — open someone's profile to add them.</p>
+      ) : (
+        <div className="space-y-3">
+          {incoming.length > 0 && (
+            <div>
+              <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/55">Requests</div>
+              <div className="space-y-1.5">
+                {incoming.map((e) => (
+                  <Row key={e.id} edge={e} accent={accent}>
+                    <button disabled={busy} onClick={() => action(() => accept({ data: { friendshipId: e.id } }))}
+                      className="rounded-lg px-3 py-1 text-[11px] font-bold" style={{ background: accentRgb, color: "#0a0a0a" }}>
+                      Accept
+                    </button>
+                    <button disabled={busy} onClick={() => action(() => remove({ data: { otherId: e.other_id } }))}
+                      className="rounded-lg px-3 py-1 text-[11px] font-bold text-white/75"
+                      style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${ring}` }}>
+                      Decline
+                    </button>
+                  </Row>
+                ))}
+              </div>
+            </div>
+          )}
+          {friends.length > 0 && (
+            <div>
+              <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/55">
+                <Users className="h-3 w-3" /> Friends ({friends.length})
+              </div>
+              <div className="space-y-1.5">
+                {friends.map((e) => (
+                  <Row key={e.id} edge={e} accent={accent}>
+                    <button disabled={busy} onClick={() => action(() => remove({ data: { otherId: e.other_id } }))}
+                      className="rounded-lg px-3 py-1 text-[11px] font-bold text-white/75"
+                      style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${ring}` }}>
+                      Unfriend
+                    </button>
+                  </Row>
+                ))}
+              </div>
+            </div>
+          )}
+          {outgoing.length > 0 && (
+            <div>
+              <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/55">Sent</div>
+              <div className="space-y-1.5">
+                {outgoing.map((e) => (
+                  <Row key={e.id} edge={e} accent={accent}>
+                    <button disabled={busy} onClick={() => action(() => remove({ data: { otherId: e.other_id } }))}
+                      className="rounded-lg px-3 py-1 text-[11px] font-bold text-white/75"
+                      style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${ring}` }}>
+                      Cancel
+                    </button>
+                  </Row>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function Row({ edge, accent, children }: { edge: FriendEdge; accent: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl px-3 py-2"
+      style={{ background: "rgba(0,0,0,0.4)", border: `1px solid rgba(${accent} / 0.15)` }}>
+      <div className="grid h-8 w-8 place-items-center overflow-hidden rounded-full text-base"
+        style={{ background: `rgb(${accent})`, color: "#0a0a0a" }}>
+        {edge.other_avatar_url
+          ? <img src={edge.other_avatar_url} alt="" className="h-full w-full object-cover" />
+          : <span>{edge.other_avatar_emoji ?? edge.other_username[0]?.toUpperCase() ?? "U"}</span>}
+      </div>
+      <div className="flex-1 truncate text-sm font-semibold text-white">@{edge.other_username}</div>
+      <div className="flex gap-1.5">{children}</div>
+    </div>
+  );
+}
