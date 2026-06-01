@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   FlixLogo,
   AnimeLogo,
@@ -136,23 +136,19 @@ function HomeDock({ desktop }: { desktop: boolean }) {
               <Logo size={48} />
             </span>
           );
-          const sep =
-            i > 0 && i < apps.length ? (
-              <span key={`sep-${app.id}`} className="h-8 w-px shrink-0 bg-white/15" />
-            ) : null;
           return (
-            <>
-              {sep}
+            <Fragment key={app.id}>
+              {i > 0 && <span className="h-8 w-px shrink-0 bg-white/15" />}
               {app.to ? (
-                <Link key={app.id} to={app.to} className="shrink-0">
+                <Link to={app.to} className="shrink-0">
                   {inner}
                 </Link>
               ) : (
-                <a key={app.id} href={app.href} className="shrink-0">
+                <a href={app.href} className="shrink-0">
                   {inner}
                 </a>
               )}
-            </>
+            </Fragment>
           );
         })}
       </div>
