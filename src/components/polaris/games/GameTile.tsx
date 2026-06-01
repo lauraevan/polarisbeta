@@ -1,7 +1,8 @@
 import { useState, memo, useEffect, useRef } from "react";
-import { Play } from "lucide-react";
+import { Play, Bookmark, BookmarkCheck } from "lucide-react";
 import { gameIcon } from "@/lib/game-icon";
 import { lookupCover } from "@/lib/game-cover-lookup";
+import { useMyList } from "@/lib/mylist-context";
 
 type Props = {
   title: string;
@@ -10,14 +11,21 @@ type Props = {
   autoCover?: boolean;
   onPlay: () => void;
   size?: "md" | "lg";
+  /** Stable id used for My List. Defaults to a slug of the title. */
+  id?: string;
+  source?: string;
+  launchUrl?: string;
 };
 
-function TileInner({ title, cover, autoCover = true, onPlay, size = "md" }: Props) {
+function TileInner({ title, cover, autoCover = true, onPlay, size = "md", id, source, launchUrl }: Props) {
   const [resolved, setResolved] = useState<string | undefined>(cover);
   const [imgOk, setImgOk] = useState(!!cover);
   const ref = useRef<HTMLButtonElement>(null);
   const h = size === "lg" ? "h-44" : "h-32";
   const icon = gameIcon(title);
+  const gameId = id || title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const { hasGame, addGame, removeGame } = useMyList();
+  const saved = hasGame(gameId);
 
   // Lazily fetch real cover when tile becomes visible
   useEffect(() => {
@@ -50,6 +58,28 @@ function TileInner({ title, cover, autoCover = true, onPlay, size = "md" }: Prop
       onClick={onPlay}
       className={`group relative ${h} w-full overflow-hidden rounded-lg border border-amber-100/10 bg-gradient-to-br from-stone-900 via-zinc-900 to-stone-950 text-left transition-all duration-300 ease-out hover:-translate-y-1 hover:border-[rgb(var(--polaris-accent))]/70 hover:shadow-[0_16px_44px_-14px_rgba(var(--polaris-accent)/0.6)] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--polaris-accent))]/60 will-change-transform`}
     >
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (saved) removeGame(gameId);
+          else addGame({ id: gameId, title, cover: resolved, source, launchUrl });
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.stopPropagation();
+            e.preventDefault();
+            if (saved) removeGame(gameId);
+            else addGame({ id: gameId, title, cover: resolved, source, launchUrl });
+          }
+        }}
+        aria-label={saved ? "Remove from My List" : "Add to My List"}
+        className="absolute right-1.5 top-1.5 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white/85 opacity-0 backdrop-blur transition group-hover:opacity-100 hover:text-white"
+      >
+        {saved ? <BookmarkCheck className="h-3.5 w-3.5 text-[rgb(var(--polaris-accent))]" /> : <Bookmark className="h-3.5 w-3.5" />}
+      </span>
+
       {/* Cover or generated icon */}
       {resolved && imgOk ? (
         <img
