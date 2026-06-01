@@ -63,7 +63,12 @@ function iconForChannel(slug: string) {
   return Hash;
 }
 
-type Channel = { id: string; slug: string; name: string; description: string | null; emoji: string | null };
+type Channel = {
+  id: string; slug: string; name: string;
+  description: string | null; emoji: string | null;
+  filter_enabled?: boolean | null;
+  allowed_role?: string | null;
+};
 type Attachment = { kind: "image" | "gif" | "drawing" | "link"; url: string };
 type Message = {
   id: string;
