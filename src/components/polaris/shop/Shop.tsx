@@ -7,10 +7,14 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 
 type Tab = "shop" | "quests";
+type ShopFilter = "all" | "bundle" | "theme" | "accessory" | "badge";
+type ShopSort = "featured" | "price-asc" | "price-desc" | "name";
 
 export function Shop() {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("shop");
+  const [filter, setFilter] = useState<ShopFilter>("all");
+  const [sort, setSort] = useState<ShopSort>("featured");
   const fetchState = useServerFn(getShopState);
   const buyFn = useServerFn(purchaseItem);
   const claimFn = useServerFn(claimQuest);
@@ -53,6 +57,15 @@ export function Shop() {
   const themes = items.filter((i) => i.kind === "theme");
   const accessories = items.filter((i) => i.kind === "accessory");
   const credItems = items.filter((i) => i.kind === "badge" || i.kind === "icon");
+
+  const sortItems = (list: Item[]) => {
+    const arr = [...list];
+    if (sort === "price-asc") arr.sort((a, b) => (a.price_coins ?? a.price_basic_credits ?? 0) - (b.price_coins ?? b.price_basic_credits ?? 0));
+    else if (sort === "price-desc") arr.sort((a, b) => (b.price_coins ?? b.price_basic_credits ?? 0) - (a.price_coins ?? a.price_basic_credits ?? 0));
+    else if (sort === "name") arr.sort((a, b) => a.name.localeCompare(b.name));
+    return arr;
+  };
+  const show = (k: ShopFilter) => filter === "all" || filter === k;
 
   return (
     <div
@@ -101,34 +114,73 @@ export function Shop() {
         ) : tab === "shop" ? (
           <>
             <FeaturedBanner />
+
+            {/* Customization toolbar */}
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/80">Filter</span>
+              {(["all", "bundle", "theme", "accessory", "badge"] as ShopFilter[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-bold capitalize transition ${
+                    filter === f
+                      ? "bg-amber-300 text-stone-900 shadow"
+                      : "bg-black/40 text-amber-100/80 ring-1 ring-amber-200/20 hover:bg-black/60"
+                  }`}
+                >
+                  {f === "all" ? "All" : f === "accessory" ? "Accessories" : `${f}s`}
+                </button>
+              ))}
+              <span className="mx-1 h-4 w-px self-center bg-white/15" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/80">Sort</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as ShopSort)}
+                className="rounded-full bg-black/40 px-3 py-1 text-[11px] font-bold text-amber-100/90 ring-1 ring-amber-200/20 focus:outline-none"
+              >
+                <option value="featured" className="bg-stone-950">Featured</option>
+                <option value="price-asc" className="bg-stone-950">Price: Low → High</option>
+                <option value="price-desc" className="bg-stone-950">Price: High → Low</option>
+                <option value="name" className="bg-stone-950">Name (A–Z)</option>
+              </select>
+            </div>
+
+            {show("bundle") && (
             <Section title="Featured Bundles" subtitle="Save coins with curated packs">
               <Grid cards={3}>
-                {bundles.map((b) => (
+                {sortItems(bundles).map((b) => (
                   <BundleCard key={b.id} item={b} owned={ownedSet.has(b.id)} onBuy={() => buy.mutate(b.id)} busy={buy.isPending} />
                 ))}
               </Grid>
             </Section>
+            )}
+            {show("theme") && (
             <Section title="Themes" subtitle="Warm palettes for chat surfaces" icon={<Flame className="h-4 w-4 text-amber-300" />}>
               <Grid cards={4}>
-                {themes.map((i) => (
+                {sortItems(themes).map((i) => (
                   <ItemCard key={i.id} item={i} owned={ownedSet.has(i.id)} onBuy={() => buy.mutate(i.id)} busy={buy.isPending} />
                 ))}
               </Grid>
             </Section>
+            )}
+            {show("accessory") && (
             <Section title="Banner Accessories" subtitle="Animated touches for your profile">
               <Grid cards={4}>
-                {accessories.map((i) => (
+                {sortItems(accessories).map((i) => (
                   <ItemCard key={i.id} item={i} owned={ownedSet.has(i.id)} onBuy={() => buy.mutate(i.id)} busy={buy.isPending} />
                 ))}
               </Grid>
             </Section>
+            )}
+            {show("badge") && (
             <Section title="Badges & Frames" subtitle="Earned with credits, not coins" icon={<Trophy className="h-4 w-4 text-amber-300" />}>
               <Grid cards={4}>
-                {credItems.map((i) => (
+                {sortItems(credItems).map((i) => (
                   <ItemCard key={i.id} item={i} owned={ownedSet.has(i.id)} onBuy={() => buy.mutate(i.id)} busy={buy.isPending} credits />
                 ))}
               </Grid>
             </Section>
+            )}
           </>
         ) : (
           <QuestsPanel
