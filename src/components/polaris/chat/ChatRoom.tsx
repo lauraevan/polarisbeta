@@ -11,6 +11,7 @@ import { tenorSearch, type TenorGif } from "@/lib/tenor";
 import { DrawingCanvas } from "./DrawingCanvas";
 import { AuthDialog } from "../AuthDialog";
 import { ProfileSheet } from "../ProfileSheet";
+import { checkDmSafety } from "@/lib/dm-filter";
 import logo from "@/assets/polaris-logo.png";
 
 type Tab = "global" | "dms" | "notifs";
@@ -86,6 +87,10 @@ export function ChatRoom() {
   const [tab, setTab] = useState<Tab>("global");
   const [channels, setChannels] = useState<Channel[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Recently opened channels (most recent first), used to render the tabs strip
+  // at the top of the chat — quick switching without going back to the sidebar.
+  const [openTabs, setOpenTabs] = useState<string[]>([]);
+  const [dmWarning, setDmWarning] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -160,6 +165,22 @@ export function ChatRoom() {
   }, [activeId, user]);
 
   const active = useMemo(() => channels.find((c) => c.id === activeId) ?? null, [channels, activeId]);
+
+  // Maintain the recently-opened channel tab strip whenever a new channel becomes active.
+  useEffect(() => {
+    if (!activeId) return;
+    setOpenTabs((prev) => {
+      const next = [activeId, ...prev.filter((id) => id !== activeId)];
+      return next.slice(0, 6);
+    });
+  }, [activeId]);
+  const closeTab = useCallback((id: string) => {
+    setOpenTabs((prev) => {
+      const next = prev.filter((t) => t !== id);
+      if (id === activeId && next.length > 0) setActiveId(next[0]);
+      return next;
+    });
+  }, [activeId]);
 
   // ===== DMs: load partner list & subscribe =====
   useEffect(() => {
@@ -247,6 +268,22 @@ export function ChatRoom() {
   const sendDM = useCallback(async () => {
     if (!user || !profile || !dmActiveUserId || !dmText.trim()) return;
     const body = dmText.trim();
+    const safety = checkDmSafety(body);
+    if (!safety.ok) {
+      setDmWarning(safety.reason);
+      // Log silently for moderation review. Best effort — never blocks UX.
+      try {
+        await supabase.from("dm_moderation_flags").insert({
+          sender_id: user.id,
+          recipient_id: dmActiveUserId,
+          blocked_content: body.slice(0, 500),
+          matched_terms: safety.matched,
+          severity: "high",
+        });
+      } catch { /* ignore log failure */ }
+      return;
+    }
+    setDmWarning(null);
     setDmText("");
     await supabase.from("direct_messages").insert({
       sender_id: user.id,
@@ -583,16 +620,24 @@ export function ChatRoom() {
         <main className="flex h-full min-w-0 flex-1 flex-col">
           {tab === "dms" ? (
             dmActiveUserId ? (
-              <DMThread
-                meId={user.id}
-                partner={dmPartners.find((p) => p.user_id === dmActiveUserId) || null}
-                messages={dmMessages}
-                value={dmText}
-                onChange={setDmText}
-                onSend={sendDM}
-                onAvatar={(uid) => setViewProfileId(uid)}
-                scrollRef={dmScrollRef}
-              />
+              <>
+                {dmWarning && (
+                  <div className="border-b border-red-500/30 bg-red-500/10 px-4 py-2 text-[12px] text-red-200">
+                    🛡️ {dmWarning}
+                    <button onClick={() => setDmWarning(null)} className="ml-2 underline opacity-70 hover:opacity-100">dismiss</button>
+                  </div>
+                )}
+                <DMThread
+                  meId={user.id}
+                  partner={dmPartners.find((p) => p.user_id === dmActiveUserId) || null}
+                  messages={dmMessages}
+                  value={dmText}
+                  onChange={setDmText}
+                  onSend={sendDM}
+                  onAvatar={(uid) => setViewProfileId(uid)}
+                  scrollRef={dmScrollRef}
+                />
+              </>
             ) : (
               <EmptyMain icon={Users} title="Direct Messages" hint="Pick a conversation on the left, or hit + to start a new DM." />
             )
@@ -604,24 +649,56 @@ export function ChatRoom() {
       <main className="flex h-full min-w-0 flex-1 flex-col">
         {/* Header */}
         <header
-          className="flex items-center gap-3 border-b border-white/10 px-4 py-3 sm:px-6"
+          className="flex flex-col gap-2 border-b border-white/10 px-4 py-3 sm:px-6"
           style={{ background: "rgba(20,12,10,0.55)", backdropFilter: "blur(20px) saturate(160%)" }}
         >
-          <Hash className="h-4 w-4 text-white/40" />
-          <div className="min-w-0">
-            <div className="truncate text-sm font-bold text-white">{active?.name || "Chat"}</div>
-            {active?.description && (
-              <div className="truncate text-[11px] text-white/45">{active.description}</div>
-            )}
+          <div className="flex items-center gap-3">
+            <Hash className="h-4 w-4 text-white/40" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-bold text-white">{active?.name || "Chat"}</div>
+              {active?.description && (
+                <div className="truncate text-[11px] text-white/45">{active.description}</div>
+              )}
+            </div>
+            <select
+              className="sm:hidden rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
+              value={activeId ?? ""}
+              onChange={(e) => setActiveId(e.target.value)}
+            >
+              {channels.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
+            </select>
           </div>
-          {/* mobile channel picker */}
-          <select
-            className="sm:hidden ml-auto rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
-            value={activeId ?? ""}
-            onChange={(e) => setActiveId(e.target.value)}
-          >
-            {channels.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
-          </select>
+          {openTabs.length > 1 && (
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {openTabs.map((id) => {
+                const ch = channels.find((c) => c.id === id);
+                if (!ch) return null;
+                const isActive = id === activeId;
+                return (
+                  <div
+                    key={id}
+                    className={`group flex shrink-0 items-center gap-1 rounded-t-lg border border-b-0 px-2.5 py-1 text-[11px] font-semibold transition ${
+                      isActive
+                        ? "border-white/25 bg-white/12 text-white"
+                        : "border-white/10 bg-white/[0.04] text-white/55 hover:bg-white/8"
+                    }`}
+                  >
+                    <button onClick={() => setActiveId(id)} className="flex items-center gap-1">
+                      <Hash className="h-3 w-3 opacity-60" />
+                      <span>{ch.name}</span>
+                    </button>
+                    <button
+                      onClick={() => closeTab(id)}
+                      className="ml-0.5 rounded p-0.5 text-white/40 opacity-0 hover:bg-white/15 hover:text-white group-hover:opacity-100"
+                      title="Close tab"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </header>
 
         {/* Messages */}

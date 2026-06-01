@@ -179,6 +179,36 @@ export type Database = {
         }
         Relationships: []
       }
+      dm_moderation_flags: {
+        Row: {
+          blocked_content: string
+          created_at: string
+          id: string
+          matched_terms: string[]
+          recipient_id: string
+          sender_id: string
+          severity: string
+        }
+        Insert: {
+          blocked_content: string
+          created_at?: string
+          id?: string
+          matched_terms?: string[]
+          recipient_id: string
+          sender_id: string
+          severity?: string
+        }
+        Update: {
+          blocked_content?: string
+          created_at?: string
+          id?: string
+          matched_terms?: string[]
+          recipient_id?: string
+          sender_id?: string
+          severity?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           about_me: string | null

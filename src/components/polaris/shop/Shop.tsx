@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Coins, Flame, Sparkles, Check, Lock, Gift, Trophy, ShoppingBag, Palette, Stars, Award, Crown } from "lucide-react";
+import { Coins, Flame, Check, Lock, Gift, Trophy, ShoppingBag, Palette, Stars, Award, Crown } from "lucide-react";
 import { getShopState, purchaseItem, claimQuest } from "@/lib/shop.functions";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
@@ -83,8 +83,7 @@ export function Shop() {
             <h1 className="text-lg font-bold text-amber-50 sm:text-xl">Cozy Shop</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Wallet icon={<Coins className="h-3.5 w-3.5" />} value={wallet.coins} label="Coins" tone="amber" />
-            <Wallet icon={<Sparkles className="h-3.5 w-3.5" />} value={wallet.basic_credits} label="Credits" tone="violet" />
+            <Wallet icon={<Coins className="h-3.5 w-3.5" />} value={wallet.coins} label="Coins" />
           </div>
         </div>
         {/* Tabs */}
@@ -173,10 +172,10 @@ export function Shop() {
             </Section>
             )}
             {show("badge") && (
-            <Section title="Badges & Frames" subtitle="Earned with credits, not coins" icon={<Trophy className="h-4 w-4 text-amber-300" />}>
+            <Section title="Badges & Frames" subtitle="Rare cosmetics — purchased with coins" icon={<Trophy className="h-4 w-4 text-amber-300" />}>
               <Grid cards={4}>
                 {sortItems(credItems).map((i) => (
-                  <ItemCard key={i.id} item={i} owned={ownedSet.has(i.id)} onBuy={() => buy.mutate(i.id)} busy={buy.isPending} credits />
+                  <ItemCard key={i.id} item={i} owned={ownedSet.has(i.id)} onBuy={() => buy.mutate(i.id)} busy={buy.isPending} />
                 ))}
               </Grid>
             </Section>
@@ -195,9 +194,9 @@ export function Shop() {
   );
 }
 
-function Wallet({ icon, value, label, tone }: { icon: React.ReactNode; value: number; label: string; tone: "amber" | "violet" }) {
-  const ring = tone === "amber" ? "ring-amber-300/40" : "ring-violet-300/40";
-  const fg = tone === "amber" ? "text-amber-200" : "text-violet-200";
+function Wallet({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
+  const ring = "ring-amber-300/40";
+  const fg = "text-amber-200";
   return (
     <div className={`flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 text-xs font-bold ring-1 ${ring} ${fg}`}>
       {icon}
@@ -261,10 +260,10 @@ type Item = {
   payload: unknown; bundle_contents: string[];
 };
 
-function ItemCard({ item, owned, onBuy, busy, credits }: { item: Item; owned: boolean; onBuy: () => void; busy: boolean; credits?: boolean }) {
+function ItemCard({ item, owned, onBuy, busy }: { item: Item; owned: boolean; onBuy: () => void; busy: boolean }) {
   const payload = (item.payload ?? {}) as { accent?: string; banner?: string; effect?: string; emoji?: string; color?: string; frame?: string };
   const accent = payload.accent || payload.color || payload.banner || "230 150 80";
-  const price = credits ? item.price_basic_credits : item.price_coins;
+  const price = item.price_coins;
 
   return (
     <div
@@ -294,7 +293,7 @@ function ItemCard({ item, owned, onBuy, busy, credits }: { item: Item; owned: bo
               <Check className="h-3 w-3" /> Owned
             </span>
           ) : (
-            <PriceTag value={price} kind={credits ? "credits" : "coins"} />
+            <PriceTag value={price} />
           )}
           {!owned && (
             <button
@@ -381,7 +380,7 @@ function BundleCard({ item, owned, onBuy, busy }: { item: Item; owned: boolean; 
               <Check className="h-3.5 w-3.5" /> Owned
             </span>
           ) : (
-            <PriceTag value={item.price_coins} kind="coins" big />
+            <PriceTag value={item.price_coins} big />
           )}
           {!owned && (
             <button
@@ -398,13 +397,11 @@ function BundleCard({ item, owned, onBuy, busy }: { item: Item; owned: boolean; 
   );
 }
 
-function PriceTag({ value, kind, big }: { value: number | null; kind: "coins" | "credits"; big?: boolean }) {
+function PriceTag({ value, big }: { value: number | null; big?: boolean }) {
   if (!value) return <span className="text-[11px] text-white/40">—</span>;
-  const Icon = kind === "coins" ? Coins : Sparkles;
-  const color = kind === "coins" ? "text-amber-300" : "text-violet-300";
   return (
-    <span className={`inline-flex items-center gap-1 font-bold ${color} ${big ? "text-base" : "text-xs"}`}>
-      <Icon className={big ? "h-4 w-4" : "h-3 w-3"} />
+    <span className={`inline-flex items-center gap-1 font-bold text-amber-300 ${big ? "text-base" : "text-xs"}`}>
+      <Coins className={big ? "h-4 w-4" : "h-3 w-3"} />
       <span className="tabular-nums">{value.toLocaleString()}</span>
     </span>
   );
@@ -441,7 +438,7 @@ function QuestsPanel({ quests, progress, onClaim, busy }: { quests: Quest[]; pro
                   </div>
                   <p className="mt-0.5 text-xs text-white/55">{q.description}</p>
                 </div>
-                <PriceTag value={q.reward_coins} kind="coins" />
+                <PriceTag value={q.reward_coins} />
               </div>
               <div className="mt-1 flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-wider text-white/40">
