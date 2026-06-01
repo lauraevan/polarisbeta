@@ -102,6 +102,7 @@ function SettingsPage() {
     try {
       await verify({ data: { key: adminKey } });
       unlock();
+      await refreshProfile();
       setAdminKey("");
       setAdminMsg("Access granted. Open the admin panel above.");
     } catch (e) {
