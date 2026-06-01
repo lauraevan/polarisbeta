@@ -165,3 +165,90 @@ export const claimQuest = createServerFn({ method: "POST" })
     });
     return { ok: true, coins: newCoins };
   });
+
+/**
+ * Trade coins for AI credits. Credits are ONLY for AI usage (never for items):
+ *   - 25 coins → 1 basic credit  (free-tier models)
+ *   - 50 coins → 1 premium credit (premium models)
+ */
+export const exchangeCoinsForCredits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      tier: z.enum(["basic", "premium"]),
+      amount: z.number().int().min(1).max(200),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const rate = data.tier === "basic" ? 25 : 50;
+    const cost = rate * data.amount;
+
+    const { data: wallet } = await supabaseAdmin
+      .from("user_wallet")
+      .select("coins, basic_credits, premium_credits")
+      .eq("user_id", userId).maybeSingle();
+    const coins = wallet?.coins ?? 0;
+    if (coins < cost) throw new Error(`Need ${cost} coins (have ${coins})`);
+
+    const newCoins = coins - cost;
+    const newBasic = (wallet?.basic_credits ?? 0) + (data.tier === "basic" ? data.amount : 0);
+    const newPremium = (wallet?.premium_credits ?? 0) + (data.tier === "premium" ? data.amount : 0);
+
+    await supabaseAdmin.from("user_wallet").update({
+      coins: newCoins,
+      basic_credits: newBasic,
+      premium_credits: newPremium,
+      updated_at: new Date().toISOString(),
+    }).eq("user_id", userId);
+
+    await supabaseAdmin.from("coin_transactions").insert({
+      user_id: userId,
+      kind: "exchange",
+      coins_delta: -cost,
+      basic_credits_delta: data.tier === "basic" ? data.amount : 0,
+      premium_credits_delta: data.tier === "premium" ? data.amount : 0,
+      reference: `coin->${data.tier}`,
+      meta: { rate, amount: data.amount } as never,
+    });
+    return { ok: true, coins: newCoins, basic_credits: newBasic, premium_credits: newPremium };
+  });
+
+export const getAiWallet = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: wallet } = await supabaseAdmin
+      .from("user_wallet")
+      .select("coins, basic_credits, premium_credits")
+      .eq("user_id", context.userId).maybeSingle();
+    return wallet ?? { coins: 0, basic_credits: 0, premium_credits: 0 };
+  });
+
+/**
+ * Burn one AI credit of the requested tier. Used by the AI chat when the
+ * daily free quota is exhausted but the user has banked credits.
+ */
+export const consumeAiCredit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ tier: z.enum(["basic", "premium"]) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: wallet } = await supabaseAdmin
+      .from("user_wallet").select("coins, basic_credits, premium_credits")
+      .eq("user_id", userId).maybeSingle();
+    const field = data.tier === "basic" ? "basic_credits" : "premium_credits";
+    const have = (wallet?.[field] as number | undefined) ?? 0;
+    if (have < 1) throw new Error(`No ${data.tier} credits`);
+    const update = data.tier === "basic"
+      ? { basic_credits: have - 1 }
+      : { premium_credits: have - 1 };
+    await supabaseAdmin.from("user_wallet")
+      .update({ ...update, updated_at: new Date().toISOString() })
+      .eq("user_id", userId);
+    return {
+      ok: true,
+      coins: wallet?.coins ?? 0,
+      basic_credits: data.tier === "basic" ? have - 1 : wallet?.basic_credits ?? 0,
+      premium_credits: data.tier === "premium" ? have - 1 : wallet?.premium_credits ?? 0,
+    };
+  });
