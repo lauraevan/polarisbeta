@@ -300,15 +300,6 @@ function FlixInner() {
   return (
     <>
       {splash && <PolarisFlixSplash onDone={() => setSplash(false)} />}
-      <ProfileSplash tag="media" />
-      {!splash && !viewer && (
-        <WhosWatching
-          onPick={(v) => {
-            setViewer(v);
-            try { sessionStorage.setItem(VIEWER_KEY, v.id); } catch { /* noop */ }
-          }}
-        />
-      )}
 
       <div className="relative min-h-screen pb-32">
         {/* Warm autumn overlay so the wallpaper feels cinematic */}
