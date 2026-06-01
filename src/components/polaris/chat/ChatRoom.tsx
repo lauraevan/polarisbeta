@@ -125,7 +125,12 @@ export function ChatRoom() {
   useEffect(() => {
     if (!user) return;
     supabase.from("chat_channels").select("*").order("created_at", { ascending: true }).then(({ data }) => {
-      const list = (data || []) as Channel[];
+      const raw = (data || []) as Channel[];
+      const role = profile?.custom_role ?? null;
+      const isOwner = !!(profile as { is_owner?: boolean } | null)?.is_owner;
+      const list = raw.filter((c) =>
+        isOwner || !c.allowed_role || c.allowed_role === role,
+      );
       setChannels(list);
       if (!activeId && list[0]) setActiveId(list[0].id);
     });
