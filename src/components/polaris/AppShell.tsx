@@ -5,6 +5,7 @@ import { WallpaperPicker } from "./WallpaperPicker";
 import { Dock } from "./Dock";
 import { WallpaperProvider } from "@/lib/wallpaper-context";
 import { SidebarProvider } from "@/lib/sidebar-context";
+import { MyListProvider } from "@/lib/mylist-context";
 import { PolarisBoot } from "./Boot";
 import { ProfileSheet } from "./ProfileSheet";
 import { useEffect, useState } from "react";
@@ -26,6 +27,7 @@ export function AppShell({ children, hideDock = false }: { children: ReactNode; 
   return (
     <WallpaperProvider>
       <SidebarProvider>
+        <MyListProvider>
         <WallpaperLayer />
         <div className="flex min-h-screen text-white">
           <Sidebar />
@@ -35,6 +37,7 @@ export function AppShell({ children, hideDock = false }: { children: ReactNode; 
         {!hideDock && <WallpaperPicker open={wallpaperOpen} onOpenChange={setWallpaperOpen} />}
         <ProfileSheet open={profileOpen} onClose={() => setProfileOpen(false)} />
         <PolarisBoot />
+        </MyListProvider>
       </SidebarProvider>
     </WallpaperProvider>
   );

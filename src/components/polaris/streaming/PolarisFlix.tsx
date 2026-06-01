@@ -7,7 +7,7 @@ import { MovieModal } from "./MovieModal";
 import { Player } from "./Player";
 import { PolarisFlixSplash } from "./Splash";
 import { LiveTV } from "./LiveTV";
-import { MyListProvider, useMyList } from "@/lib/mylist-context";
+import { useMyList } from "@/lib/mylist-context";
 import polarisLogo from "@/assets/polaris-logo.png";
 
 type Tab = "home" | "movies" | "shows" | "anime" | "live";
@@ -681,11 +681,7 @@ function FlixInner() {
 }
 
 export function PolarisFlix() {
-  return (
-    <MyListProvider>
-      <FlixInner />
-    </MyListProvider>
-  );
+  return <FlixInner />;
 }
 
 function Grid({ items, onSelect }: { items: TmdbItem[]; onSelect: (item: TmdbItem) => void }) {

@@ -272,6 +272,42 @@ export type Database = {
         }
         Relationships: []
       }
+      movie_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          kind: string
+          rating: number
+          tmdb_id: number
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          rating: number
+          tmdb_id: number
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          rating?: number
+          tmdb_id?: number
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           about_me: string | null
