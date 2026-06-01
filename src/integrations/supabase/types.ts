@@ -46,30 +46,36 @@ export type Database = {
       }
       chat_channels: {
         Row: {
+          allowed_role: string | null
           created_at: string
           created_by: string | null
           description: string | null
           emoji: string | null
+          filter_enabled: boolean
           id: string
           name: string
           slug: string
           topic: string | null
         }
         Insert: {
+          allowed_role?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           emoji?: string | null
+          filter_enabled?: boolean
           id?: string
           name: string
           slug: string
           topic?: string | null
         }
         Update: {
+          allowed_role?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           emoji?: string | null
+          filter_enabled?: boolean
           id?: string
           name?: string
           slug?: string
@@ -248,6 +254,7 @@ export type Database = {
           ban_reason: string | null
           banned_at: string | null
           banner_color: string
+          banner_url: string | null
           created_at: string
           custom_role: string | null
           description: string | null
@@ -260,6 +267,7 @@ export type Database = {
           play_history: Json
           pronouns: string | null
           roles: string[]
+          spent_coins: number
           updated_at: string
           username: string
           watch_history: Json
@@ -272,6 +280,7 @@ export type Database = {
           ban_reason?: string | null
           banned_at?: string | null
           banner_color?: string
+          banner_url?: string | null
           created_at?: string
           custom_role?: string | null
           description?: string | null
@@ -284,6 +293,7 @@ export type Database = {
           play_history?: Json
           pronouns?: string | null
           roles?: string[]
+          spent_coins?: number
           updated_at?: string
           username: string
           watch_history?: Json
@@ -296,6 +306,7 @@ export type Database = {
           ban_reason?: string | null
           banned_at?: string | null
           banner_color?: string
+          banner_url?: string | null
           created_at?: string
           custom_role?: string | null
           description?: string | null
@@ -308,6 +319,7 @@ export type Database = {
           play_history?: Json
           pronouns?: string | null
           roles?: string[]
+          spent_coins?: number
           updated_at?: string
           username?: string
           watch_history?: Json
