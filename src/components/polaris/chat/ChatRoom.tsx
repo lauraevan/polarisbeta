@@ -327,6 +327,21 @@ export function ChatRoom() {
     async (content: string | null, attachments: Attachment[] = []) => {
       if (!user || !profile || !activeId) return;
       if (!content?.trim() && attachments.length === 0) return;
+      // Channel-level role restriction & basic filter (server is the source of
+      // truth; this is a UX guard so banned text never round-trips).
+      const ch = channels.find((c) => c.id === activeId);
+      const isOwner = !!(profile as { is_owner?: boolean } | null)?.is_owner;
+      if (ch?.allowed_role && !isOwner && profile.custom_role !== ch.allowed_role) {
+        setDmWarning(`#${ch.name} is restricted to ${ch.allowed_role}.`);
+        return;
+      }
+      if (ch?.filter_enabled && content) {
+        const bad = /\b(fuck|shit|bitch|nigger|faggot|retard|cunt|slur)\b/i;
+        if (bad.test(content)) {
+          setDmWarning(`Filter is on in #${ch.name} — message blocked.`);
+          return;
+        }
+      }
       setSending(true);
       const { error } = await supabase.from("chat_messages").insert({
         channel_id: activeId,
