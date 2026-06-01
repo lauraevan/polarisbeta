@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
 import { useTabCloak } from "@/lib/tab-cloaker";
 import { useAdmin } from "@/lib/admin-context";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
@@ -92,11 +93,45 @@ function SettingsPage() {
   const { cloak, setCloakId, cloaks } = useTabCloak();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
   const { isAdmin, isOwner, unlock, lock } = useAdmin();
-  const { refreshProfile } = useAuth();
+  const { refreshProfile, user, profile, updateProfile } = useAuth();
   const verify = useServerFn(verifyAdminKey);
   const [adminKey, setAdminKey] = useState("");
   const [adminMsg, setAdminMsg] = useState<string | null>(null);
   const [adminLoading, setAdminLoading] = useState(false);
+  type OwnedTheme = { id: string; name: string; kind: string; accent: string; banner: string; bundle?: string | null };
+  const [ownedThemes, setOwnedThemes] = useState<OwnedTheme[]>([]);
+
+  useEffect(() => {
+    if (!user) { setOwnedThemes([]); return; }
+    (async () => {
+      const { data: inv } = await supabase.from("user_inventory").select("item_id").eq("user_id", user.id);
+      const ids = (inv ?? []).map((r) => r.item_id);
+      if (!ids.length) { setOwnedThemes([]); return; }
+      const { data: items } = await supabase.from("shop_items").select("id,name,kind,payload,bundle_contents").in("id", ids);
+      const itemsById = new Map((items ?? []).map((i) => [i.id, i]));
+      const bundleNameById = new Map<string, string>();
+      for (const it of items ?? []) {
+        if (it.kind === "bundle" && Array.isArray(it.bundle_contents)) {
+          for (const child of it.bundle_contents) bundleNameById.set(child, it.name);
+        }
+      }
+      const themes: OwnedTheme[] = [];
+      for (const it of items ?? []) {
+        if (it.kind !== "theme") continue;
+        const p = (it.payload ?? {}) as { accent?: string; banner?: string };
+        themes.push({
+          id: it.id,
+          name: it.name,
+          kind: it.kind,
+          accent: p.accent ?? "255 140 80",
+          banner: p.banner ?? p.accent ?? "230 110 50",
+          bundle: bundleNameById.get(it.id) ?? null,
+        });
+      }
+      void itemsById;
+      setOwnedThemes(themes);
+    })();
+  }, [user]);
 
   async function submitAdmin() {
     setAdminMsg(null);
@@ -124,6 +159,21 @@ function SettingsPage() {
   const activePresetId = THEME_PRESETS.find(
     (p) => p.ui === uiTheme && p.glass === liquidGlass && p.accent === customAccent,
   )?.id;
+
+  async function applyOwnedTheme(t: { accent: string; banner: string }) {
+    setCustomAccent(t.accent);
+    setSecondaryAccent(t.banner);
+    if (profile) {
+      await updateProfile({ accent_color: t.accent, banner_color: t.banner });
+    }
+  }
+
+  // Group owned themes by bundle name
+  const themeGroups: Record<string, OwnedTheme[]> = {};
+  for (const t of ownedThemes) {
+    const key = t.bundle ?? "Standalone Themes";
+    (themeGroups[key] ??= []).push(t);
+  }
 
   return (
     <div className="min-h-screen px-4 pb-32 pt-8 sm:px-8">
@@ -208,6 +258,43 @@ function SettingsPage() {
             })}
           </div>
         </section>
+
+        {/* My owned themes (from purchases) */}
+        {ownedThemes.length > 0 && (
+          <section className="liquid-glass-themed rounded-2xl p-5">
+            <SectionTitle icon={Package} title="My Themes" subtitle={`${ownedThemes.length} owned — purchased from the Shop`} />
+            <div className="mt-4 space-y-5">
+              {Object.entries(themeGroups).map(([bundleName, list]) => (
+                <div key={bundleName}>
+                  <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.25em] text-white/55">{bundleName}</div>
+                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
+                    {list.map((t) => {
+                      const active = customAccent === t.accent;
+                      return (
+                        <button
+                          key={t.id}
+                          onClick={() => applyOwnedTheme(t)}
+                          className={`group relative overflow-hidden rounded-xl border text-left transition ${
+                            active ? "border-white scale-[1.02] shadow-lg" : "border-white/10 hover:border-white/30"
+                          }`}
+                        >
+                          <div
+                            className="h-14 w-full"
+                            style={{ background: `linear-gradient(135deg, rgb(${t.banner}), rgb(${t.accent}))` }}
+                          />
+                          <div className="px-3 py-2">
+                            <div className="truncate text-[12px] font-bold text-white">{t.name}</div>
+                            <div className="truncate text-[10px] text-white/55">{active ? "Active" : "Tap to apply"}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Background Mode */}
         <section className="liquid-glass-themed rounded-2xl p-5">

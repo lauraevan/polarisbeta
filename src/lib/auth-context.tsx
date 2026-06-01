@@ -27,6 +27,7 @@ export type Profile = {
   banner_color: string;
   avatar_emoji: string | null;
   avatar_url: string | null;
+  banner_url?: string | null;
   custom_role: string | null;
   roles: string[];
   fav_genres: number[];
@@ -36,6 +37,7 @@ export type Profile = {
   is_owner?: boolean;
   is_banned?: boolean;
   ban_reason?: string | null;
+  spent_coins?: number;
 };
 
 type Ctx = {

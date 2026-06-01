@@ -1,16 +1,18 @@
 import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import { useAdmin } from "@/lib/admin-context";
+import { useWallpaper } from "@/lib/wallpaper-context";
 import {
   adminListUsers, adminListChannels, adminGrantCoins, adminGrantCredits,
   adminPostAnnouncement, adminBanUser, adminUnbanUser, adminKickUser,
-  adminDeleteChannel, adminRevokeOwner,
+  adminDeleteChannel, adminRevokeOwner, adminRenameUser, adminUpdateChannel,
+  adminGetStats, adminDeleteMessage,
 } from "@/lib/admin.functions";
 import {
   Shield, Coins, Sparkles, Megaphone, Ban, UserX, Hash, LogOut,
-  Crown, Users, Trash2, RefreshCw, Search,
+  Crown, Users, Trash2, RefreshCw, Search, Home, Pencil, Filter, Lock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
@@ -24,11 +26,28 @@ type AdminUser = {
   is_owner: boolean; is_banned: boolean; ban_reason: string | null; created_at: string;
   wallet: { coins: number; basic_credits: number; premium_credits: number };
 };
-type AdminChannel = { id: string; slug: string; name: string; emoji: string | null };
+type AdminChannel = {
+  id: string; slug: string; name: string; emoji: string | null;
+  filter_enabled?: boolean; allowed_role?: string | null;
+};
+type AdminStats = {
+  me: {
+    id: string; username: string; display_name: string | null; created_at: string;
+    avatar_emoji: string | null; avatar_url: string | null; banner_url?: string | null;
+    banner_color: string; accent_color: string; about_me: string | null;
+    custom_role: string | null; spent_coins?: number;
+  } | null;
+  wallet: { coins: number; basic_credits: number; premium_credits: number };
+  totals: { users: number; messages: number; channels: number; banned: number };
+  recentMessages: Array<{ id: string; username: string; content: string | null; created_at: string; channel_id: string }>;
+};
+
+const BLEED_KEY = "polaris.admin.bleed.v1";
 
 function AdminPage() {
   const { user, profile, loading, refreshProfile } = useAuth();
   const { isAdmin, lock } = useAdmin();
+  const { wallpaper } = useWallpaper();
   const navigate = useNavigate();
 
   const listUsers = useServerFn(adminListUsers);
@@ -40,45 +59,50 @@ function AdminPage() {
   const unbanUser = useServerFn(adminUnbanUser);
   const kickUser = useServerFn(adminKickUser);
   const delChannel = useServerFn(adminDeleteChannel);
+  const updChannel = useServerFn(adminUpdateChannel);
+  const renameUser = useServerFn(adminRenameUser);
+  const getStats = useServerFn(adminGetStats);
+  const delMessage = useServerFn(adminDeleteMessage);
   const revoke = useServerFn(adminRevokeOwner);
 
-  const [tab, setTab] = useState<"users" | "economy" | "announce" | "channels">("users");
+  const [tab, setTab] = useState<"home" | "users" | "economy" | "announce" | "channels" | "moderation">("home");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [channels, setChannels] = useState<AdminChannel[]>([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
 
-  // Economy form
+  const [bleed, setBleed] = useState<number>(() => {
+    if (typeof window === "undefined") return 70;
+    const v = window.localStorage.getItem(BLEED_KEY);
+    return v ? Number(v) : 70;
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(BLEED_KEY, String(bleed));
+  }, [bleed]);
+  const panelAlpha = useMemo(() => Math.max(0.12, 1 - (bleed / 100) * 0.88), [bleed]);
+
   const [ecoUser, setEcoUser] = useState(""); const [ecoCoins, setEcoCoins] = useState(100);
   const [credUser, setCredUser] = useState(""); const [credTier, setCredTier] = useState<"basic" | "premium">("basic");
   const [credAmt, setCredAmt] = useState(10);
-  // Announce form
   const [annTitle, setAnnTitle] = useState(""); const [annBody, setAnnBody] = useState("");
   const [annKind, setAnnKind] = useState<"announcement" | "update" | "alert">("announcement");
-  // Ban form
-  const [banReason, setBanReason] = useState("");
 
   const refresh = async () => {
     try {
-      const [u, c] = await Promise.all([listUsers(), listChannels()]);
+      const [u, c, s] = await Promise.all([listUsers(), listChannels(), getStats()]);
       setUsers(u as AdminUser[]);
       setChannels(c as AdminChannel[]);
-    } catch (e) {
-      setMsg((e as Error).message);
-    }
+      setStats(s as AdminStats);
+    } catch (e) { setMsg((e as Error).message); }
   };
 
-  // Ensure we have the freshest profile (is_owner may have just been granted).
   useEffect(() => { if (user) refreshProfile(); /* eslint-disable-next-line */ }, [user]);
   useEffect(() => { if (isAdmin) refresh(); /* eslint-disable-next-line */ }, [isAdmin]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/" />;
-  // Wait for profile to hydrate before deciding to bounce — otherwise the
-  // admin route flashes a redirect before is_owner has loaded.
-  if (!profile) {
-    return <div className="fixed inset-0 grid place-items-center bg-[#06060a] text-white/60 text-sm">Loading admin…</div>;
-  }
+  if (!profile) return <div className="fixed inset-0 grid place-items-center bg-[#06060a] text-white/60 text-sm">Loading admin…</div>;
   if (!isAdmin) return <Navigate to="/settings" />;
 
   async function run(fn: () => Promise<unknown>, ok: string) {
@@ -92,10 +116,17 @@ function AdminPage() {
     || u.display_name?.toLowerCase().includes(q.toLowerCase()),
   );
 
+  const panelStyle = { background: `rgba(6,6,10,${panelAlpha})` };
+  const cardStyle = { background: `rgba(255,255,255,${Math.min(0.08, (1 - panelAlpha) * 0.18 + 0.03)})` };
+
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-[#06060a] text-white overflow-y-auto">
-      {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-black/60 px-6 py-4 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[60] flex flex-col text-white overflow-y-auto" style={panelStyle}>
+      {bleed > 5 && wallpaper.poster && (
+        <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center"
+          style={{ backgroundImage: `url(${wallpaper.poster})`, opacity: bleed / 100 }} />
+      )}
+      <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-6 py-4 backdrop-blur-2xl"
+        style={{ background: `rgba(0,0,0,${Math.max(0.45, panelAlpha)})` }}>
         <div className="flex items-center gap-3">
           <Shield className="h-6 w-6 text-red-400" />
           <div>
@@ -103,7 +134,14 @@ function AdminPage() {
             <h1 className="text-xl font-black">Polaris Admin Panel</h1>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-1.5 text-[11px]">
+            <span className="text-white/55">Bleed</span>
+            <input type="range" min={0} max={100} step={5} value={bleed}
+              onChange={(e) => setBleed(Number(e.target.value))}
+              className="h-1.5 w-28 accent-white" />
+            <span className="tabular-nums text-white/55">{bleed}%</span>
+          </div>
           <button onClick={refresh} className="rounded-lg p-2 text-white/70 hover:bg-white/10" title="Refresh">
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -111,22 +149,22 @@ function AdminPage() {
             className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
             Back to App
           </button>
-          <button
-            onClick={async () => { await revoke(); lock(); navigate({ to: "/settings" }); }}
-            className="flex items-center gap-1.5 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-200 hover:bg-red-500/30"
-          >
+          <button onClick={async () => { await revoke(); lock(); navigate({ to: "/settings" }); }}
+            className="flex items-center gap-1.5 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-200 hover:bg-red-500/30">
             <LogOut className="h-3.5 w-3.5" /> Sign out of Admin
           </button>
         </div>
       </header>
 
-      {/* Tabs */}
-      <nav className="flex gap-1 border-b border-white/10 bg-black/40 px-4">
+      <nav className="flex flex-wrap gap-1 border-b border-white/10 px-4 backdrop-blur-xl"
+        style={{ background: `rgba(0,0,0,${Math.max(0.35, panelAlpha * 0.7)})` }}>
         {([
+          { id: "home", label: "Home", icon: Home },
           { id: "users", label: "Users", icon: Users },
           { id: "economy", label: "Economy", icon: Coins },
           { id: "announce", label: "Announcements", icon: Megaphone },
           { id: "channels", label: "Channels", icon: Hash },
+          { id: "moderation", label: "Moderation", icon: Trash2 },
         ] as const).map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition ${
@@ -138,12 +176,55 @@ function AdminPage() {
       </nav>
 
       {msg && (
-        <div className="mx-6 mt-4 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm">
+        <div className="mx-6 mt-4 rounded-xl border border-white/10 px-4 py-2 text-sm backdrop-blur-md" style={cardStyle}>
           {msg}
         </div>
       )}
 
       <main className="flex-1 p-6">
+        {tab === "home" && stats && (
+          <section className="space-y-6">
+            <div className="overflow-hidden rounded-3xl border border-white/10 backdrop-blur-xl" style={cardStyle}>
+              <div className="h-32 w-full"
+                style={{
+                  background: stats.me?.banner_url
+                    ? `url(${stats.me.banner_url}) center/cover no-repeat`
+                    : `linear-gradient(135deg, rgb(${stats.me?.banner_color ?? "230 110 50"}), rgb(${stats.me?.accent_color ?? "255 140 80"}))`,
+                }} />
+              <div className="-mt-12 flex flex-wrap items-end gap-4 p-6">
+                <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-full text-4xl shadow-2xl"
+                  style={{ background: `rgb(${stats.me?.accent_color ?? "255 140 80"})`, boxShadow: "0 0 0 4px rgba(0,0,0,0.85)" }}>
+                  {stats.me?.avatar_url
+                    ? <img src={stats.me.avatar_url} alt="" className="h-full w-full object-cover" />
+                    : <span>{stats.me?.avatar_emoji ?? stats.me?.username?.[0]?.toUpperCase() ?? "?"}</span>}
+                </div>
+                <div className="min-w-0 flex-1 pb-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-2xl font-black">{stats.me?.display_name || stats.me?.username}</h2>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-bold text-amber-200">
+                      <Crown className="h-3 w-3" /> Owner
+                    </span>
+                  </div>
+                  <div className="text-sm text-white/55">@{stats.me?.username}</div>
+                  {stats.me?.about_me && <p className="mt-2 max-w-lg text-sm text-white/75">{stats.me.about_me}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-4">
+                <Stat label="Joined" value={stats.me ? new Date(stats.me.created_at).toLocaleDateString() : "—"} />
+                <Stat label="Coins" value={stats.wallet.coins.toLocaleString()} />
+                <Stat label="Coins spent" value={(stats.me?.spent_coins ?? 0).toLocaleString()} />
+                <Stat label="AI credits" value={`${stats.wallet.basic_credits}b / ${stats.wallet.premium_credits}p`} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <BigStat icon={Users} label="Total users" value={stats.totals.users} />
+              <BigStat icon={Hash} label="Channels" value={stats.totals.channels} />
+              <BigStat icon={Megaphone} label="Messages" value={stats.totals.messages} />
+              <BigStat icon={Ban} label="Banned" value={stats.totals.banned} accent="red" />
+            </div>
+          </section>
+        )}
+
         {tab === "users" && (
           <section className="space-y-4">
             <div className="flex items-center gap-2">
@@ -152,9 +233,9 @@ function AdminPage() {
                 className="w-full max-w-md rounded-xl bg-white/5 px-3 py-2 text-sm outline-none ring-1 ring-white/10 focus:ring-white/30" />
               <span className="text-xs text-white/50">{filtered.length} users</span>
             </div>
-            <div className="overflow-x-auto rounded-2xl border border-white/10">
+            <div className="overflow-x-auto rounded-2xl border border-white/10 backdrop-blur-md" style={cardStyle}>
               <table className="w-full text-sm">
-                <thead className="bg-white/5 text-left text-[11px] uppercase tracking-wider text-white/55">
+                <thead className="text-left text-[11px] uppercase tracking-wider text-white/55" style={{ background: "rgba(255,255,255,0.04)" }}>
                   <tr>
                     <th className="px-4 py-3">User</th><th className="px-4 py-3">Coins</th>
                     <th className="px-4 py-3">Credits</th><th className="px-4 py-3">Status</th>
@@ -183,17 +264,23 @@ function AdminPage() {
                           : <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-[11px] text-emerald-200">Active</span>}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex flex-wrap justify-end gap-1">
+                          <button
+                            onClick={() => {
+                              const t = window.prompt(`Rename @${u.username} to:`, u.username);
+                              if (t && t !== u.username) run(() => renameUser({ data: { from: u.username, to: t } }), `Renamed to @${t}`);
+                            }}
+                            className="rounded bg-white/10 px-2 py-1 text-[11px] hover:bg-white/20" title="Rename user">
+                            <Pencil className="inline h-3 w-3" /> Rename
+                          </button>
                           {u.is_banned ? (
                             <button onClick={() => run(() => unbanUser({ data: { username: u.username } }), "Unbanned")}
                               className="rounded bg-white/10 px-2 py-1 text-[11px] hover:bg-white/20">Unban</button>
                           ) : (
-                            <button
-                              onClick={() => {
-                                const r = window.prompt(`Ban reason for ${u.username}?`, "Violating community rules");
-                                if (r) run(() => banUser({ data: { username: u.username, reason: r } }), `Banned ${u.username}`);
-                              }}
-                              className="rounded bg-red-500/20 px-2 py-1 text-[11px] text-red-200 hover:bg-red-500/30">
+                            <button onClick={() => {
+                              const r = window.prompt(`Ban reason for ${u.username}?`, "Violating community rules");
+                              if (r) run(() => banUser({ data: { username: u.username, reason: r } }), `Banned ${u.username}`);
+                            }} className="rounded bg-red-500/20 px-2 py-1 text-[11px] text-red-200 hover:bg-red-500/30">
                               <Ban className="inline h-3 w-3" /> Ban
                             </button>
                           )}
@@ -208,14 +295,13 @@ function AdminPage() {
                 </tbody>
               </table>
             </div>
-            <div className="text-xs text-white/45">Banned users see a ban screen in chat and cannot send messages or DMs.</div>
-            <input className="hidden" value={banReason} onChange={(e) => setBanReason(e.target.value)} />
+            <div className="text-xs text-white/45">Banned users see a ban screen in chat. Renaming a user also updates all their past message handles.</div>
           </section>
         )}
 
         {tab === "economy" && (
           <section className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <div className="rounded-2xl border border-white/10 p-5 backdrop-blur-md" style={cardStyle}>
               <h2 className="flex items-center gap-2 text-lg font-bold"><Coins className="h-4 w-4" /> Set / Add Coins</h2>
               <div className="mt-4 space-y-3">
                 <input value={ecoUser} onChange={(e) => setEcoUser(e.target.value)} placeholder="Username"
@@ -230,7 +316,7 @@ function AdminPage() {
                 </div>
               </div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <div className="rounded-2xl border border-white/10 p-5 backdrop-blur-md" style={cardStyle}>
               <h2 className="flex items-center gap-2 text-lg font-bold"><Sparkles className="h-4 w-4" /> AI Credits</h2>
               <div className="mt-4 space-y-3">
                 <input value={credUser} onChange={(e) => setCredUser(e.target.value)} placeholder="Username"
@@ -254,7 +340,7 @@ function AdminPage() {
         )}
 
         {tab === "announce" && (
-          <section className="mx-auto max-w-2xl space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+          <section className="mx-auto max-w-2xl space-y-4 rounded-2xl border border-white/10 p-6 backdrop-blur-md" style={cardStyle}>
             <h2 className="flex items-center gap-2 text-lg font-bold"><Megaphone className="h-4 w-4" /> Post Announcement</h2>
             <p className="text-xs text-white/55">Posts into the announcements chat channel and the notification center.</p>
             <select value={annKind} onChange={(e) => setAnnKind(e.target.value as typeof annKind)}
@@ -277,28 +363,93 @@ function AdminPage() {
 
         {tab === "channels" && (
           <section className="space-y-3">
+            <p className="text-xs text-white/55">
+              <Filter className="mr-1 inline h-3 w-3" /> Filter blocks links + flagged words.
+              <Lock className="ml-3 mr-1 inline h-3 w-3" /> Restrict role: only users whose "Personal Tag" matches can read/post.
+            </p>
             {channels.map((c) => (
-              <div key={c.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">{c.emoji || "💬"}</span>
-                  <div>
-                    <div className="font-semibold">#{c.slug}</div>
-                    <div className="text-[11px] text-white/45">{c.name}</div>
+              <div key={c.id} className="rounded-xl border border-white/10 px-4 py-3 backdrop-blur-md" style={cardStyle}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{c.emoji || "💬"}</span>
+                    <div>
+                      <div className="font-semibold">#{c.slug}</div>
+                      <div className="text-[11px] text-white/45">{c.name}</div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1 text-[11px]">
+                      <input type="checkbox" checked={!!c.filter_enabled}
+                        onChange={(e) => run(() => updChannel({ data: { id: c.id, filter_enabled: e.target.checked } }), `Filter ${e.target.checked ? "on" : "off"} for #${c.slug}`)} />
+                      <Filter className="h-3 w-3" /> Filter
+                    </label>
+                    <input defaultValue={c.allowed_role ?? ""} placeholder="Restrict to role (blank = open)"
+                      onBlur={(e) => {
+                        const next = e.target.value.trim() || null;
+                        if ((c.allowed_role ?? null) !== next) {
+                          run(() => updChannel({ data: { id: c.id, allowed_role: next } }), `Updated role lock for #${c.slug}`);
+                        }
+                      }}
+                      className="w-48 rounded-lg bg-white/5 px-2 py-1 text-[11px] outline-none ring-1 ring-white/10" />
+                    <button onClick={() => { if (window.confirm(`Delete #${c.slug} and all messages?`)) run(() => delChannel({ data: { id: c.id } }), `Deleted #${c.slug}`); }}
+                      className="flex items-center gap-1.5 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-200 hover:bg-red-500/30">
+                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    if (window.confirm(`Delete #${c.slug} and all messages?`))
-                      run(() => delChannel({ data: { id: c.id } }), `Deleted #${c.slug}`);
-                  }}
-                  className="flex items-center gap-1.5 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-200 hover:bg-red-500/30">
-                  <Trash2 className="h-3.5 w-3.5" /> Delete
-                </button>
               </div>
             ))}
           </section>
         )}
+
+        {tab === "moderation" && (
+          <section className="space-y-3">
+            <div className="text-xs text-white/55">Recent messages across all channels. Delete inline.</div>
+            <div className="overflow-x-auto rounded-2xl border border-white/10 backdrop-blur-md" style={cardStyle}>
+              <table className="w-full text-sm">
+                <thead className="text-left text-[11px] uppercase tracking-wider text-white/55" style={{ background: "rgba(255,255,255,0.04)" }}>
+                  <tr><th className="px-4 py-3">When</th><th className="px-4 py-3">User</th><th className="px-4 py-3">Content</th><th className="px-4 py-3 text-right">Actions</th></tr>
+                </thead>
+                <tbody>
+                  {(stats?.recentMessages ?? []).map((m) => (
+                    <tr key={m.id} className="border-t border-white/5">
+                      <td className="px-4 py-3 text-[11px] text-white/45">{new Date(m.created_at).toLocaleString()}</td>
+                      <td className="px-4 py-3 font-semibold">@{m.username}</td>
+                      <td className="px-4 py-3 text-xs text-white/75">{(m.content ?? "").slice(0, 200)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => { if (window.confirm("Delete this message?")) run(() => delMessage({ data: { id: m.id } }), "Message deleted"); }}
+                          className="rounded bg-red-500/20 px-2 py-1 text-[11px] text-red-200 hover:bg-red-500/30">
+                          <Trash2 className="inline h-3 w-3" /> Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
       </main>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="bg-black/40 px-4 py-3 text-center">
+      <div className="text-[10px] uppercase tracking-[0.2em] text-white/55">{label}</div>
+      <div className="mt-1 text-base font-bold tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function BigStat({ icon: Icon, label, value, accent }: { icon: typeof Users; label: string; value: number; accent?: "red" }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-md">
+      <div className={`flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] ${accent === "red" ? "text-red-300/80" : "text-white/55"}`}>
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </div>
+      <div className="mt-1 text-2xl font-black tabular-nums">{value.toLocaleString()}</div>
     </div>
   );
 }
