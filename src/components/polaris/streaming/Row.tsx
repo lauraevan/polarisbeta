@@ -55,7 +55,7 @@ export function Row({ title, items, onSelect, ranked, loading, size = "md" }: Pr
             <div key={item.id} className="shrink-0" style={{ width: w }}>
               <button
                 onClick={() => onSelect(item)}
-                className={`group/card relative block w-full overflow-hidden rounded-xl liquid-glass transition hover:scale-[1.04] hover:z-10 ${
+                className={`group/card relative block w-full overflow-hidden rounded-xl liquid-glass transition-all duration-300 hover:scale-[1.05] hover:z-10 hover:shadow-[0_18px_50px_-12px_rgba(var(--polaris-accent)/0.55)] ring-1 ring-amber-100/10 hover:ring-[rgb(var(--polaris-accent))]/60 ${
                   ranked ? "flex items-end" : ""
                 }`}
                 style={{ height: h }}
@@ -78,7 +78,7 @@ export function Row({ title, items, onSelect, ranked, loading, size = "md" }: Pr
                       alt={item.title || item.name}
                       loading="lazy"
                       decoding="async"
-                      className="h-full w-full object-cover opacity-0 transition-opacity duration-500"
+                      className="h-full w-full object-cover opacity-0 transition-all duration-500 group-hover/card:brightness-110"
                       onLoad={(e) => e.currentTarget.classList.remove("opacity-0")}
                     />
                   ) : (
@@ -86,8 +86,11 @@ export function Row({ title, items, onSelect, ranked, loading, size = "md" }: Pr
                       {item.title || item.name}
                     </div>
                   )}
+                  {/* Cozy warm overlay — inner amber glow + film grain */}
+                  <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-amber-950/40 via-transparent to-amber-200/5 mix-blend-overlay opacity-70" />
+                  <div className="pointer-events-none absolute inset-0 rounded-xl shadow-[inset_0_0_30px_rgba(0,0,0,0.45),inset_0_0_0_1px_rgba(255,200,140,0.08)]" />
                   {item.vote_average > 0 && (
-                    <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-md bg-black/75 px-1.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
+                    <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-md bg-black/75 px-1.5 py-0.5 text-[11px] font-semibold text-amber-50 backdrop-blur ring-1 ring-amber-200/20">
                       <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                       {item.vote_average.toFixed(1)}
                     </div>
