@@ -142,7 +142,7 @@ export function ChatRoom() {
       .subscribe();
     return () => { sub.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, profile?.custom_role, (profile as { is_owner?: boolean } | null)?.is_owner]);
 
   // Load messages + subscribe per channel
   useEffect(() => {
