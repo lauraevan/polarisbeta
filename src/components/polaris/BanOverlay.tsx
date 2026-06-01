@@ -1,5 +1,6 @@
 import { useAuth } from "@/lib/auth-context";
 import { ShieldAlert } from "lucide-react";
+import { useRouterState } from "@tanstack/react-router";
 
 /**
  * Soft-ban surface: only renders inside chat surfaces (passed via wrap-around).
@@ -7,8 +8,11 @@ import { ShieldAlert } from "lucide-react";
  */
 export function BanOverlay() {
   const { profile, signOut } = useAuth();
+  const path = useRouterState({ select: (s) => s.location.pathname });
   const banned = (profile as { is_banned?: boolean; ban_reason?: string | null } | null);
+  // Soft ban: only block chat surfaces.
   if (!banned?.is_banned) return null;
+  if (!path.startsWith("/chat")) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-6">
       <div className="liquid-glass-strong max-w-md rounded-3xl p-8 text-center">

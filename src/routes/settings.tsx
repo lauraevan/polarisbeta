@@ -5,6 +5,10 @@ import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
 import { useTabCloak } from "@/lib/tab-cloaker";
+import { useAdmin } from "@/lib/admin-context";
+import { useServerFn } from "@tanstack/react-start";
+import { verifyAdminKey } from "@/lib/admin.functions";
+import { Link } from "@tanstack/react-router";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
@@ -86,6 +90,26 @@ function SettingsPage() {
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const { cloak, setCloakId, cloaks } = useTabCloak();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
+  const { isAdmin, isOwner, unlock, lock } = useAdmin();
+  const verify = useServerFn(verifyAdminKey);
+  const [adminKey, setAdminKey] = useState("");
+  const [adminMsg, setAdminMsg] = useState<string | null>(null);
+  const [adminLoading, setAdminLoading] = useState(false);
+
+  async function submitAdmin() {
+    setAdminMsg(null);
+    setAdminLoading(true);
+    try {
+      await verify({ data: { key: adminKey } });
+      unlock();
+      setAdminKey("");
+      setAdminMsg("Access granted. Open the admin panel above.");
+    } catch (e) {
+      setAdminMsg((e as Error).message || "Invalid key");
+    } finally {
+      setAdminLoading(false);
+    }
+  }
 
   function applyPreset(p: ThemePreset) {
     setUITheme(p.ui);
