@@ -161,11 +161,7 @@ function WhosWatching({ onPick }: { onPick: (v: ViewerProfile) => void }) {
 function FlixInner() {
   const [splash, setSplash] = useState(true);
   const [tab, setTab] = useState<Tab>("home");
-  const [viewer, setViewer] = useState<ViewerProfile | null>(() => {
-    if (typeof window === "undefined") return null;
-    const saved = sessionStorage.getItem(VIEWER_KEY);
-    return VIEWERS.find((v) => v.id === saved) ?? null;
-  });
+  // Viewer selection ("who's watching") removed — go straight into Polaris.
   const [selected, setSelected] = useState<{ item: TmdbItem; kind: MediaKind } | null>(null);
   const [playing, setPlaying] = useState<{ item: TmdbItem; kind: MediaKind } | null>(null);
   const [query, setQuery] = useState("");
