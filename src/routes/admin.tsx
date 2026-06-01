@@ -46,7 +46,7 @@ const BLEED_KEY = "polaris.admin.bleed.v1";
 
 function AdminPage() {
   const { user, profile, loading, refreshProfile } = useAuth();
-  const { isAdmin, lock } = useAdmin();
+  const { isAdmin, isOwner, unlock, lock } = useAdmin();
   const { wallpaper } = useWallpaper();
   const navigate = useNavigate();
 
@@ -98,12 +98,16 @@ function AdminPage() {
   };
 
   useEffect(() => { if (user) refreshProfile(); /* eslint-disable-next-line */ }, [user]);
-  useEffect(() => { if (isAdmin) refresh(); /* eslint-disable-next-line */ }, [isAdmin]);
+  // Server profile says owner? Auto-unlock the device flag so the panel works
+  // even if localStorage was cleared or the user landed here from a fresh tab.
+  useEffect(() => { if (isOwner && !isAdmin) unlock(); }, [isOwner, isAdmin, unlock]);
+  useEffect(() => { if (isAdmin || isOwner) refresh(); /* eslint-disable-next-line */ }, [isAdmin, isOwner]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/" />;
   if (!profile) return <div className="fixed inset-0 grid place-items-center bg-[#06060a] text-white/60 text-sm">Loading admin…</div>;
-  if (!isAdmin) return <Navigate to="/settings" />;
+  // Owner === access. Device flag is a UX convenience, not the gate.
+  if (!isOwner) return <Navigate to="/settings" />;
 
   async function run(fn: () => Promise<unknown>, ok: string) {
     setMsg(null);
