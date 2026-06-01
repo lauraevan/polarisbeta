@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Sparkles, Heart, Send, Loader2, Film, Gamepad2, Tv2, Bookmark } from "lucide-react";
-import ReactMarkdown from "react-markdown";
 import { useMyList } from "@/lib/mylist-context";
 
 type Mode = "recs" | "match";
@@ -196,9 +195,7 @@ export function PolarisRecs() {
 
       {answer && (
         <div className="liquid-glass mt-5 rounded-2xl p-5 text-sm text-white/90">
-          <div className="prose prose-sm prose-invert max-w-none">
-            <ReactMarkdown>{answer}</ReactMarkdown>
-          </div>
+          <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-white/90">{answer}</pre>
         </div>
       )}
     </div>
