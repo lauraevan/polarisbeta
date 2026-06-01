@@ -87,7 +87,7 @@ export const claimQuest = createServerFn({ method: "POST" })
       ...(quest.repeatable ? { completed: false, completed_at: null, progress: {} } : {}),
     }).eq("id", prog.id);
     await supabaseAdmin.from("coin_transactions").insert({
-      user_id: userId, kind: "quest", coins_delta: quest.reward_coins ?? 0,
+      user_id: userId, kind: "quest_reward", coins_delta: quest.reward_coins ?? 0,
       reference: quest.id, meta: { name: quest.name } as never,
     });
     return { ok: true, coins: newCoins };
