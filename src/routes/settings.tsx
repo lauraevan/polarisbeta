@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
 import { useTabCloak } from "@/lib/tab-cloaker";
 import { useAdmin } from "@/lib/admin-context";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
@@ -97,6 +98,41 @@ function SettingsPage() {
   const [adminKey, setAdminKey] = useState("");
   const [adminMsg, setAdminMsg] = useState<string | null>(null);
   const [adminLoading, setAdminLoading] = useState(false);
+  const { user, profile, updateProfile } = useAuth();
+  type OwnedTheme = { id: string; name: string; kind: string; accent: string; banner: string; bundle?: string | null };
+  const [ownedThemes, setOwnedThemes] = useState<OwnedTheme[]>([]);
+
+  useEffect(() => {
+    if (!user) { setOwnedThemes([]); return; }
+    (async () => {
+      const { data: inv } = await supabase.from("user_inventory").select("item_id").eq("user_id", user.id);
+      const ids = (inv ?? []).map((r) => r.item_id);
+      if (!ids.length) { setOwnedThemes([]); return; }
+      const { data: items } = await supabase.from("shop_items").select("id,name,kind,payload,bundle_contents").in("id", ids);
+      const itemsById = new Map((items ?? []).map((i) => [i.id, i]));
+      const bundleNameById = new Map<string, string>();
+      for (const it of items ?? []) {
+        if (it.kind === "bundle" && Array.isArray(it.bundle_contents)) {
+          for (const child of it.bundle_contents) bundleNameById.set(child, it.name);
+        }
+      }
+      const themes: OwnedTheme[] = [];
+      for (const it of items ?? []) {
+        if (it.kind !== "theme") continue;
+        const p = (it.payload ?? {}) as { accent?: string; banner?: string };
+        themes.push({
+          id: it.id,
+          name: it.name,
+          kind: it.kind,
+          accent: p.accent ?? "255 140 80",
+          banner: p.banner ?? p.accent ?? "230 110 50",
+          bundle: bundleNameById.get(it.id) ?? null,
+        });
+      }
+      void itemsById;
+      setOwnedThemes(themes);
+    })();
+  }, [user]);
 
   async function submitAdmin() {
     setAdminMsg(null);
@@ -124,6 +160,21 @@ function SettingsPage() {
   const activePresetId = THEME_PRESETS.find(
     (p) => p.ui === uiTheme && p.glass === liquidGlass && p.accent === customAccent,
   )?.id;
+
+  async function applyOwnedTheme(t: { accent: string; banner: string }) {
+    setCustomAccent(t.accent);
+    setSecondaryAccent(t.banner);
+    if (profile) {
+      await updateProfile({ accent_color: t.accent, banner_color: t.banner });
+    }
+  }
+
+  // Group owned themes by bundle name
+  const themeGroups: Record<string, OwnedTheme[]> = {};
+  for (const t of ownedThemes) {
+    const key = t.bundle ?? "Standalone Themes";
+    (themeGroups[key] ??= []).push(t);
+  }
 
   return (
     <div className="min-h-screen px-4 pb-32 pt-8 sm:px-8">

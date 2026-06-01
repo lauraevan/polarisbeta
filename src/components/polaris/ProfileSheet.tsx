@@ -538,7 +538,11 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
                     >
                       <div
                         className="h-16"
-                        style={{ background: `linear-gradient(135deg, rgb(${banner}), rgb(${accent}))` }}
+                        style={{
+                          background: bannerUrl
+                            ? `url(${bannerUrl}) center/cover no-repeat`
+                            : `linear-gradient(135deg, rgb(${banner}), rgb(${accent}))`,
+                        }}
                       />
                       <div className="relative -mt-7 px-4 pb-4">
                         <div
