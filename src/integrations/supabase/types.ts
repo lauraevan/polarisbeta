@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          posted_by: string | null
+          posted_by_username: string | null
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          kind?: string
+          posted_by?: string | null
+          posted_by_username?: string | null
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          posted_by?: string | null
+          posted_by_username?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       chat_channels: {
         Row: {
           created_at: string
@@ -215,6 +245,8 @@ export type Database = {
           accent_color: string
           avatar_emoji: string | null
           avatar_url: string | null
+          ban_reason: string | null
+          banned_at: string | null
           banner_color: string
           created_at: string
           custom_role: string | null
@@ -223,6 +255,8 @@ export type Database = {
           fav_game_tags: string[]
           fav_genres: number[]
           id: string
+          is_banned: boolean
+          is_owner: boolean
           play_history: Json
           pronouns: string | null
           roles: string[]
@@ -235,6 +269,8 @@ export type Database = {
           accent_color?: string
           avatar_emoji?: string | null
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           banner_color?: string
           created_at?: string
           custom_role?: string | null
@@ -243,6 +279,8 @@ export type Database = {
           fav_game_tags?: string[]
           fav_genres?: number[]
           id: string
+          is_banned?: boolean
+          is_owner?: boolean
           play_history?: Json
           pronouns?: string | null
           roles?: string[]
@@ -255,6 +293,8 @@ export type Database = {
           accent_color?: string
           avatar_emoji?: string | null
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           banner_color?: string
           created_at?: string
           custom_role?: string | null
@@ -263,6 +303,8 @@ export type Database = {
           fav_game_tags?: string[]
           fav_genres?: number[]
           id?: string
+          is_banned?: boolean
+          is_owner?: boolean
           play_history?: Json
           pronouns?: string | null
           roles?: string[]

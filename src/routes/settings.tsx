@@ -5,6 +5,10 @@ import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
 import { useTabCloak } from "@/lib/tab-cloaker";
+import { useAdmin } from "@/lib/admin-context";
+import { useServerFn } from "@tanstack/react-start";
+import { verifyAdminKey } from "@/lib/admin.functions";
+import { Link } from "@tanstack/react-router";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
@@ -86,6 +90,26 @@ function SettingsPage() {
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const { cloak, setCloakId, cloaks } = useTabCloak();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
+  const { isAdmin, isOwner, unlock, lock } = useAdmin();
+  const verify = useServerFn(verifyAdminKey);
+  const [adminKey, setAdminKey] = useState("");
+  const [adminMsg, setAdminMsg] = useState<string | null>(null);
+  const [adminLoading, setAdminLoading] = useState(false);
+
+  async function submitAdmin() {
+    setAdminMsg(null);
+    setAdminLoading(true);
+    try {
+      await verify({ data: { key: adminKey } });
+      unlock();
+      setAdminKey("");
+      setAdminMsg("Access granted. Open the admin panel above.");
+    } catch (e) {
+      setAdminMsg((e as Error).message || "Invalid key");
+    } finally {
+      setAdminLoading(false);
+    }
+  }
 
   function applyPreset(p: ThemePreset) {
     setUITheme(p.ui);
@@ -110,6 +134,40 @@ function SettingsPage() {
             Personalize Polaris — theme, wallpaper, and accent.
           </p>
         </header>
+
+        {/* Admin access */}
+        <section className="liquid-glass-themed rounded-2xl p-5">
+          <SectionTitle icon={Shield} title="Admin access" subtitle={isAdmin ? "Admin panel is active on this device" : isOwner ? "Owner detected — unlock the admin panel on this device" : "Restricted — enter the Polaris admin key"} />
+          {isAdmin ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Link to="/admin" className="rounded-xl bg-red-500 px-4 py-2 text-sm font-bold text-white hover:bg-red-400">
+                Open Admin Panel
+              </Link>
+              <button onClick={lock} className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20">
+                Sign out of Admin (this device)
+              </button>
+            </div>
+          ) : (
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                type="password"
+                value={adminKey}
+                onChange={(e) => setAdminKey(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") submitAdmin(); }}
+                placeholder="Enter Polaris admin key…"
+                className="flex-1 rounded-xl bg-white/5 px-3 py-2 text-sm outline-none ring-1 ring-white/10 focus:ring-white/30"
+              />
+              <button
+                onClick={submitAdmin}
+                disabled={adminLoading || !adminKey}
+                className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-black hover:bg-white/90 disabled:opacity-50"
+              >
+                {adminLoading ? "Verifying…" : "Unlock"}
+              </button>
+            </div>
+          )}
+          {adminMsg && <div className="mt-3 text-xs text-white/65">{adminMsg}</div>}
+        </section>
 
         {/* Theme presets */}
         <section className="liquid-glass-themed rounded-2xl p-5">

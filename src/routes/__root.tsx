@@ -15,6 +15,8 @@ import { AuthProvider } from "../lib/auth-context";
 import { ThemeProvider } from "../lib/theme-context";
 import { TabCloakProvider } from "../lib/tab-cloaker";
 import { PanicModeProvider, PanicOverlay } from "../lib/panic-mode";
+import { AdminProvider } from "../lib/admin-context";
+import { BanOverlay } from "../components/polaris/BanOverlay";
 
 function NotFoundComponent() {
   return (
@@ -143,9 +145,12 @@ function RootComponent() {
         <AuthProvider>
           <TabCloakProvider>
             <PanicModeProvider>
-              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-              <Outlet />
-              <PanicOverlay />
+              <AdminProvider>
+                {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                <Outlet />
+                <PanicOverlay />
+                <BanOverlay />
+              </AdminProvider>
             </PanicModeProvider>
           </TabCloakProvider>
         </AuthProvider>
