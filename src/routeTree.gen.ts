@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as GamesRouteImport } from './routes/games'
@@ -20,6 +21,11 @@ import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
 
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/settings': typeof SettingsRoute
+  '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesByTo {
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/settings': typeof SettingsRoute
+  '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
 }
 export interface FileRoutesById {
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/settings': typeof SettingsRoute
+  '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/settings'
+    | '/shop'
     | '/api/ai-chat'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/settings'
+    | '/shop'
     | '/api/ai-chat'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/settings'
+    | '/shop'
     | '/api/ai-chat'
   fileRoutesById: FileRoutesById
 }
@@ -157,11 +169,19 @@ export interface RootRouteChildren {
   GamesRoute: typeof GamesRoute
   MediaRoute: typeof MediaRoute
   SettingsRoute: typeof SettingsRoute
+  ShopRoute: typeof ShopRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -245,6 +265,7 @@ const rootRouteChildren: RootRouteChildren = {
   GamesRoute: GamesRoute,
   MediaRoute: MediaRoute,
   SettingsRoute: SettingsRoute,
+  ShopRoute: ShopRoute,
   ApiAiChatRoute: ApiAiChatRoute,
 }
 export const routeTree = rootRouteImport

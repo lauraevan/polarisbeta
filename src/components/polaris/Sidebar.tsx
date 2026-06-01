@@ -9,6 +9,7 @@ import {
   Joystick,
   MessageCircle,
   Settings as SettingsIcon,
+  ShoppingBag,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -25,6 +26,7 @@ const nav = [
   { to: "/ai", label: "AI Tools", icon: Sparkles },
   { to: "/emulator", label: "Emulator", icon: Joystick },
   { to: "/chat", label: "Chat", icon: MessageCircle },
+  { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 
