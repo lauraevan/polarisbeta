@@ -264,11 +264,11 @@ export const adminUpdateChannel = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await requireOwner(context.userId);
-    const patch: Record<string, unknown> = {};
+    const patch: { filter_enabled?: boolean; allowed_role?: string | null } = {};
     if (typeof data.filter_enabled === "boolean") patch.filter_enabled = data.filter_enabled;
     if (data.allowed_role !== undefined) patch.allowed_role = data.allowed_role?.trim() || null;
     if (!Object.keys(patch).length) return { ok: true };
-    const { error } = await supabaseAdmin.from("chat_channels").update(patch).eq("id", data.id);
+    const { error } = await supabaseAdmin.from("chat_channels").update(patch as never).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
