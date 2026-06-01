@@ -1,47 +1,68 @@
-## Multi-tab Emulator with Switch options
 
-Turn the current placeholder `/emulator` route into a real emulator hub with **three tabs**, each handling a different gaming domain.
+This is a large update. I'll ship it in 3 phases so each piece is reviewable and the preview never stays broken. Confirm or tweak before I start.
 
-### Tabs
+## Phase 1 — Foundation (the boring but critical stuff)
 
-**1. Retro (EmulatorJS) — actually works**
-- Add `emulatorjs` via CDN (`cdn.emulatorjs.org`) inside an embedded iframe page (`public/emujs.html`).
-- Supports NES, SNES, N64, GBA, GB/GBC, Sega Genesis, PS1, NDS, Atari.
-- Two ways to load games:
-  - **Upload ROM** (file input — stays local, never uploaded anywhere).
-  - **Built-in homebrew library** — a curated list of legally-free homebrew ROMs (e.g. Alex the Allegator, Pacman clones) hosted on archive.org so the user has something playable instantly.
-- Console picker dropdown + fullscreen + gamepad support (EmulatorJS handles all of this).
+**Database (Lovable Cloud)**
+New tables to power the economy:
+- `user_wallet` — `user_id`, `coins`, `basic_credits`, `premium_credits`
+- `user_inventory` — owned themes, accessories, badges, icons (one row per item)
+- `shop_items` — catalog: id, kind (`theme` | `accessory` | `badge` | `icon` | `bundle`), name, price_coins or price_credits, payload (colors/asset refs), bundle_contents
+- `quests` — catalog of available quests + reward range
+- `user_quest_progress` — per-user progress, claimed flag, verification payload (heartbeats for movies)
+- `coin_transactions` — audit log (earn / spend / exchange), required so coins can never be inflated client-side
 
-**2. Switch · Cloud (Afterplay.io)**
-- Embed `https://afterplay.io` in a sandboxed iframe.
-- Banner above the iframe explaining: cloud-streamed, requires their account, Switch tier may be paid.
-- "Open in new tab" fallback button in case afterplay blocks iframing via `X-Frame-Options` (likely — we'll detect the load failure and surface the fallback automatically).
+All writes go through `createServerFn` with `requireSupabaseAuth` — client cannot mint coins. Exchange Coins→Credits (25 basic / 50 premium) lives in a server fn too.
 
-**3. Switch · Experimental (Vela)**
-- Embed Vela's hosted web build (the project's GitHub Pages deployment) in an iframe.
-- Clear "alpha — most commercial games will not run" warning banner.
-- Same iframe-blocked fallback to open externally.
+**Rename**
+- `Media` → `Cinema` everywhere (route stays `/media` to avoid breaking links; nav label + titles change). If you want the URL changed to `/cinema` too, say so and I'll add a redirect.
 
-### UI
+**Fix GN Math GPT 5.4 bot**
+- I'll downgrade the default model to `google/gemini-2.5-flash` (free tier, no credit ceiling) and add a graceful 402/429 fallback that swaps models automatically instead of erroring out.
 
-- Tabs styled with the same `liquid-glass-themed` look used in PolarisFlix's nav, accent-colored active state.
-- Each tab fills the remaining viewport below the tab bar.
-- Hidden dock (`<AppShell hideDock>` like the AI route) so the emulator gets full screen.
+## Phase 2 — Visual polish + posters
 
-### Files
+**Cozy/warm poster styling for Cinema + Games**
+- Replace the current flat tiles with premium poster cards: warm amber/ember gradient frames, soft inner glow, subtle film-grain overlay, rounded corners, hover lift with warm shadow.
+- Cinema rows already pull TMDB posters — I'll restyle the `Row`/poster components.
+- Games hub will use the existing Steam/Hydra cover art with the same poster treatment.
+- Warmer accent tokens added to `styles.css` (ember, candle, sunset).
 
-- **edit** `src/routes/emulator.tsx` — replace `ComingSoon` with a new `<Emulator />` component that manages the 3 tabs.
-- **create** `src/components/polaris/emulator/Emulator.tsx` — tab shell + the three panes.
-- **create** `src/components/polaris/emulator/RetroPane.tsx` — console picker, ROM upload, homebrew library, iframe to `/emujs.html`.
-- **create** `src/components/polaris/emulator/CloudPane.tsx` — Afterplay iframe + fallback.
-- **create** `src/components/polaris/emulator/VelaPane.tsx` — Vela iframe + warning + fallback.
-- **create** `public/emujs.html` — minimal HTML page that boots EmulatorJS from CDN and reads the chosen core + ROM URL from query params (`?core=snes&rom=...`). This is needed because EmulatorJS expects to control the whole document.
-- **create** `src/lib/homebrew-roms.ts` — small curated list (name, console, archive.org URL, cover).
+**New nature wallpapers**
+- I'll add ~4 new cozy/warm nature wallpapers (forest morning, autumn cabin, golden hour meadow, fireplace). All royalty-free sources, properly attributed in the file.
 
-### Honest expectations to set in UI
+**PC layout reflow**
+- Home (Polaris) and Proxy UI currently size for mobile/tablet — I'll add proper desktop breakpoints so search, dock, and proxy cards scale up on ≥1024px (bigger type, wider cards, more breathing room).
 
-- Retro tab: "Fully works in your browser. Upload your own ROMs or pick from the homebrew library."
-- Cloud Switch tab: "Streamed from Afterplay's servers. Sign-in required; Switch may need a paid tier."
-- Experimental Switch tab: "Open-source WebGPU emulator. Most commercial games won't boot yet — this is for testing."
+## Phase 3 — Shop, Quests, Split Windows
 
-No backend changes, no new dependencies installed (EmulatorJS loads from CDN inside the public HTML page, so it doesn't pollute the React bundle).
+**Shop tab (`/shop`)**
+Three sub-pages:
+1. **Store** — themes, accessories, badges, icons grid. Singles 900 coins, bundles 1600. Badges/icons priced in credits.
+2. **Exchange** — Coins → AI credits (25:1 basic, 50:1 premium). Server-side rate-limited.
+3. **Quests / Achievements** — list of quests with progress bars + Claim button.
+
+**Quests** (examples, 100–750 coins by difficulty)
+- Play a game 10–15 min (heartbeat ping every 30s while game iframe is focused)
+- Watch a full movie/show (anti-skip: server records timestamp heartbeats every 60s; quest only claimable if heartbeats cover ≥85% of runtime with monotonic progression — no jumping ahead, no scrubbing past unwatched chunks)
+- Send N chat messages, customize profile, try a new wallpaper, etc.
+
+**Anti-cheat**
+- All "watched" / "played" verification is server-side. Client sends heartbeats with `(item_id, position_seconds, session_id)`; server validates monotonic-ish progression and total covered duration before allowing claim.
+
+**Coins vs Credits rule**
+- Coins ONLY buy cosmetics (themes, accessories, badges, icons). Hard-coded server-side — no path to unlock features with coins. Credits stay the unit for AI features.
+
+**Tab windows + split windows**
+- New windowing layer on top of `AppShell`: open any route as a window, drag, minimize, snap to left/right half (split view). Useful for browser + chat side-by-side, or cinema + games.
+- Keyboard: `Cmd/Ctrl+\` to split, drag a tab to a screen edge to snap.
+- This is the largest UI surface — done last because it touches every route.
+
+---
+
+## Questions before I start
+
+1. **Scope confirm:** OK to ship in 3 phases (Foundation → Polish → Shop+Windows), one phase per turn? Otherwise this becomes one massive unreviewable change.
+2. **Cinema URL:** keep `/media` (just relabel) or change to `/cinema` with a redirect?
+3. **Starting coins:** should new users get a welcome bonus (e.g. 500 coins) or start at 0?
+4. **Bundle contents:** want me to design the first ~3 bundles myself (e.g. "Cozy Cabin pack" = warm theme + fireplace banner + 2 badges), or do you want to spec them?

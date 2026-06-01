@@ -104,6 +104,42 @@ export type Database = {
           },
         ]
       }
+      coin_transactions: {
+        Row: {
+          basic_credits_delta: number
+          coins_delta: number
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["coin_tx_kind"]
+          meta: Json
+          premium_credits_delta: number
+          reference: string | null
+          user_id: string
+        }
+        Insert: {
+          basic_credits_delta?: number
+          coins_delta: number
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["coin_tx_kind"]
+          meta?: Json
+          premium_credits_delta?: number
+          reference?: string | null
+          user_id: string
+        }
+        Update: {
+          basic_credits_delta?: number
+          coins_delta?: number
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["coin_tx_kind"]
+          meta?: Json
+          premium_credits_delta?: number
+          reference?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       direct_messages: {
         Row: {
           attachments: Json
@@ -206,6 +242,193 @@ export type Database = {
         }
         Relationships: []
       }
+      quests: {
+        Row: {
+          description: string
+          difficulty: string
+          id: string
+          is_active: boolean
+          kind: Database["public"]["Enums"]["quest_kind"]
+          name: string
+          repeatable: boolean
+          reward_coins: number
+          sort_order: number
+          target: Json
+        }
+        Insert: {
+          description: string
+          difficulty?: string
+          id: string
+          is_active?: boolean
+          kind: Database["public"]["Enums"]["quest_kind"]
+          name: string
+          repeatable?: boolean
+          reward_coins: number
+          sort_order?: number
+          target?: Json
+        }
+        Update: {
+          description?: string
+          difficulty?: string
+          id?: string
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["quest_kind"]
+          name?: string
+          repeatable?: boolean
+          reward_coins?: number
+          sort_order?: number
+          target?: Json
+        }
+        Relationships: []
+      }
+      shop_items: {
+        Row: {
+          bundle_contents: string[]
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          kind: Database["public"]["Enums"]["shop_item_kind"]
+          name: string
+          payload: Json
+          price_basic_credits: number | null
+          price_coins: number | null
+          price_premium_credits: number | null
+          sort_order: number
+        }
+        Insert: {
+          bundle_contents?: string[]
+          created_at?: string
+          description?: string | null
+          id: string
+          is_active?: boolean
+          kind: Database["public"]["Enums"]["shop_item_kind"]
+          name: string
+          payload?: Json
+          price_basic_credits?: number | null
+          price_coins?: number | null
+          price_premium_credits?: number | null
+          sort_order?: number
+        }
+        Update: {
+          bundle_contents?: string[]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["shop_item_kind"]
+          name?: string
+          payload?: Json
+          price_basic_credits?: number | null
+          price_coins?: number | null
+          price_premium_credits?: number | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      user_inventory: {
+        Row: {
+          acquired_at: string
+          equipped: boolean
+          id: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          equipped?: boolean
+          id?: string
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          acquired_at?: string
+          equipped?: boolean
+          id?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_inventory_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_quest_progress: {
+        Row: {
+          claimed: boolean
+          claimed_at: string | null
+          completed: boolean
+          completed_at: string | null
+          id: string
+          progress: Json
+          quest_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          claimed?: boolean
+          claimed_at?: string | null
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          progress?: Json
+          quest_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          claimed?: boolean
+          claimed_at?: string | null
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          progress?: Json
+          quest_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_quest_progress_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_wallet: {
+        Row: {
+          basic_credits: number
+          coins: number
+          created_at: string
+          premium_credits: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          basic_credits?: number
+          coins?: number
+          created_at?: string
+          premium_credits?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          basic_credits?: number
+          coins?: number
+          created_at?: string
+          premium_credits?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -214,7 +437,20 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      coin_tx_kind:
+        | "quest_reward"
+        | "purchase"
+        | "exchange"
+        | "admin_grant"
+        | "welcome"
+      quest_kind:
+        | "watch_movie"
+        | "play_game"
+        | "chat_messages"
+        | "customize_profile"
+        | "try_wallpaper"
+        | "daily_login"
+      shop_item_kind: "theme" | "accessory" | "badge" | "icon" | "bundle"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -341,6 +577,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      coin_tx_kind: [
+        "quest_reward",
+        "purchase",
+        "exchange",
+        "admin_grant",
+        "welcome",
+      ],
+      quest_kind: [
+        "watch_movie",
+        "play_game",
+        "chat_messages",
+        "customize_profile",
+        "try_wallpaper",
+        "daily_login",
+      ],
+      shop_item_kind: ["theme", "accessory", "badge", "icon", "bundle"],
+    },
   },
 } as const
