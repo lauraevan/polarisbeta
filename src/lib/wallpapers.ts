@@ -26,6 +26,7 @@ const wp = (id: number, slug: string, posterPath: string, accent: string, name: 
 });
 
 export const WALLPAPERS: Wallpaper[] = [
+  wp(9665, "frieren-lasting-memories", "/i/c/960x540/media/9665/frieren-lasting-memories.3840x2160.jpg", "230 200 140", "Frieren Lasting Memories"),
   wp(1922, "first-fall-day-in-forest", "/i/c/960x540/media/1922/first-fall-day-in-forest.jpg", "230 150 80", "Autumn Leaves Forest"),
   wp(7623, "rocks-glow-with-autumn-fire", "/i/c/960x540/media/7623/rocks-glow-with-autumn-fire.3840x2160.jpg", "255 140 60", "Autumn Fire Rocks"),
   wp(758, "mountain-landscape-in-autumn", "/i/c/960x540/media/758/mountain-landscape-in-autumn.jpg", "230 150 70", "Autumn Mountains"),
