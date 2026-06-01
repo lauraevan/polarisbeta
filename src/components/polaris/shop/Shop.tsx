@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Coins, Flame, Sparkles, Check, Lock, Gift, Trophy, ShoppingBag } from "lucide-react";
+import { Coins, Flame, Sparkles, Check, Lock, Gift, Trophy, ShoppingBag, Palette, Stars, Award, Crown } from "lucide-react";
 import { getShopState, purchaseItem, claimQuest } from "@/lib/shop.functions";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
@@ -260,6 +260,23 @@ function ItemCard({ item, owned, onBuy, busy, credits }: { item: Item; owned: bo
 }
 
 function BundleCard({ item, owned, onBuy, busy }: { item: Item; owned: boolean; onBuy: () => void; busy: boolean }) {
+  // Map bundle_contents prefixes -> icon + label so the cover reflects what's inside
+  const contentSummary = (() => {
+    const counts = { theme: 0, accessory: 0, badge: 0, icon: 0 } as Record<string, number>;
+    for (const c of item.bundle_contents) {
+      if (c.startsWith("theme.")) counts.theme++;
+      else if (c.startsWith("acc.")) counts.accessory++;
+      else if (c.startsWith("badge.")) counts.badge++;
+      else if (c.startsWith("icon.")) counts.icon++;
+    }
+    return [
+      { key: "theme", n: counts.theme, Icon: Palette, label: "Themes", tint: "from-rose-400 to-amber-500" },
+      { key: "accessory", n: counts.accessory, Icon: Stars, label: "Accessories", tint: "from-amber-300 to-orange-500" },
+      { key: "badge", n: counts.badge, Icon: Award, label: "Badges", tint: "from-emerald-400 to-amber-500" },
+      { key: "icon", n: counts.icon, Icon: Crown, label: "Icons", tint: "from-violet-400 to-amber-500" },
+    ].filter((x) => x.n > 0);
+  })();
+
   return (
     <div
       className="group relative overflow-hidden rounded-2xl border border-amber-200/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-15px_rgba(255,170,90,0.55)]"
@@ -273,9 +290,32 @@ function BundleCard({ item, owned, onBuy, busy }: { item: Item; owned: boolean; 
         <div className="mb-3 flex items-center gap-2">
           <Gift className="h-4 w-4 text-amber-200" />
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-100/85">Bundle</span>
+          <span className="ml-auto rounded-full bg-black/35 px-2 py-0.5 text-[9px] font-bold text-amber-100/90 ring-1 ring-amber-200/25">
+            {item.bundle_contents.length} items
+          </span>
         </div>
         <h4 className="text-lg font-black text-amber-50 drop-shadow">{item.name}</h4>
         <p className="mt-1 text-xs text-amber-100/75">{item.description}</p>
+
+        {/* Icon summary of bundle contents */}
+        {contentSummary.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {contentSummary.map(({ key, n, Icon, label, tint }) => (
+              <div
+                key={key}
+                className="flex items-center gap-1.5 rounded-lg bg-black/40 px-2 py-1 ring-1 ring-amber-200/20"
+                title={`${n} ${label}`}
+              >
+                <span className={`grid h-5 w-5 place-items-center rounded-md bg-gradient-to-br ${tint} text-stone-950 shadow-[0_2px_8px_rgba(255,170,80,0.45)]`}>
+                  <Icon className="h-3 w-3" strokeWidth={2.5} />
+                </span>
+                <span className="text-[10px] font-bold text-amber-50">×{n}</span>
+                <span className="text-[10px] text-amber-100/70">{label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="mt-3 flex flex-wrap gap-1">
           {item.bundle_contents.map((c) => (
             <span key={c} className="rounded-md bg-black/35 px-1.5 py-0.5 text-[10px] font-semibold text-amber-100/90 ring-1 ring-amber-200/20">
