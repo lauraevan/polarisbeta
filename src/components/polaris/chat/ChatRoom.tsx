@@ -356,7 +356,7 @@ export function ChatRoom() {
       setSending(false);
       if (!error) setText("");
     },
-    [user, profile, activeId],
+    [user, profile, activeId, channels],
   );
 
   const sendGartic = useCallback(async () => {
