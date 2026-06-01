@@ -33,6 +33,9 @@ export type Profile = {
   fav_game_tags: string[];
   watch_history: Array<{ id: number; kind: string; title: string; at: number }>;
   play_history: Array<{ id: string; title: string; at: number }>;
+  is_owner?: boolean;
+  is_banned?: boolean;
+  ban_reason?: string | null;
 };
 
 type Ctx = {

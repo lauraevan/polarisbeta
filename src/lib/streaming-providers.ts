@@ -129,3 +129,23 @@ PROVIDERS.push(
         : `https://embed.warezcdn.com/serie/${id}/${s ?? 1}/${e ?? 1}`,
   },
 );
+
+// StreameX — community-requested. Primary embed pattern.
+PROVIDERS.unshift(
+  {
+    id: "streamex",
+    label: "StreameX",
+    build: (kind, id, s, e) =>
+      kind === "movie"
+        ? `https://streamex.sh/embed/movie/${id}`
+        : `https://streamex.sh/embed/tv/${id}/${s ?? 1}/${e ?? 1}`,
+  },
+  {
+    id: "streamex-watch",
+    label: "StreameX (alt)",
+    build: (kind, id, s, e) =>
+      kind === "movie"
+        ? `https://streamex.sh/watch/movie/${id}`
+        : `https://streamex.sh/watch/tv/${id}/${s ?? 1}/${e ?? 1}`,
+  },
+);

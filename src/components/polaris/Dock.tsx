@@ -69,16 +69,13 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
     <>
       <Launchpad open={launchpadOpen} onClose={() => setLaunchpadOpen(false)} />
       <div
-        className={`pointer-events-none fixed inset-x-0 bottom-4 z-30 flex px-4 ${
-          dockPosition === "left" ? "justify-start" : dockPosition === "right" ? "justify-end" : "justify-center"
-        }`}
+        className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4"
       >
         <div
           className="pointer-events-auto flex items-center gap-1.5 transform-gpu will-change-transform [backface-visibility:hidden]"
           style={{
             transform: `scale(${dockSize}) translateZ(0)`,
-            transformOrigin:
-              dockPosition === "left" ? "bottom left" : dockPosition === "right" ? "bottom right" : "bottom center",
+            transformOrigin: "bottom center",
             transition: dragging ? "none" : "transform 220ms cubic-bezier(.2,.7,.2,1)",
           }}
         >
