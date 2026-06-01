@@ -620,16 +620,24 @@ export function ChatRoom() {
         <main className="flex h-full min-w-0 flex-1 flex-col">
           {tab === "dms" ? (
             dmActiveUserId ? (
-              <DMThread
-                meId={user.id}
-                partner={dmPartners.find((p) => p.user_id === dmActiveUserId) || null}
-                messages={dmMessages}
-                value={dmText}
-                onChange={setDmText}
-                onSend={sendDM}
-                onAvatar={(uid) => setViewProfileId(uid)}
-                scrollRef={dmScrollRef}
-              />
+              <>
+                {dmWarning && (
+                  <div className="border-b border-red-500/30 bg-red-500/10 px-4 py-2 text-[12px] text-red-200">
+                    🛡️ {dmWarning}
+                    <button onClick={() => setDmWarning(null)} className="ml-2 underline opacity-70 hover:opacity-100">dismiss</button>
+                  </div>
+                )}
+                <DMThread
+                  meId={user.id}
+                  partner={dmPartners.find((p) => p.user_id === dmActiveUserId) || null}
+                  messages={dmMessages}
+                  value={dmText}
+                  onChange={setDmText}
+                  onSend={sendDM}
+                  onAvatar={(uid) => setViewProfileId(uid)}
+                  scrollRef={dmScrollRef}
+                />
+              </>
             ) : (
               <EmptyMain icon={Users} title="Direct Messages" hint="Pick a conversation on the left, or hit + to start a new DM." />
             )
