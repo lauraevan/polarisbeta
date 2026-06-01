@@ -8,7 +8,6 @@ import { Player } from "./Player";
 import { PolarisFlixSplash } from "./Splash";
 import { LiveTV } from "./LiveTV";
 import { MyListProvider, useMyList } from "@/lib/mylist-context";
-import { ProfileSplash } from "@/components/polaris/ProfileSplash";
 import polarisLogo from "@/assets/polaris-logo.png";
 
 type Tab = "home" | "movies" | "shows" | "anime" | "live";
