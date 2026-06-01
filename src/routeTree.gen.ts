@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as MylistRouteImport } from './routes/mylist'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as EmulatorRouteImport } from './routes/emulator'
@@ -30,6 +31,11 @@ const ShopRoute = ShopRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MylistRoute = MylistRouteImport.update({
+  id: '/mylist',
+  path: '/mylist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MediaRoute = MediaRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
+  '/mylist': typeof MylistRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
+  '/mylist': typeof MylistRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
+  '/mylist': typeof MylistRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/emulator'
     | '/games'
     | '/media'
+    | '/mylist'
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/emulator'
     | '/games'
     | '/media'
+    | '/mylist'
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/emulator'
     | '/games'
     | '/media'
+    | '/mylist'
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
@@ -181,6 +193,7 @@ export interface RootRouteChildren {
   EmulatorRoute: typeof EmulatorRoute
   GamesRoute: typeof GamesRoute
   MediaRoute: typeof MediaRoute
+  MylistRoute: typeof MylistRoute
   SettingsRoute: typeof SettingsRoute
   ShopRoute: typeof ShopRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mylist': {
+      id: '/mylist'
+      path: '/mylist'
+      fullPath: '/mylist'
+      preLoaderRoute: typeof MylistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/media': {
@@ -285,6 +305,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmulatorRoute: EmulatorRoute,
   GamesRoute: GamesRoute,
   MediaRoute: MediaRoute,
+  MylistRoute: MylistRoute,
   SettingsRoute: SettingsRoute,
   ShopRoute: ShopRoute,
   ApiAiChatRoute: ApiAiChatRoute,
@@ -292,3 +313,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
