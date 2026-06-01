@@ -48,7 +48,7 @@ function TileInner({ title, cover, autoCover = true, onPlay, size = "md" }: Prop
     <button
       ref={ref}
       onClick={onPlay}
-      className={`group relative ${h} w-full overflow-hidden rounded-md border border-white/5 bg-zinc-900/80 text-left transition-transform duration-150 ease-out hover:-translate-y-0.5 hover:border-[rgb(var(--polaris-accent))]/60 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--polaris-accent))]/60 will-change-transform`}
+      className={`group relative ${h} w-full overflow-hidden rounded-lg border border-amber-100/10 bg-gradient-to-br from-stone-900 via-zinc-900 to-stone-950 text-left transition-all duration-300 ease-out hover:-translate-y-1 hover:border-[rgb(var(--polaris-accent))]/70 hover:shadow-[0_16px_44px_-14px_rgba(var(--polaris-accent)/0.6)] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--polaris-accent))]/60 will-change-transform`}
     >
       {/* Cover or generated icon */}
       {resolved && imgOk ? (
@@ -72,13 +72,16 @@ function TileInner({ title, cover, autoCover = true, onPlay, size = "md" }: Prop
       )}
 
       {/* Gradient overlay for legibility */}
-      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-amber-950/30 to-transparent" />
+      {/* Cozy warm inner glow + soft frame */}
+      <div className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-t from-transparent via-transparent to-amber-200/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="pointer-events-none absolute inset-0 rounded-lg shadow-[inset_0_0_24px_rgba(0,0,0,0.45),inset_0_0_0_1px_rgba(255,200,140,0.08)]" />
 
       <div className="relative flex h-full flex-col justify-end p-2.5">
-        <span className="line-clamp-2 text-xs font-semibold leading-tight text-white">
+        <span className="line-clamp-2 text-xs font-semibold leading-tight text-amber-50 drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
           {title}
         </span>
-        <span className="mt-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/60 transition group-hover:text-[rgb(var(--polaris-accent))]">
+        <span className="mt-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-amber-200/60 transition group-hover:text-[rgb(var(--polaris-accent))]">
           <Play className="h-2.5 w-2.5 fill-current" /> Play
         </span>
       </div>

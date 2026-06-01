@@ -101,11 +101,11 @@ function HomeWeb() {
   );
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-2xl flex-col items-center justify-center px-5 py-10">
+    <div className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex-col items-center justify-center px-5 py-10 lg:py-16">
       {/* Compact title */}
-      <div className="mb-6 text-center">
-        <div className="text-[10px] uppercase tracking-[0.32em] text-white/70">Polaris One</div>
-        <div className="mt-1 text-[11px] text-white/45">Your warm cinematic web hub</div>
+      <div className="mb-6 lg:mb-10 text-center">
+        <div className="text-[10px] lg:text-xs uppercase tracking-[0.32em] text-white/70">Polaris One</div>
+        <div className="mt-1 text-[11px] lg:text-sm text-white/45">Your warm cinematic web hub</div>
       </div>
 
       {/* Single centered search */}
@@ -114,27 +114,27 @@ function HomeWeb() {
           e.preventDefault();
           window.open(getPolarisBrowserUrl(engine, normalizeUrl(query)), "_blank", "noopener,noreferrer");
         }}
-        className="liquid-glass-ghost flex w-full max-w-xl items-center gap-3 rounded-2xl px-4 py-3 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.6),0_20px_50px_-20px_rgba(var(--polaris-accent)/0.45)]"
+        className="liquid-glass-ghost flex w-full max-w-xl lg:max-w-3xl items-center gap-3 rounded-2xl px-4 py-3 lg:px-6 lg:py-4 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.6),0_20px_50px_-20px_rgba(var(--polaris-accent)/0.45)]"
       >
-        <Search className="h-4 w-4 text-white/60" />
+        <Search className="h-4 w-4 lg:h-5 lg:w-5 text-white/60" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search the web or enter a URL"
-          className="flex-1 bg-transparent text-sm text-white placeholder:text-white/50 focus:outline-none"
+          className="flex-1 bg-transparent text-sm lg:text-base text-white placeholder:text-white/50 focus:outline-none"
         />
         <kbd className="hidden rounded-md border border-white/15 px-1.5 py-0.5 text-[10px] text-white/55 md:inline">↵</kbd>
       </form>
 
       {/* Categories */}
-      <div className="mt-5 flex flex-wrap justify-center gap-1.5">
+      <div className="mt-5 lg:mt-7 flex flex-wrap justify-center gap-1.5 lg:gap-2">
         {CATEGORIES.map((c) => {
           const isOn = c === active;
           return (
             <button
               key={c}
               onClick={() => setActive(c)}
-              className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all duration-200 ${
+              className={`rounded-full px-3 lg:px-4 py-1 lg:py-1.5 text-[11px] lg:text-sm font-medium transition-all duration-200 ${
                 isOn ? "text-white" : "text-white/65 hover:text-white"
               }`}
               style={
@@ -153,11 +153,11 @@ function HomeWeb() {
       </div>
 
       {/* Shortcuts — auto-centering responsive grid */}
-      <div className="mt-5 flex w-full justify-center">
+      <div className="mt-5 lg:mt-8 flex w-full justify-center">
         <div
-          className="grid w-full justify-center gap-3"
+          className="grid w-full justify-center gap-3 lg:gap-5"
           style={{
-            gridTemplateColumns: `repeat(auto-fit, minmax(${Math.round(60 * shortcutSize)}px, ${Math.round(70 * shortcutSize)}px))`,
+            gridTemplateColumns: `repeat(auto-fit, minmax(${Math.round(72 * shortcutSize)}px, ${Math.round(96 * shortcutSize)}px))`,
             justifyContent: "center",
           }}
         >
@@ -167,14 +167,14 @@ function HomeWeb() {
               href={getPolarisBrowserUrl(engine, s.url)}
               target="_blank"
               rel="noreferrer"
-              className="liquid-glass-ghost shortcut-card group flex aspect-square flex-col items-center justify-center gap-1 rounded-xl p-1.5 text-center"
+              className="liquid-glass-ghost shortcut-card group flex aspect-square flex-col items-center justify-center gap-1 lg:gap-1.5 rounded-xl p-1.5 lg:p-3 text-center"
             >
               <img
                 src={`https://www.google.com/s2/favicons?domain=${s.url}&sz=128`}
                 alt={s.name}
-                className="h-5 w-5 rounded"
+                className="h-5 w-5 lg:h-8 lg:w-8 rounded"
               />
-              <div className="text-[9px] font-medium leading-tight text-white/85">{s.name}</div>
+              <div className="text-[9px] lg:text-xs font-medium leading-tight text-white/85">{s.name}</div>
             </a>
           ))}
         </div>
