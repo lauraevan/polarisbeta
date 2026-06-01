@@ -488,6 +488,14 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
                     </Section>
                   )}
 
+                  {isView && profile && viewUserId && viewUserId !== profile.id && (
+                    <FriendButton otherId={viewUserId} accent={accent} />
+                  )}
+
+                  {!isView && (
+                    <FriendsPanel accent={accent} />
+                  )}
+
                   {err && (
                     <div className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
                       {err}
