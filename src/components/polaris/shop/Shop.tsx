@@ -438,7 +438,7 @@ function QuestsPanel({ quests, progress, onClaim, busy }: { quests: Quest[]; pro
                   </div>
                   <p className="mt-0.5 text-xs text-white/55">{q.description}</p>
                 </div>
-                <PriceTag value={q.reward_coins} kind="coins" />
+                <PriceTag value={q.reward_coins} />
               </div>
               <div className="mt-1 flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-wider text-white/40">
