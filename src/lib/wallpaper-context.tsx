@@ -62,6 +62,15 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 
 export function useWallpaper() {
   const ctx = useContext(WallpaperCtx);
-  if (!ctx) throw new Error("useWallpaper must be used inside WallpaperProvider");
+  if (!ctx) {
+    // Safe fallback for routes mounted outside AppShell (e.g. /admin).
+    return {
+      wallpaper: WALLPAPERS[0],
+      setWallpaperId: () => {},
+      resolution: "540p" as Resolution,
+      setResolution: () => {},
+      all: WALLPAPERS,
+    };
+  }
   return ctx;
 }
