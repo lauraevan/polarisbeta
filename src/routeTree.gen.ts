@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RecsRouteImport } from './routes/recs'
 import { Route as MylistRouteImport } from './routes/mylist'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as GamesRouteImport } from './routes/games'
@@ -31,6 +32,11 @@ const ShopRoute = ShopRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecsRoute = RecsRouteImport.update({
+  id: '/recs',
+  path: '/recs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MylistRoute = MylistRouteImport.update({
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/mylist': typeof MylistRoute
+  '/recs': typeof RecsRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/mylist': typeof MylistRoute
+  '/recs': typeof RecsRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/mylist': typeof MylistRoute
+  '/recs': typeof RecsRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/mylist'
+    | '/recs'
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/mylist'
+    | '/recs'
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/mylist'
+    | '/recs'
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
@@ -194,6 +206,7 @@ export interface RootRouteChildren {
   GamesRoute: typeof GamesRoute
   MediaRoute: typeof MediaRoute
   MylistRoute: typeof MylistRoute
+  RecsRoute: typeof RecsRoute
   SettingsRoute: typeof SettingsRoute
   ShopRoute: typeof ShopRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
@@ -213,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recs': {
+      id: '/recs'
+      path: '/recs'
+      fullPath: '/recs'
+      preLoaderRoute: typeof RecsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mylist': {
@@ -306,6 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   GamesRoute: GamesRoute,
   MediaRoute: MediaRoute,
   MylistRoute: MylistRoute,
+  RecsRoute: RecsRoute,
   SettingsRoute: SettingsRoute,
   ShopRoute: ShopRoute,
   ApiAiChatRoute: ApiAiChatRoute,
