@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info } from "lucide-react";
+import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info, Radio } from "lucide-react";
 import { tmdbApi, IMG, type TmdbItem, type MediaKind } from "@/lib/tmdb";
 import { Row } from "./Row";
 import { MovieModal } from "./MovieModal";
 import { Player } from "./Player";
 import { PolarisFlixSplash } from "./Splash";
+import { LiveTV } from "./LiveTV";
 import { MyListProvider, useMyList } from "@/lib/mylist-context";
 import { ProfileSplash } from "@/components/polaris/ProfileSplash";
 import polarisLogo from "@/assets/polaris-logo.png";
 
-type Tab = "home" | "movies" | "shows" | "anime";
+type Tab = "home" | "movies" | "shows" | "anime" | "live";
 
 // TMDB genre IDs. Movie and TV share many but not all.
 const MOVIE_GENRES = [
@@ -298,6 +299,7 @@ function FlixInner() {
     { id: "movies", label: "Movies", icon: Film },
     { id: "shows", label: "Shows", icon: Tv2 },
     { id: "anime", label: "Anime", icon: Sparkles },
+    { id: "live", label: "Live TV", icon: Radio },
   ];
 
   return (
