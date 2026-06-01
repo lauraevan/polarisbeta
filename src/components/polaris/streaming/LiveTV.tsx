@@ -1,69 +1,65 @@
 import { useMemo, useState } from "react";
-import { Radio, Search, X, Tv2, Trophy, Newspaper, Film, Music2, Baby, FlaskConical, Globe2, Flame, Star } from "lucide-react";
+import { Radio, Search, X, Tv2, Trophy, Newspaper, Film, Music2, Baby, FlaskConical, Globe2, Flame, Star, Volume2, Maximize2, ListVideo, ChevronRight } from "lucide-react";
 
 type Channel = {
   id: string;
   name: string;
   category: Category;
-  logo: string; // URL
+  domain: string;          // used for favicon fallback chains
+  emoji: string;           // always-renders fallback
+  accent: string;          // brand tint for the chip backdrop
   tagline?: string;
   popular?: boolean;
   highlight?: boolean;
+  now?: string;            // what's airing now (display-only)
+  next?: string;           // up next
 };
 
 type Category = "All" | "Sports" | "News" | "Entertainment" | "Movies" | "Kids" | "Music" | "Documentary";
 
 const SRC = "https://toustream.glseries.net/live-tv.html";
-const LOGO = (q: string) =>
-  `https://logo.clearbit.com/${q}`;
 
 const CHANNELS: Channel[] = [
   // Sports
-  { id: "sky-sports", name: "Sky Sports", category: "Sports", logo: LOGO("skysports.com"), tagline: "Premier League · F1 · Boxing", popular: true, highlight: true },
-  { id: "espn", name: "ESPN", category: "Sports", logo: LOGO("espn.com"), tagline: "NFL · NBA · UFC", popular: true, highlight: true },
-  { id: "bt-sport", name: "TNT Sports", category: "Sports", logo: LOGO("tntsports.co.uk"), tagline: "UCL · Premiership Rugby" },
-  { id: "fox-sports", name: "FOX Sports", category: "Sports", logo: LOGO("foxsports.com"), tagline: "MLB · College Football" },
-  { id: "nba-tv", name: "NBA TV", category: "Sports", logo: LOGO("nba.com"), tagline: "League Pass · Live Games", popular: true },
-  { id: "dazn", name: "DAZN", category: "Sports", logo: LOGO("dazn.com"), tagline: "Boxing · MMA" },
+  { id: "sky-sports",      name: "Sky Sports",            category: "Sports",        domain: "skysports.com",        emoji: "⚽", accent: "5 95 200",   tagline: "Premier League · F1 · Boxing", popular: true, highlight: true, now: "Premier League Live",        next: "Saturday Football Highlights" },
+  { id: "espn",            name: "ESPN",                  category: "Sports",        domain: "espn.com",             emoji: "🏈", accent: "200 30 30",  tagline: "NFL · NBA · UFC",              popular: true, highlight: true, now: "NBA Tonight",                next: "SportsCenter" },
+  { id: "bt-sport",        name: "TNT Sports",            category: "Sports",        domain: "tntsports.co.uk",      emoji: "🥊", accent: "230 60 30",  tagline: "UCL · Premiership Rugby",                                  now: "Champions League Magazine",   next: "Boxing Tonight" },
+  { id: "fox-sports",      name: "FOX Sports",            category: "Sports",        domain: "foxsports.com",        emoji: "⚾", accent: "30 50 160",  tagline: "MLB · College Football",                                    now: "MLB Game of the Week",        next: "College Gameday" },
+  { id: "nba-tv",          name: "NBA TV",                category: "Sports",        domain: "nba.com",              emoji: "🏀", accent: "200 80 30",  tagline: "League Pass · Live Games",      popular: true,                  now: "NBA League Pass",             next: "GameTime" },
+  { id: "dazn",            name: "DAZN",                  category: "Sports",        domain: "dazn.com",             emoji: "🥋", accent: "240 220 40", tagline: "Boxing · MMA",                                                now: "Fight Night",                 next: "DAZN Boxing Show" },
 
-  // News
-  { id: "bbc-news", name: "BBC News", category: "News", logo: LOGO("bbc.co.uk"), tagline: "Global news · 24/7", popular: true, highlight: true },
-  { id: "cnn", name: "CNN", category: "News", logo: LOGO("cnn.com"), tagline: "Breaking news", popular: true },
-  { id: "sky-news", name: "Sky News", category: "News", logo: LOGO("sky.com"), tagline: "UK & World" },
-  { id: "al-jazeera", name: "Al Jazeera", category: "News", logo: LOGO("aljazeera.com"), tagline: "International perspectives" },
-  { id: "fox-news", name: "FOX News", category: "News", logo: LOGO("foxnews.com"), tagline: "US politics" },
-  { id: "msnbc", name: "MSNBC", category: "News", logo: LOGO("msnbc.com"), tagline: "Analysis & commentary" },
+  { id: "bbc-news",        name: "BBC News",              category: "News",          domain: "bbc.co.uk",            emoji: "🌍", accent: "190 20 20",  tagline: "Global news · 24/7",            popular: true, highlight: true, now: "BBC Newsroom Live",           next: "World News Today" },
+  { id: "cnn",             name: "CNN",                   category: "News",          domain: "cnn.com",              emoji: "📰", accent: "200 30 30",  tagline: "Breaking news",                 popular: true,                  now: "CNN Newsroom",                next: "Anderson Cooper 360" },
+  { id: "sky-news",        name: "Sky News",              category: "News",          domain: "sky.com",              emoji: "📡", accent: "10 90 200",  tagline: "UK & World",                                                  now: "Sky News Tonight",            next: "The World" },
+  { id: "al-jazeera",      name: "Al Jazeera",            category: "News",          domain: "aljazeera.com",        emoji: "🕌", accent: "210 150 40", tagline: "International perspectives",                                  now: "Newshour",                    next: "Inside Story" },
+  { id: "fox-news",        name: "FOX News",              category: "News",          domain: "foxnews.com",          emoji: "🦅", accent: "30 60 160",  tagline: "US politics",                                                 now: "America Reports",             next: "Special Report" },
+  { id: "msnbc",           name: "MSNBC",                 category: "News",          domain: "msnbc.com",            emoji: "🎙️", accent: "20 130 220", tagline: "Analysis & commentary",                                       now: "Morning Joe",                 next: "Deadline: White House" },
 
-  // Entertainment
-  { id: "bbc-one", name: "BBC One", category: "Entertainment", logo: LOGO("bbc.co.uk"), tagline: "Flagship UK channel", popular: true, highlight: true },
-  { id: "itv", name: "ITV", category: "Entertainment", logo: LOGO("itv.com"), tagline: "Drama · Reality" },
-  { id: "channel4", name: "Channel 4", category: "Entertainment", logo: LOGO("channel4.com"), tagline: "Bold storytelling" },
-  { id: "abc", name: "ABC", category: "Entertainment", logo: LOGO("abc.com"), tagline: "US prime time" },
-  { id: "nbc", name: "NBC", category: "Entertainment", logo: LOGO("nbc.com"), tagline: "SNL · Late Night" },
-  { id: "cbs", name: "CBS", category: "Entertainment", logo: LOGO("cbs.com"), tagline: "Drama · Comedy" },
+  { id: "bbc-one",         name: "BBC One",               category: "Entertainment", domain: "bbc.co.uk",            emoji: "🎭", accent: "180 30 90",  tagline: "Flagship UK channel",           popular: true, highlight: true, now: "EastEnders",                  next: "Strictly Come Dancing" },
+  { id: "itv",             name: "ITV",                   category: "Entertainment", domain: "itv.com",              emoji: "📺", accent: "230 60 130", tagline: "Drama · Reality",                                             now: "Coronation Street",           next: "Britain's Got Talent" },
+  { id: "channel4",        name: "Channel 4",             category: "Entertainment", domain: "channel4.com",         emoji: "🎬", accent: "240 80 130", tagline: "Bold storytelling",                                           now: "Channel 4 News",              next: "Gogglebox" },
+  { id: "abc",             name: "ABC",                   category: "Entertainment", domain: "abc.com",              emoji: "🎤", accent: "30 30 30",   tagline: "US prime time",                                               now: "Jeopardy!",                   next: "ABC World News Tonight" },
+  { id: "nbc",             name: "NBC",                   category: "Entertainment", domain: "nbc.com",              emoji: "🦚", accent: "120 60 200", tagline: "SNL · Late Night",                                            now: "The Tonight Show",            next: "Saturday Night Live" },
+  { id: "cbs",             name: "CBS",                   category: "Entertainment", domain: "cbs.com",              emoji: "👁️", accent: "30 80 180",  tagline: "Drama · Comedy",                                              now: "60 Minutes",                  next: "The Late Show" },
 
-  // Movies
-  { id: "hbo", name: "HBO", category: "Movies", logo: LOGO("hbo.com"), tagline: "Premium cinema", popular: true, highlight: true },
-  { id: "amc", name: "AMC", category: "Movies", logo: LOGO("amc.com"), tagline: "Cinematic series" },
-  { id: "tcm", name: "Turner Classics", category: "Movies", logo: LOGO("tcm.com"), tagline: "Classic cinema" },
-  { id: "fxm", name: "FX Movies", category: "Movies", logo: LOGO("fxnetworks.com"), tagline: "Blockbusters & cult" },
+  { id: "hbo",             name: "HBO",                   category: "Movies",        domain: "hbo.com",              emoji: "🎞️", accent: "120 60 200", tagline: "Premium cinema",                popular: true, highlight: true, now: "Succession Marathon",         next: "House of the Dragon" },
+  { id: "amc",             name: "AMC",                   category: "Movies",        domain: "amc.com",              emoji: "🍿", accent: "200 30 30",  tagline: "Cinematic series",                                            now: "Breaking Bad Marathon",       next: "The Walking Dead" },
+  { id: "tcm",             name: "Turner Classics",       category: "Movies",        domain: "tcm.com",              emoji: "🎟️", accent: "180 120 30", tagline: "Classic cinema",                                              now: "Casablanca",                  next: "Citizen Kane" },
+  { id: "fxm",             name: "FX Movies",             category: "Movies",        domain: "fxnetworks.com",       emoji: "🎥", accent: "20 20 20",   tagline: "Blockbusters & cult",                                         now: "Logan",                       next: "The Revenant" },
 
-  // Kids
-  { id: "cartoon-network", name: "Cartoon Network", category: "Kids", logo: LOGO("cartoonnetwork.com"), tagline: "Animation hub", popular: true },
-  { id: "disney-channel", name: "Disney Channel", category: "Kids", logo: LOGO("disney.com"), tagline: "Family favorites", popular: true },
-  { id: "nick", name: "Nickelodeon", category: "Kids", logo: LOGO("nick.com"), tagline: "SpongeBob & more" },
-  { id: "boomerang", name: "Boomerang", category: "Kids", logo: LOGO("boomerang.com"), tagline: "Retro toons" },
+  { id: "cartoon-network", name: "Cartoon Network",       category: "Kids",          domain: "cartoonnetwork.com",   emoji: "🐰", accent: "30 30 30",   tagline: "Animation hub",                 popular: true,                  now: "Adventure Time",              next: "Regular Show" },
+  { id: "disney-channel",  name: "Disney Channel",        category: "Kids",          domain: "disney.com",           emoji: "🏰", accent: "40 60 200",  tagline: "Family favorites",              popular: true,                  now: "Bluey",                       next: "Mickey Mouse Funhouse" },
+  { id: "nick",            name: "Nickelodeon",           category: "Kids",          domain: "nick.com",             emoji: "🟧", accent: "230 110 30", tagline: "SpongeBob & more",                                            now: "SpongeBob SquarePants",       next: "PAW Patrol" },
+  { id: "boomerang",       name: "Boomerang",             category: "Kids",          domain: "boomerang.com",        emoji: "🪃", accent: "240 180 40", tagline: "Retro toons",                                                 now: "Looney Tunes",                next: "Tom and Jerry" },
 
-  // Music
-  { id: "mtv", name: "MTV", category: "Music", logo: LOGO("mtv.com"), tagline: "Pop & culture", popular: true },
-  { id: "vh1", name: "VH1", category: "Music", logo: LOGO("vh1.com"), tagline: "Hits & throwbacks" },
-  { id: "mtv-live", name: "MTV Live", category: "Music", logo: LOGO("mtv.com"), tagline: "Concert specials" },
+  { id: "mtv",             name: "MTV",                   category: "Music",         domain: "mtv.com",              emoji: "🎵", accent: "230 60 30",  tagline: "Pop & culture",                 popular: true,                  now: "MTV Hits Hour",               next: "Ridiculousness" },
+  { id: "vh1",             name: "VH1",                   category: "Music",         domain: "vh1.com",              emoji: "🎼", accent: "240 50 130", tagline: "Hits & throwbacks",                                           now: "2000s Hip-Hop Hour",          next: "Behind the Music" },
+  { id: "mtv-live",        name: "MTV Live",              category: "Music",         domain: "mtv.com",              emoji: "🎤", accent: "230 60 30",  tagline: "Concert specials",                                            now: "Coachella Replay",            next: "Unplugged" },
 
-  // Documentary
-  { id: "natgeo", name: "National Geographic", category: "Documentary", logo: LOGO("nationalgeographic.com"), tagline: "Earth · Science", popular: true, highlight: true },
-  { id: "discovery", name: "Discovery", category: "Documentary", logo: LOGO("discovery.com"), tagline: "Real-world adventures" },
-  { id: "history", name: "History", category: "Documentary", logo: LOGO("history.com"), tagline: "Stories that shaped us" },
-  { id: "animal-planet", name: "Animal Planet", category: "Documentary", logo: LOGO("animalplanet.com"), tagline: "Wildlife stories" },
+  { id: "natgeo",          name: "National Geographic",   category: "Documentary",   domain: "nationalgeographic.com", emoji: "🌋", accent: "230 200 30", tagline: "Earth · Science",             popular: true, highlight: true, now: "Wild Yellowstone",            next: "Cosmos" },
+  { id: "discovery",       name: "Discovery",             category: "Documentary",   domain: "discovery.com",        emoji: "🔭", accent: "30 80 180",  tagline: "Real-world adventures",                                       now: "Deadliest Catch",             next: "Gold Rush" },
+  { id: "history",         name: "History",               category: "Documentary",   domain: "history.com",          emoji: "📜", accent: "180 100 40", tagline: "Stories that shaped us",                                      now: "Forged in Fire",              next: "Ancient Aliens" },
+  { id: "animal-planet",   name: "Animal Planet",         category: "Documentary",   domain: "animalplanet.com",     emoji: "🦁", accent: "120 180 40", tagline: "Wildlife stories",                                            now: "The Zoo",                     next: "North Woods Law" },
 ];
 
 const CATEGORIES: { id: Category; label: string; icon: typeof Tv2 }[] = [
@@ -76,6 +72,48 @@ const CATEGORIES: { id: Category; label: string; icon: typeof Tv2 }[] = [
   { id: "Music", label: "Music", icon: Music2 },
   { id: "Documentary", label: "Docs", icon: FlaskConical },
 ];
+
+/**
+ * Channel logo with a multi-source fallback chain. Clearbit returns 404 for
+ * many broadcaster domains; DuckDuckGo's icon service is dramatically more
+ * reliable. We finally fall back to the channel emoji so the tile is never
+ * blank.
+ */
+function ChannelLogo({ c, size = 40, className = "" }: { c: Channel; size?: number; className?: string }) {
+  const [stage, setStage] = useState(0);
+  const srcs = [
+    `https://icons.duckduckgo.com/ip3/${c.domain}.ico`,
+    `https://www.google.com/s2/favicons?sz=128&domain=${c.domain}`,
+    `https://logo.clearbit.com/${c.domain}`,
+  ];
+  if (stage >= srcs.length) {
+    return (
+      <span
+        className={`grid place-items-center rounded-md text-white ${className}`}
+        style={{
+          width: size, height: size,
+          background: `linear-gradient(135deg, rgb(${c.accent}/0.95), rgb(${c.accent}/0.55))`,
+          fontSize: size * 0.55,
+        }}
+        aria-label={c.name}
+      >
+        {c.emoji}
+      </span>
+    );
+  }
+  return (
+    <img
+      key={stage}
+      src={srcs[stage]}
+      alt={c.name}
+      width={size}
+      height={size}
+      onError={() => setStage((s) => s + 1)}
+      className={`rounded-md bg-white object-contain p-1 ${className}`}
+      style={{ width: size, height: size }}
+    />
+  );
+}
 
 export function LiveTV() {
   const [cat, setCat] = useState<Category>("All");
@@ -184,7 +222,7 @@ export function LiveTV() {
                       onClick={() => setPlaying(c)}
                       className="flex items-center gap-2 rounded-full bg-black/35 px-3 py-1.5 text-xs font-semibold text-amber-50 ring-1 ring-amber-200/30 transition hover:bg-black/55"
                     >
-                      <img src={c.logo} alt="" className="h-4 w-4 rounded-sm bg-white object-contain" />
+                      <ChannelLogo c={c} size={16} className="!p-0" />
                       {c.name}
                     </button>
                   ))}
@@ -197,7 +235,7 @@ export function LiveTV() {
                     onClick={() => setPlaying(c)}
                     className="group relative flex aspect-square items-center justify-center rounded-xl bg-stone-950/55 ring-1 ring-white/10 transition hover:scale-[1.04] hover:ring-amber-300/60"
                   >
-                    <img src={c.logo} alt={c.name} className="h-10 w-10 rounded bg-white object-contain p-1" />
+                    <ChannelLogo c={c} size={42} />
                     <span className="absolute inset-x-0 bottom-1 truncate px-1 text-center text-[9px] font-semibold text-white/80">{c.name}</span>
                   </button>
                 ))}
@@ -233,7 +271,7 @@ export function LiveTV() {
         </p>
       </div>
 
-      {playing && <LivePlayer channel={playing} onClose={() => setPlaying(null)} />}
+      {playing && <LivePlayer channel={playing} all={CHANNELS} onPick={setPlaying} onClose={() => setPlaying(null)} />}
     </div>
   );
 }
@@ -257,14 +295,14 @@ function ChannelRow({ channels, onPlay }: { channels: Channel[]; onPlay: (c: Cha
         <button
           key={c.id}
           onClick={() => onPlay(c)}
-          className="group relative flex w-40 shrink-0 flex-col items-center gap-2 rounded-xl border border-amber-100/10 bg-gradient-to-b from-stone-900/80 to-stone-950/90 p-3 transition hover:-translate-y-0.5 hover:border-amber-200/40 hover:shadow-[0_18px_50px_-15px_rgba(255,170,90,0.45)]"
+          className="group relative flex w-44 shrink-0 flex-col items-center gap-2 rounded-xl border border-white/5 bg-stone-950/70 p-3 text-left transition hover:-translate-y-0.5 hover:border-amber-200/40 hover:bg-stone-900/80"
+          style={{ boxShadow: `inset 0 0 0 1px rgb(${c.accent}/0.18)` }}
         >
-          <div className="grid h-16 w-16 place-items-center rounded-lg bg-white">
-            <img src={c.logo} alt={c.name} className="h-12 w-12 object-contain" />
-          </div>
-          <div className="text-center">
+          <ChannelLogo c={c} size={56} />
+          <div className="w-full text-center">
             <div className="truncate text-sm font-bold text-amber-50">{c.name}</div>
             {c.tagline && <div className="line-clamp-1 text-[10px] text-white/55">{c.tagline}</div>}
+            {c.now && <div className="mt-1 line-clamp-1 text-[10px] text-amber-200/80">▸ {c.now}</div>}
           </div>
           <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-rose-500/90 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
             <span className="h-1 w-1 rounded-full bg-white" /> Live
@@ -279,51 +317,126 @@ function ChannelCard({ c, onPlay }: { c: Channel; onPlay: () => void }) {
   return (
     <button
       onClick={onPlay}
-      className="group relative flex flex-col items-center gap-2 rounded-xl border border-amber-100/10 bg-gradient-to-b from-stone-900/80 to-stone-950/90 p-3 transition hover:-translate-y-0.5 hover:border-amber-200/40 hover:shadow-[0_18px_50px_-15px_rgba(255,170,90,0.45)]"
+      className="group relative flex flex-col items-center gap-2 rounded-xl border border-white/5 bg-stone-950/70 p-3 transition hover:-translate-y-0.5 hover:border-amber-200/40 hover:bg-stone-900/80"
+      style={{ boxShadow: `inset 0 0 0 1px rgb(${c.accent}/0.16)` }}
     >
-      <div className="grid h-14 w-14 place-items-center rounded-lg bg-white">
-        <img src={c.logo} alt={c.name} className="h-10 w-10 object-contain" />
-      </div>
+      <ChannelLogo c={c} size={52} />
       <div className="w-full text-center">
         <div className="truncate text-xs font-bold text-amber-50">{c.name}</div>
         {c.tagline && <div className="line-clamp-1 text-[10px] text-white/50">{c.tagline}</div>}
+        {c.now && <div className="mt-0.5 line-clamp-1 text-[10px] text-amber-200/75">▸ {c.now}</div>}
       </div>
       <span className="absolute right-1.5 top-1.5 rounded-full bg-rose-500/90 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">Live</span>
     </button>
   );
 }
 
-function LivePlayer({ channel, onClose }: { channel: Channel; onClose: () => void }) {
+function LivePlayer({ channel, all, onPick, onClose }: { channel: Channel; all: Channel[]; onPick: (c: Channel) => void; onClose: () => void }) {
+  const [showSidebar, setShowSidebar] = useState(true);
+  const related = all.filter((c) => c.category === channel.category && c.id !== channel.id).slice(0, 8);
+
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-black/95 backdrop-blur-2xl animate-[fadeIn_180ms_ease]">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
+    <div className="fixed inset-0 z-[200] flex flex-col bg-black animate-[fadeIn_180ms_ease]">
+      {/* Glassy top bar branded with the channel accent */}
+      <div
+        className="relative flex items-center justify-between gap-3 px-4 py-3 sm:px-6"
+        style={{
+          background: `linear-gradient(180deg, rgb(${channel.accent}/0.35) 0%, rgba(0,0,0,0.85) 100%)`,
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
         <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-white">
-            <img src={channel.logo} alt="" className="h-7 w-7 object-contain" />
-          </div>
+          <ChannelLogo c={channel} size={40} />
           <div>
             <div className="flex items-center gap-2 text-sm font-black text-amber-50">
-              <Radio className="h-3.5 w-3.5 text-rose-400" /> {channel.name}
+              <span className="relative inline-flex h-2 w-2">
+                <span className="absolute inset-0 animate-ping rounded-full bg-rose-500/70" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
+              </span>
+              {channel.name}
+              <span className="rounded-full bg-rose-500/90 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">Live</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">{channel.category}</span>
             </div>
-            {channel.tagline && <div className="text-[11px] text-white/55">{channel.tagline}</div>}
+            {channel.now && (
+              <div className="text-[11px] text-amber-100/80">
+                Now: <span className="font-semibold text-amber-50">{channel.now}</span>
+                {channel.next && <span className="text-white/45"> · Next: {channel.next}</span>}
+              </div>
+            )}
           </div>
         </div>
-        <button onClick={onClose} className="liquid-glass rounded-full p-2 text-white" aria-label="Close player">
-          <X className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSidebar((v) => !v)}
+            className="liquid-glass hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white sm:inline-flex"
+            title="Toggle channel guide"
+          >
+            <ListVideo className="h-3.5 w-3.5" /> Guide
+          </button>
+          <button onClick={onClose} className="liquid-glass rounded-full p-2 text-white" aria-label="Close player">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
       </div>
-      <div className="relative flex-1 overflow-hidden bg-black">
-        <iframe
-          src={SRC}
-          title={`${channel.name} — Live`}
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          allowFullScreen
-          referrerPolicy="no-referrer"
-          className="absolute inset-0 h-full w-full"
-        />
-      </div>
-      <div className="px-4 py-2 text-center text-[11px] text-white/45 sm:px-6">
-        Streaming via toustream · pick a channel inside the player to switch feeds.
+
+      <div className="relative flex flex-1 overflow-hidden">
+        {/* Player surface */}
+        <div className="relative flex-1 overflow-hidden bg-black">
+          <iframe
+            // Force a fresh iframe instance per channel so the upstream tuner
+            // resets even though it doesn't accept a channel param. The hash
+            // is also a hint for upstream code that supports it.
+            key={channel.id}
+            src={`${SRC}#channel=${channel.id}`}
+            title={`${channel.name} — Live`}
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allowFullScreen
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 h-full w-full"
+          />
+          {/* Bottom action chrome — purely cosmetic but makes the surface feel like a real player */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-3 bg-gradient-to-t from-black/85 via-black/30 to-transparent px-4 py-3 text-xs text-white/80">
+            <Radio className="h-3.5 w-3.5 text-rose-400" />
+            <span className="font-semibold text-amber-50">{channel.name}</span>
+            {channel.tagline && <span className="hidden text-white/55 sm:inline">· {channel.tagline}</span>}
+            <div className="ml-auto flex items-center gap-2 opacity-70">
+              <Volume2 className="h-3.5 w-3.5" />
+              <Maximize2 className="h-3.5 w-3.5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Channel guide sidebar */}
+        {showSidebar && (
+          <aside className="hidden w-72 shrink-0 flex-col border-l border-white/5 bg-stone-950/95 lg:flex">
+            <div className="border-b border-white/5 px-4 py-3">
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/80">More in</div>
+              <div className="text-sm font-bold text-amber-50">{channel.category}</div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2">
+              {related.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => onPick(c)}
+                  className="group flex w-full items-center gap-3 rounded-lg p-2 text-left transition hover:bg-white/5"
+                >
+                  <ChannelLogo c={c} size={36} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-bold text-amber-50">{c.name}</div>
+                    {c.now && <div className="truncate text-[10px] text-amber-200/70">▸ {c.now}</div>}
+                  </div>
+                  <ChevronRight className="h-3.5 w-3.5 text-white/30 group-hover:text-white/70" />
+                </button>
+              ))}
+              {related.length === 0 && (
+                <div className="px-3 py-6 text-center text-xs text-white/40">No siblings in this category.</div>
+              )}
+            </div>
+            <div className="border-t border-white/5 px-4 py-2 text-[10px] text-white/35">
+              Polaris Live · feed: toustream
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );
