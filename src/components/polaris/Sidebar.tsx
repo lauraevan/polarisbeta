@@ -19,7 +19,7 @@ import { ProfileButton } from "./ProfileButton";
 const nav = [
   { to: "/", label: "Home", icon: Home },
   { to: "/games", label: "Games", icon: Gamepad2 },
-  { to: "/media", label: "Media", icon: Tv },
+  { to: "/media", label: "Cinema", icon: Tv },
   { to: "/browser", label: "Browser", icon: Globe2 },
   { to: "/apps", label: "Apps", icon: LayoutGrid },
   { to: "/ai", label: "AI Tools", icon: Sparkles },
