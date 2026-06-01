@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppShell } from "@/components/polaris/AppShell";
-import { Home } from "@/components/polaris/Home";
+import { HomeScreen } from "@/components/polaris/HomeScreen";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -15,9 +14,5 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  return (
-    <AppShell>
-      <Home />
-    </AppShell>
-  );
+  return <HomeScreen />;
 }

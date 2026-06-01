@@ -16,8 +16,10 @@ import {
 import logo from "@/assets/polaris-logo.png";
 import { useSidebarState } from "@/lib/sidebar-context";
 import { ProfileButton } from "./ProfileButton";
+import { useEffect, useState } from "react";
+import { isDesktopMode } from "@/lib/runtime-mode";
 
-const nav = [
+const ALL_NAV = [
   { to: "/", label: "Home", icon: Home },
   { to: "/games", label: "Games", icon: Gamepad2 },
   { to: "/media", label: "Cinema", icon: Tv },
@@ -34,6 +36,9 @@ export function Sidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { collapsed, toggle } = useSidebarState();
   const width = collapsed ? "w-[68px]" : "w-60";
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => setDesktop(isDesktopMode()), []);
+  const nav = desktop ? ALL_NAV.filter((n) => n.to !== "/shop") : ALL_NAV;
 
   return (
     <aside
