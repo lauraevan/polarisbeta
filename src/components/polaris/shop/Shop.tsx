@@ -206,11 +206,11 @@ function Grid({ children, cards }: { children: React.ReactNode; cards: number })
 type Item = {
   id: string; kind: string; name: string; description: string | null;
   price_coins: number | null; price_basic_credits: number | null;
-  payload: Record<string, unknown>; bundle_contents: string[];
+  payload: unknown; bundle_contents: string[];
 };
 
 function ItemCard({ item, owned, onBuy, busy, credits }: { item: Item; owned: boolean; onBuy: () => void; busy: boolean; credits?: boolean }) {
-  const payload = item.payload as { accent?: string; banner?: string; effect?: string; emoji?: string; color?: string; frame?: string };
+  const payload = (item.payload ?? {}) as { accent?: string; banner?: string; effect?: string; emoji?: string; color?: string; frame?: string };
   const accent = payload.accent || payload.color || payload.banner || "230 150 80";
   const price = credits ? item.price_basic_credits : item.price_coins;
 
@@ -318,8 +318,8 @@ function PriceTag({ value, kind, big }: { value: number | null; kind: "coins" | 
   );
 }
 
-type Quest = { id: string; name: string; description: string; difficulty: string; reward_coins: number; repeatable: boolean; kind: string };
-type Progress = { quest_id: string; completed: boolean; claimed: boolean; progress: Record<string, unknown> };
+type Quest = { id: string; name: string; description: string; difficulty: string; reward_coins: number | null; repeatable: boolean; kind: string };
+type Progress = { quest_id: string; completed: boolean; claimed: boolean; progress: unknown };
 
 function QuestsPanel({ quests, progress, onClaim, busy }: { quests: Quest[]; progress: Progress[]; onClaim: (id: string) => void; busy: boolean }) {
   const byQ = new Map(progress.map((p) => [p.quest_id, p]));
