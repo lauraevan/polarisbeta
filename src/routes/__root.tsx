@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../lib/auth-context";
 import { ThemeProvider } from "../lib/theme-context";
 import { TabCloakProvider } from "../lib/tab-cloaker";
+import { PanicModeProvider, PanicOverlay } from "../lib/panic-mode";
 
 function NotFoundComponent() {
   return (
@@ -128,8 +129,11 @@ function RootComponent() {
       <ThemeProvider>
         <AuthProvider>
           <TabCloakProvider>
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
+            <PanicModeProvider>
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+              <PanicOverlay />
+            </PanicModeProvider>
           </TabCloakProvider>
         </AuthProvider>
       </ThemeProvider>

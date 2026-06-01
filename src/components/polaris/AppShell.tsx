@@ -32,7 +32,7 @@ export function AppShell({ children, hideDock = false }: { children: ReactNode; 
           <main className="relative flex-1 overflow-x-hidden">{children}</main>
         </div>
         {!hideDock && <Dock onOpenWallpaper={() => setWallpaperOpen(true)} />}
-        <WallpaperPicker open={wallpaperOpen} onOpenChange={setWallpaperOpen} />
+        {!hideDock && <WallpaperPicker open={wallpaperOpen} onOpenChange={setWallpaperOpen} />}
         <ProfileSheet open={profileOpen} onClose={() => setProfileOpen(false)} />
         <PolarisBoot />
       </SidebarProvider>
