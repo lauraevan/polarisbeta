@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Save, LogOut, Loader2, Camera, Trash2, Sparkles } from "lucide-react";
+import { X, Save, LogOut, Loader2, Camera, Trash2, Sparkles, ImagePlus } from "lucide-react";
 import { useAuth, type Profile } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,6 +26,8 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
   const [viewing, setViewing] = useState<Profile | null>(null);
   const [loadingView, setLoadingView] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [ownedThemes, setOwnedThemes] = useState<Array<{ id: string; name: string; accent: string; banner: string }>>([]);
   const [tab, setTab] = useState<"profile" | "chat">("profile");
 
   useEffect(() => {
@@ -41,6 +43,24 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
     });
   }, [open, viewUserId]);
 
+  // Load owned themes for banner picker.
+  useEffect(() => {
+    if (!open || viewUserId || !profile) return;
+    (async () => {
+      const { data: inv } = await supabase.from("user_inventory").select("item_id").eq("user_id", profile.id);
+      const ids = (inv ?? []).map((r) => r.item_id);
+      if (!ids.length) { setOwnedThemes([]); return; }
+      const { data: items } = await supabase.from("shop_items").select("id,name,kind,payload").in("id", ids);
+      const themes = (items ?? [])
+        .filter((i) => i.kind === "theme")
+        .map((i) => {
+          const p = (i.payload ?? {}) as { accent?: string; banner?: string };
+          return { id: i.id, name: i.name, accent: p.accent ?? "255 140 80", banner: p.banner ?? p.accent ?? "230 110 50" };
+        });
+      setOwnedThemes(themes);
+    })();
+  }, [open, viewUserId, profile]);
+
   if (!open || typeof document === "undefined") return null;
 
   const isView = !!viewUserId && (!profile || viewUserId !== profile.id);
@@ -50,6 +70,7 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
   const merged = { ...(base as Profile), ...(isView ? {} : draft) };
   const accent = merged.accent_color || "255 140 80";
   const banner = merged.banner_color || accent;
+  const bannerUrl = merged.banner_url ?? null;
   const dirty = Object.keys(draft).length > 0;
 
   async function save() {
@@ -84,6 +105,20 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
     const { data } = supabase.storage.from("avatars").getPublicUrl(path);
     setDraft({ ...draft, avatar_url: data.publicUrl });
     setUploadingAvatar(false);
+  }
+
+  async function uploadBanner(file: File) {
+    if (!profile) return;
+    if (file.size > 6 * 1024 * 1024) { setErr("Banner must be under 6MB."); return; }
+    setUploadingBanner(true);
+    setErr(null);
+    const ext = (file.name.split(".").pop() || "png").toLowerCase();
+    const path = `${profile.id}/banner-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { setErr("Upload failed: " + upErr.message); setUploadingBanner(false); return; }
+    const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+    setDraft({ ...draft, banner_url: data.publicUrl });
+    setUploadingBanner(false);
   }
 
   const accentRgb = `rgb(${accent})`;
@@ -161,10 +196,41 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
                       <div
                         className="h-32 w-full rounded-2xl"
                         style={{
-                          background: `linear-gradient(135deg, rgb(${banner}), rgb(${accent}))`,
+                          background: bannerUrl
+                            ? `url(${bannerUrl}) center/cover no-repeat`
+                            : `linear-gradient(135deg, rgb(${banner}), rgb(${accent}))`,
                           boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.08)",
                         }}
-                      />
+                      >
+                        {!isView && (
+                          <div className="absolute right-3 top-3 flex gap-2">
+                            <label
+                              className="flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold text-white shadow-lg backdrop-blur-md"
+                              style={{ background: "rgba(0,0,0,0.55)", border: `1px solid ${accentRing}` }}
+                              title="Upload banner image"
+                            >
+                              {uploadingBanner ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImagePlus className="h-3 w-3" />}
+                              {uploadingBanner ? "Uploading…" : "Upload banner"}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadBanner(f); e.currentTarget.value = ""; }}
+                              />
+                            </label>
+                            {bannerUrl && (
+                              <button
+                                onClick={() => setDraft({ ...draft, banner_url: null })}
+                                className="rounded-full p-1.5 text-white shadow-lg backdrop-blur-md"
+                                style={{ background: "rgba(0,0,0,0.55)", border: `1px solid ${accentRing}` }}
+                                title="Clear banner image"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       <div className="-mt-10 flex items-end gap-4 pl-2">
                         <div className="relative">
                           <div
@@ -315,6 +381,26 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
                             ))}
                           </div>
                         </Field>
+                        {ownedThemes.length > 0 && (
+                          <Field label="Apply a Purchased Theme Banner">
+                            <div className="flex flex-wrap gap-2">
+                              {ownedThemes.map((t) => (
+                                <button
+                                  key={t.id}
+                                  onClick={() => setDraft({ ...draft, banner_color: t.banner, accent_color: t.accent, banner_url: null })}
+                                  title={t.name}
+                                  className="group flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:scale-[1.02]"
+                                  style={{
+                                    background: `linear-gradient(135deg, rgb(${t.banner}), rgb(${t.accent}))`,
+                                    boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.15)",
+                                  }}
+                                >
+                                  {t.name}
+                                </button>
+                              ))}
+                            </div>
+                          </Field>
+                        )}
                         <Field label="Emoji Avatar (fallback)">
                           <div className="flex flex-wrap gap-1.5">
                             {PRESET_EMOJI.map((e) => (
