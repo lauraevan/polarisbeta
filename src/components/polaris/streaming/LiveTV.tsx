@@ -17,7 +17,14 @@ type Channel = {
 
 type Category = "All" | "Sports" | "News" | "Entertainment" | "Movies" | "Kids" | "Music" | "Documentary";
 
-const SRC = "https://toustream.glseries.net/live-tv.html";
+// toustream.xyz exposes per-channel pages; we point each tile at its slug
+// instead of dumping users on the homepage. The custom Polaris chrome
+// (top bar, guide, controls) wraps the stream so it never feels like a
+// raw embed.
+const SRC_BASE = "https://toustream.xyz";
+function channelSrc(c: Channel) {
+  return `${SRC_BASE}/watch/${c.id}`;
+}
 
 const CHANNELS: Channel[] = [
   // Sports
@@ -384,10 +391,9 @@ function LivePlayer({ channel, all, onPick, onClose }: { channel: Channel; all: 
         <div className="relative flex-1 overflow-hidden bg-black">
           <iframe
             // Force a fresh iframe instance per channel so the upstream tuner
-            // resets even though it doesn't accept a channel param. The hash
-            // is also a hint for upstream code that supports it.
+            // re-bootstraps for the new slug.
             key={channel.id}
-            src={`${SRC}#channel=${channel.id}`}
+            src={channelSrc(channel)}
             title={`${channel.name} — Live`}
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
             allowFullScreen
@@ -433,7 +439,7 @@ function LivePlayer({ channel, all, onPick, onClose }: { channel: Channel; all: 
               )}
             </div>
             <div className="border-t border-white/5 px-4 py-2 text-[10px] text-white/35">
-              Polaris Live · feed: toustream
+              Polaris Live · source: toustream.xyz
             </div>
           </aside>
         )}
