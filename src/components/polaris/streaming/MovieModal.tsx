@@ -2,6 +2,7 @@ import { Play, Plus, Check, X, Star, Clock, Calendar, Globe2 } from "lucide-reac
 import { IMG, tmdbApi, type TmdbItem, type MediaKind } from "@/lib/tmdb";
 import { useMyList } from "@/lib/mylist-context";
 import { useQuery } from "@tanstack/react-query";
+import { CommunityRatings } from "./CommunityRatings";
 
 type Props = {
   item: TmdbItem;
@@ -141,7 +142,7 @@ export function MovieModal({ item, kind, onClose, onPlay }: Props) {
           {/* Stats */}
           {details.data && (
             <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <Stat label="Rating" value={item.vote_average.toFixed(1) + " / 10"} />
+              <Stat label="Critic Score" value={item.vote_average.toFixed(1) + " / 10"} />
               <Stat label={kind === "movie" ? "Runtime" : "Episode"} value={runtime ? `${runtime} min` : "—"} />
               <Stat label="Status" value={details.data.status || "—"} />
               <Stat
@@ -151,6 +152,8 @@ export function MovieModal({ item, kind, onClose, onPlay }: Props) {
               />
             </div>
           )}
+
+          <CommunityRatings kind={kind} tmdbId={item.id} />
         </div>
       </div>
     </div>
