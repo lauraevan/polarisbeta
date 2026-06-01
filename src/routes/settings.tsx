@@ -259,6 +259,43 @@ function SettingsPage() {
           </div>
         </section>
 
+        {/* My owned themes (from purchases) */}
+        {ownedThemes.length > 0 && (
+          <section className="liquid-glass-themed rounded-2xl p-5">
+            <SectionTitle icon={Package} title="My Themes" subtitle={`${ownedThemes.length} owned — purchased from the Shop`} />
+            <div className="mt-4 space-y-5">
+              {Object.entries(themeGroups).map(([bundleName, list]) => (
+                <div key={bundleName}>
+                  <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.25em] text-white/55">{bundleName}</div>
+                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
+                    {list.map((t) => {
+                      const active = customAccent === t.accent;
+                      return (
+                        <button
+                          key={t.id}
+                          onClick={() => applyOwnedTheme(t)}
+                          className={`group relative overflow-hidden rounded-xl border text-left transition ${
+                            active ? "border-white scale-[1.02] shadow-lg" : "border-white/10 hover:border-white/30"
+                          }`}
+                        >
+                          <div
+                            className="h-14 w-full"
+                            style={{ background: `linear-gradient(135deg, rgb(${t.banner}), rgb(${t.accent}))` }}
+                          />
+                          <div className="px-3 py-2">
+                            <div className="truncate text-[12px] font-bold text-white">{t.name}</div>
+                            <div className="truncate text-[10px] text-white/55">{active ? "Active" : "Tap to apply"}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Background Mode */}
         <section className="liquid-glass-themed rounded-2xl p-5">
           <div className="mb-4">
