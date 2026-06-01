@@ -519,6 +519,67 @@ export function PolarisAI() {
             >
               <Plus className="h-5 w-5" />
             </button>
+
+            {isSignedIn && (
+              <div className="relative">
+                <button
+                  onClick={() => { setWalletOpen((o) => !o); setModelOpen(false); setModeOpen(false); }}
+                  className="flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-amber-500/10 px-2.5 py-1.5 text-xs font-semibold text-amber-100 hover:bg-amber-500/20"
+                  title="Coins & AI credits"
+                >
+                  <Coins className="h-3.5 w-3.5" />
+                  {wallet?.coins ?? 0}
+                  <span className="hidden text-amber-200/70 sm:inline">·</span>
+                  <span className="hidden text-amber-200/90 sm:inline">{(wallet?.basic_credits ?? 0)}b / {(wallet?.premium_credits ?? 0)}p</span>
+                </button>
+                {walletOpen && (
+                  <div className="liquid-glass-strong absolute right-0 top-[calc(100%+8px)] z-40 w-[280px] overflow-hidden rounded-2xl border border-white/10 p-3">
+                    <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/80">Polaris Wallet</div>
+                    <div className="mb-3 grid grid-cols-3 gap-2 text-center">
+                      <div className="rounded-xl bg-amber-500/15 p-2">
+                        <div className="text-base font-black text-amber-100">{wallet?.coins ?? 0}</div>
+                        <div className="text-[9px] uppercase tracking-wider text-amber-200/70">Coins</div>
+                      </div>
+                      <div className="rounded-xl bg-emerald-500/15 p-2">
+                        <div className="text-base font-black text-emerald-100">{wallet?.basic_credits ?? 0}</div>
+                        <div className="text-[9px] uppercase tracking-wider text-emerald-200/70">Basic</div>
+                      </div>
+                      <div className="rounded-xl bg-indigo-500/15 p-2">
+                        <div className="text-base font-black text-indigo-100">{wallet?.premium_credits ?? 0}</div>
+                        <div className="text-[9px] uppercase tracking-wider text-indigo-200/70">Premium</div>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <button
+                        onClick={() => exchange("basic")}
+                        disabled={exchanging !== null || (wallet?.coins ?? 0) < 25}
+                        className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-xs hover:bg-white/10 disabled:opacity-50"
+                      >
+                        <span className="flex items-center gap-2 text-white">
+                          <Sparkles className="h-3.5 w-3.5 text-emerald-300" />
+                          Trade <b>25 coins</b> → <b>1 basic credit</b>
+                        </span>
+                        <span className="text-emerald-200/80">+1</span>
+                      </button>
+                      <button
+                        onClick={() => exchange("premium")}
+                        disabled={exchanging !== null || (wallet?.coins ?? 0) < 50}
+                        className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-xs hover:bg-white/10 disabled:opacity-50"
+                      >
+                        <span className="flex items-center gap-2 text-white">
+                          <Sparkles className="h-3.5 w-3.5 text-indigo-300" />
+                          Trade <b>50 coins</b> → <b>1 premium credit</b>
+                        </span>
+                        <span className="text-indigo-200/80">+1</span>
+                      </button>
+                    </div>
+                    <div className="mt-3 text-[10px] leading-relaxed text-white/45">
+                      Credits unlock extra AI messages past your daily quota. They can't buy items — coins do that in the Shop.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </header>
 
