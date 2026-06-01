@@ -228,3 +228,74 @@ export const adminRevokeOwner = createServerFn({ method: "POST" })
       .update({ is_owner: false, custom_role: null }).eq("id", context.userId);
     return { ok: true };
   });
+
+/** Rename a user everywhere: profile + all past chat messages + DMs. */
+export const adminRenameUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      from: z.string().min(1).max(60),
+      to: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await requireOwner(context.userId);
+    const { data: target } = await supabaseAdmin
+      .from("profiles").select("id").eq("username", data.from).maybeSingle();
+    if (!target) throw new Error("User not found");
+    const { data: clash } = await supabaseAdmin
+      .from("profiles").select("id").eq("username", data.to).maybeSingle();
+    if (clash) throw new Error("Target username already taken");
+    await supabaseAdmin.from("profiles").update({ username: data.to }).eq("id", target.id);
+    await supabaseAdmin.from("chat_messages").update({ username: data.to }).eq("user_id", target.id);
+    await supabaseAdmin.from("direct_messages").update({ sender_username: data.to }).eq("sender_id", target.id);
+    return { ok: true };
+  });
+
+/** Update a channel's filter / role-restriction settings. */
+export const adminUpdateChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      id: z.string().uuid(),
+      filter_enabled: z.boolean().optional(),
+      allowed_role: z.string().max(40).nullable().optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await requireOwner(context.userId);
+    const patch: Record<string, unknown> = {};
+    if (typeof data.filter_enabled === "boolean") patch.filter_enabled = data.filter_enabled;
+    if (data.allowed_role !== undefined) patch.allowed_role = data.allowed_role?.trim() || null;
+    if (!Object.keys(patch).length) return { ok: true };
+    const { error } = await supabaseAdmin.from("chat_channels").update(patch).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Aggregate stats for the admin home: my profile, my coins, my spend, totals across the app. */
+export const adminGetStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireOwner(context.userId);
+    const [me, wallet, totals, msgCount, chCount, bannedCount, recent] = await Promise.all([
+      supabaseAdmin.from("profiles").select("*").eq("id", context.userId).maybeSingle(),
+      supabaseAdmin.from("user_wallet").select("*").eq("user_id", context.userId).maybeSingle(),
+      supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("chat_messages").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("chat_channels").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }).eq("is_banned", true),
+      supabaseAdmin.from("chat_messages").select("id, username, content, created_at, channel_id").order("created_at", { ascending: false }).limit(20),
+    ]);
+    return {
+      me: me.data,
+      wallet: wallet.data ?? { coins: 0, basic_credits: 0, premium_credits: 0 },
+      totals: {
+        users: totals.count ?? 0,
+        messages: msgCount.count ?? 0,
+        channels: chCount.count ?? 0,
+        banned: bannedCount.count ?? 0,
+      },
+      recentMessages: recent.data ?? [],
+    };
+  });
