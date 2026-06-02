@@ -3,29 +3,30 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-async function assertOwner(supabase: ReturnType<typeof requireOwnerClient>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
-  const { data: profile } = await supabase
+async function assertOwner(userId: string): Promise<string> {
+  const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("is_owner")
-    .eq("id", user.id)
+    .eq("id", userId)
     .maybeSingle();
   if (!profile?.is_owner) throw new Error("Forbidden — owner only");
-  return user.id;
+  return userId;
 }
 
-// Helper alias so TS doesn't complain in the assert helper
-type _SB = ReturnType<typeof supabaseAdmin.schema>;
-function requireOwnerClient(): _SB {
-  throw new Error("placeholder");
+async function getMyUsername(userId: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("profiles")
+    .select("username")
+    .eq("id", userId)
+    .maybeSingle();
+  return data?.username ?? null;
 }
 
 /** List recent bans with their targets (joined). */
 export const adminListBans = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertOwner(context.supabase);
+    await assertOwner(context.userId);
     const { data: bans, error } = await supabaseAdmin
       .from("bans")
       .select("*")
@@ -49,7 +50,7 @@ export const adminListEvents = createServerFn({ method: "GET" })
     z.object({ limit: z.number().int().min(1).max(1000).default(250) }).parse(input ?? {}),
   )
   .handler(async ({ context, data }) => {
-    await assertOwner(context.supabase);
+    await assertOwner(context.userId);
     const { data: events, error } = await supabaseAdmin
       .from("security_events")
       .select("*")
@@ -63,7 +64,7 @@ export const adminListEvents = createServerFn({ method: "GET" })
 export const adminListSessions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertOwner(context.supabase);
+    await assertOwner(context.userId);
     const { data, error } = await supabaseAdmin
       .from("device_sessions")
       .select("*")
@@ -96,13 +97,8 @@ export const adminCreateBan = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ context, data }) => {
-    await assertOwner(context.supabase);
-    const { data: { user } } = await context.supabase.auth.getUser();
-    const { data: meProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("username")
-      .eq("id", user!.id)
-      .single();
+    await assertOwner(context.userId);
+    const meUsername = await getMyUsername(context.userId);
 
     const { data: ban, error } = await supabaseAdmin
       .from("bans")
@@ -111,8 +107,8 @@ export const adminCreateBan = createServerFn({ method: "POST" })
         reason: data.reason,
         notes: data.notes ?? null,
         expires_at: data.expiresAt ?? null,
-        issued_by: user!.id,
-        issued_by_username: meProfile?.username ?? null,
+        issued_by: context.userId,
+        issued_by_username: meUsername,
       })
       .select()
       .single();
@@ -167,8 +163,8 @@ export const adminCreateBan = createServerFn({ method: "POST" })
     await supabaseAdmin.from("security_events").insert({
       kind: "ban_issued",
       severity: "high",
-      user_id: user!.id,
-      username: meProfile?.username ?? null,
+      user_id: context.userId,
+      username: meUsername,
       ban_id: ban.id,
       detail: { type: data.type, targetCount: data.targets.length, reason: data.reason },
     });
@@ -183,14 +179,13 @@ export const adminLiftBan = createServerFn({ method: "POST" })
     z.object({ banId: z.string().uuid(), reason: z.string().max(500).optional() }).parse(input),
   )
   .handler(async ({ context, data }) => {
-    await assertOwner(context.supabase);
-    const { data: { user } } = await context.supabase.auth.getUser();
+    await assertOwner(context.userId);
     const { error } = await supabaseAdmin
       .from("bans")
       .update({
         status: "lifted",
         lifted_at: new Date().toISOString(),
-        lifted_by: user!.id,
+        lifted_by: context.userId,
         lifted_reason: data.reason ?? null,
       })
       .eq("id", data.banId);
@@ -212,7 +207,7 @@ export const adminLiftBan = createServerFn({ method: "POST" })
     await supabaseAdmin.from("security_events").insert({
       kind: "ban_lifted",
       severity: "info",
-      user_id: user!.id,
+      user_id: context.userId,
       ban_id: data.banId,
       detail: { reason: data.reason ?? null },
     });
@@ -234,7 +229,7 @@ export const adminQuickBan = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ context, data }) => {
-    await assertOwner(context.supabase);
+    await assertOwner(context.userId);
     const { data: ev } = await supabaseAdmin
       .from("security_events")
       .select("*")
@@ -263,7 +258,7 @@ export const adminQuickBan = createServerFn({ method: "POST" })
 export const adminSecurityStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertOwner(context.supabase);
+    await assertOwner(context.userId);
     const [bansRes, eventsRes, sessionsRes, appealsRes] = await Promise.all([
       supabaseAdmin.from("bans").select("status", { count: "exact", head: false }),
       supabaseAdmin
