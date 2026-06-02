@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Send, Image as ImageIcon, Film as FilmIcon, Smile, X, MonitorUp } from "lucide-react";
+import { safeGetItem, safeSetItem } from "@/lib/safe-storage";
 
 type Attachment = {
   kind: "image" | "video" | "gif";
@@ -19,7 +20,7 @@ const STORAGE_KEY = (room: string) => `polarisflix-chat-${room}`;
 
 function loadName() {
   if (typeof window === "undefined") return "You";
-  return window.localStorage.getItem("polarisflix-chat-name") || "You";
+  return safeGetItem("localStorage", "polarisflix-chat-name") || "You";
 }
 
 export function MovieChat({ room, title, onClose }: { room: string; title: string; onClose?: () => void }) {
@@ -41,20 +42,20 @@ export function MovieChat({ room, title, onClose }: { room: string; title: strin
   // Load persisted messages
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY(room));
+      const raw = safeGetItem("localStorage", STORAGE_KEY(room));
       if (raw) setMessages(JSON.parse(raw));
     } catch {}
   }, [room]);
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY(room), JSON.stringify(messages.slice(-100)));
+      safeSetItem("localStorage", STORAGE_KEY(room), JSON.stringify(messages.slice(-100)));
     } catch {}
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
   }, [messages, room]);
 
   useEffect(() => {
-    window.localStorage.setItem("polarisflix-chat-name", name);
+    safeSetItem("localStorage", "polarisflix-chat-name", name);
   }, [name]);
 
   const handleFiles = (e: ChangeEvent<HTMLInputElement>, kind: "image" | "video") => {
