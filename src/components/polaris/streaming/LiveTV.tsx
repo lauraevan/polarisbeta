@@ -647,6 +647,74 @@ async function fetchSportDetail(match: SportMatch, signal?: AbortSignal) {
   return fetchSportSrc<SportMatch>(`data=detail&category=${encodeURIComponent(match.category || "other")}&id=${encodeURIComponent(match.id)}`, signal);
 }
 
+// ---- streamed.su fallback: when SportSRC has only 1-2 sources we top-up from
+// a different aggregator so every match has at least 3-4 mirrors to fall back
+// to (the ones that "just work" already had this many).
+type StreamedSuMatch = {
+  id: string;
+  title: string;
+  category?: string;
+  date?: number;
+  sources?: { source: string; id: string }[];
+};
+let _streamedCache: { ts: number; data: StreamedSuMatch[] } | null = null;
+async function fetchStreamedSuMatches(): Promise<StreamedSuMatch[]> {
+  if (_streamedCache && Date.now() - _streamedCache.ts < 60_000) return _streamedCache.data;
+  try {
+    const r = await fetch("https://streamed.su/api/matches/all", { headers: { Accept: "application/json" } });
+    if (!r.ok) return [];
+    const data = (await r.json()) as StreamedSuMatch[];
+    _streamedCache = { ts: Date.now(), data };
+    return data;
+  } catch {
+    return [];
+  }
+}
+function normalizeTitle(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+}
+function titleTokens(s: string) {
+  return new Set(normalizeTitle(s).split(" ").filter((w) => w.length >= 3));
+}
+function titleScore(a: string, b: string) {
+  const ta = titleTokens(a), tb = titleTokens(b);
+  if (!ta.size || !tb.size) return 0;
+  let hit = 0;
+  ta.forEach((w) => { if (tb.has(w)) hit++; });
+  return hit / Math.max(ta.size, tb.size);
+}
+async function fetchStreamedSuStreams(source: string, id: string): Promise<SportStream[]> {
+  try {
+    const r = await fetch(`https://streamed.su/api/stream/${encodeURIComponent(source)}/${encodeURIComponent(id)}`, { headers: { Accept: "application/json" } });
+    if (!r.ok) return [];
+    const arr = (await r.json()) as Array<{ embedUrl?: string; language?: string; hd?: boolean; streamNo?: number; source?: string }>;
+    return arr
+      .filter((s) => s && s.embedUrl)
+      .map((s, i) => ({
+        id: `streamedsu-${source}-${id}-${i}`,
+        streamNo: s.streamNo ?? i + 1,
+        language: s.language ?? "English",
+        hd: Boolean(s.hd),
+        embedUrl: s.embedUrl!,
+        source: `streamed:${s.source ?? source}`,
+      }));
+  } catch {
+    return [];
+  }
+}
+async function topUpFromStreamedSu(match: SportMatch): Promise<SportStream[]> {
+  const all = await fetchStreamedSuMatches();
+  if (!all.length) return [];
+  let best: { score: number; m: StreamedSuMatch } | null = null;
+  for (const m of all) {
+    const s = titleScore(match.title || "", m.title || "");
+    if (s >= 0.6 && (!best || s > best.score)) best = { score: s, m };
+  }
+  if (!best?.m.sources?.length) return [];
+  const lists = await Promise.all(best.m.sources.slice(0, 4).map((s) => fetchStreamedSuStreams(s.source, s.id)));
+  return lists.flat();
+}
+
 function LiveSportsSection({
   onPlay,
 }: {
@@ -862,6 +930,13 @@ function SportsPlayer({
       const collected: SportStream[] = [];
       const detail = await fetchSportDetail(match);
       collected.push(...((detail?.sources ?? match.sources ?? []).filter((x): x is SportStream => Boolean(x?.embedUrl))));
+      // Always top up from streamed.su when we have fewer than 3 mirrors —
+      // the matches that "just work" tend to have 3+ servers, so we make sure
+      // every match has the same depth of fallback.
+      if (collected.length < 3) {
+        const extra = await topUpFromStreamedSu(match);
+        collected.push(...extra);
+      }
       if (dead || collected.length === 0) return;
       // De-dup
       const seen = new Set<string>();
