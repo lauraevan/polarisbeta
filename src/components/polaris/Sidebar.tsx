@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   Bookmark,
   Handshake,
+  Shield,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const nav = [
   { to: "/chat", label: "Chat", icon: MessageCircle },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/partners", label: "Partners", icon: Handshake },
+  { to: "/vpn", label: "VPN", icon: Shield },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 
