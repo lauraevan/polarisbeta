@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-  <foreignObject x="0" y="0" width="100" height="100">
+<svg xmlns="http://www.w3.org/2000/svg" width="100vw" height="100vh" viewBox="0 0 100 100" preserveAspectRatio="none" style="display:block;position:fixed;inset:0;margin:0;padding:0;width:100vw;height:100vh;background:#000;">
+  <foreignObject x="0" y="0" width="100" height="100" requiredExtensions="http://www.w3.org/1999/xhtml">
     <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
       <head>
         <meta charset="UTF-8" />
@@ -9,12 +9,17 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <title>Loading…</title>
         <style><![CDATA[
+          *, *::before, *::after { box-sizing: border-box; }
+
           html, body {
             margin: 0;
             padding: 0;
             width: 100vw;
             height: 100vh;
             height: 100dvh;
+            min-width: 100vw;
+            min-height: 100vh;
+            min-height: 100dvh;
             overflow: hidden;
             background: #000;
             color: #fff;
@@ -25,10 +30,13 @@
 
           iframe {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            inset: 0;
             width: 100vw;
             height: 100vh;
             height: 100dvh;
+            min-width: 100vw;
+            min-height: 100vh;
+            min-height: 100dvh;
             border: 0;
             margin: 0;
             padding: 0;
@@ -80,6 +88,15 @@
           if (!location.hash) {
             history.replaceState(history.state, "", "#/" );
           }
+          function syncViewport() {
+            document.documentElement.style.width = window.innerWidth + 'px';
+            document.documentElement.style.height = window.innerHeight + 'px';
+            document.body.style.width = window.innerWidth + 'px';
+            document.body.style.height = window.innerHeight + 'px';
+          }
+          syncViewport();
+          window.addEventListener('resize', syncViewport);
+          window.addEventListener('orientationchange', syncViewport);
           function goFullscreen() {
             var el = document.documentElement;
             var req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
