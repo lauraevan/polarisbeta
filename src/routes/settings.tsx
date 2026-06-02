@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package, PanelTop, MessageCircle, Link2, Copy, RefreshCw, Check, ExternalLink } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package, PanelTop, MessageCircle } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
@@ -13,7 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
-import { getPolarisBrowserUrl, type ProxyEngine } from "@/lib/proxy-utils";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
