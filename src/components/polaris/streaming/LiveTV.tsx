@@ -584,6 +584,7 @@ type SportStream = {
 };
 
 const STREAMED_API = "https://streamed.pk";
+const SPORTS_SOURCE_PRIORITY: Record<string, number> = { echo: 0, delta: 1, bravo: 2, charlie: 3, alpha: 4, admin: 9 };
 const SPORTS_ICONS: Record<string, string> = {
   football: "⚽", soccer: "⚽", basketball: "🏀", baseball: "⚾",
   "american-football": "🏈", hockey: "🏒", "ice-hockey": "🏒",
@@ -607,6 +608,18 @@ function badgeUrl(b?: string) {
 function posterUrl(p?: string) {
   if (!p) return "";
   return p.startsWith("http") ? p : `${STREAMED_API}${p}`;
+}
+function orderedSources(sources: SportMatch["sources"] = []) {
+  return [...sources].sort((a, b) =>
+    (SPORTS_SOURCE_PRIORITY[a.source] ?? 5) - (SPORTS_SOURCE_PRIORITY[b.source] ?? 5)
+  );
+}
+function orderedStreams(streams: SportStream[]) {
+  return [...streams].sort((a, b) =>
+    (SPORTS_SOURCE_PRIORITY[a.source] ?? 5) - (SPORTS_SOURCE_PRIORITY[b.source] ?? 5) ||
+    Number(b.hd) - Number(a.hd) ||
+    (b.viewers ?? 0) - (a.viewers ?? 0)
+  );
 }
 
 function LiveSportsSection({
@@ -663,13 +676,13 @@ function LiveSportsSection({
   const handlePlay = async (m: SportMatch) => {
     setLoadingMatchId(m.id);
     try {
-      for (const src of m.sources) {
+      for (const src of orderedSources(m.sources)) {
         try {
           const r = await fetch(`${STREAMED_API}/api/stream/${src.source}/${src.id}`);
           if (!r.ok) continue;
           const json = await r.json();
-          const streams = (Array.isArray(json) ? json : []) as SportStream[];
-          const hd = streams.find((s) => s?.hd && s.embedUrl) ?? streams.find((s) => s?.embedUrl);
+          const streams = orderedStreams(((Array.isArray(json) ? json : []) as SportStream[]).filter((s) => s?.embedUrl));
+          const hd = streams[0];
           if (hd?.embedUrl) {
             onPlay(m, hd);
             return;
