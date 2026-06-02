@@ -57,16 +57,53 @@ async function geoLookup(ip: string): Promise<GeoLookup> {
   }
 }
 
-function clientIp(): string {
-  // Prefer common edge headers, then fall back to TanStack helper.
-  const cf = getRequestHeader("cf-connecting-ip");
-  if (cf) return cf;
-  const xri = getRequestHeader("x-real-ip");
-  if (xri) return xri;
+function normalizeIp(raw: string): string {
+  let ip = (raw || "").trim();
+  if (!ip) return "";
+  // Strip surrounding brackets, zone id, and trailing :port for IPv4.
+  ip = ip.replace(/^\[|\]$/g, "").split("%")[0];
+  if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(ip)) ip = ip.split(":")[0];
+  return ip;
+}
+function isPublicIp(ip: string): boolean {
+  if (!ip) return false;
+  if (ip === "::1" || ip === "127.0.0.1" || ip === "0.0.0.0") return false;
+  if (/^10\./.test(ip)) return false;
+  if (/^192\.168\./.test(ip)) return false;
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return false;
+  if (/^169\.254\./.test(ip)) return false;
+  if (/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(ip)) return false; // CGNAT
+  if (/^(fc|fd)/i.test(ip)) return false;
+  if (/^fe80:/i.test(ip)) return false;
+  return true;
+}
+/** Collect every candidate IP across the request's edge / proxy headers. */
+function collectIps(): string[] {
+  const out: string[] = [];
+  const single = [
+    "cf-connecting-ip", "true-client-ip", "x-real-ip", "fly-client-ip",
+    "fastly-client-ip", "x-client-ip", "x-cluster-client-ip", "x-azure-clientip",
+  ];
+  for (const h of single) {
+    const v = getRequestHeader(h);
+    if (v) out.push(normalizeIp(v));
+  }
   const xff = getRequestHeader("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
+  if (xff) xff.split(",").forEach((p) => out.push(normalizeIp(p)));
+  const fwd = getRequestHeader("forwarded");
+  if (fwd) {
+    fwd.split(",").forEach((p) => {
+      const m = p.match(/for="?([^;,"]+)"?/i);
+      if (m) out.push(normalizeIp(m[1]));
+    });
+  }
   const helper = getRequestIP({ xForwardedFor: true });
-  return helper ?? "";
+  if (helper) out.push(normalizeIp(helper));
+  return Array.from(new Set(out.filter(Boolean)));
+}
+function clientIp(): string {
+  const all = collectIps();
+  return all.find(isPublicIp) ?? all[0] ?? "";
 }
 
 /**
