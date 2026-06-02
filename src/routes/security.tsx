@@ -8,8 +8,8 @@ import {
   adminQuickBan, adminLiftBan, whoAmI, adminLookupTarget,
 } from "@/lib/security/admin-security.functions";
 import {
-  Shield, Globe2, Search, Ban, Filter, RefreshCw, MapPin, Wifi,
-  AlertTriangle, Crosshair, Fingerprint, Activity, Eye, ChevronLeft,
+  Shield, Search, Ban, RefreshCw, AlertTriangle, Fingerprint, Activity,
+  Eye, ChevronLeft, X, ChevronRight,
 } from "lucide-react";
 
 export const Route = createFileRoute("/security")({
