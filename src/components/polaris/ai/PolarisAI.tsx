@@ -783,7 +783,7 @@ export function PolarisAI() {
                 }
               }}
               rows={1}
-              placeholder={`Message ${model.label}…`}
+              placeholder={imageMode ? "Describe the image you want…" : `Message ${model.label}…`}
               className="min-h-[28px] max-h-[140px] w-full resize-none bg-transparent px-2.5 py-1 text-[13px] text-white placeholder:text-white/40 focus:outline-none"
             />
             <div className="flex items-center justify-between gap-2 px-1">
@@ -916,6 +916,23 @@ function MessageBubble({ role, content, modelLabel }: { role: Role; content: str
             {modelLabel}
           </div>
         )}
+        {(() => {
+          const imgMatch = !isUser && content.match(/^!\[[^\]]*\]\((data:image\/[a-zA-Z+.-]+;base64,[^)]+)\)$/);
+          if (imgMatch) {
+            return (
+              <div
+                className="relative overflow-hidden rounded-2xl p-1.5 backdrop-blur-xl"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(var(--polaris-accent)/0.22)",
+                  boxShadow: "0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 30px -16px rgba(var(--polaris-accent)/0.3)",
+                }}
+              >
+                <img src={imgMatch[1]} alt="Generated" className="block max-h-[420px] w-full rounded-xl object-contain" />
+              </div>
+            );
+          }
+          return (
         <div
           className="relative whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed text-white/95 backdrop-blur-xl"
           style={{
@@ -928,6 +945,8 @@ function MessageBubble({ role, content, modelLabel }: { role: Role; content: str
         >
           {content || <span className="text-white/40">…</span>}
         </div>
+          );
+        })()}
         {!!content && (
           <button
             onClick={copy}
