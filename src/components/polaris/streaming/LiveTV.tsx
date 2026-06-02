@@ -581,6 +581,7 @@ type SportStream = {
   hd: boolean;
   embedUrl: string;
   source: string;
+  viewers?: number;
 };
 
 const STREAMED_API = "https://streamed.pk";
@@ -842,7 +843,7 @@ function SportsPlayer({
     let dead = false;
     (async () => {
       const collected: SportStream[] = [];
-      for (const s of match.sources) {
+      for (const s of orderedSources(match.sources)) {
         try {
           const r = await fetch(`${STREAMED_API}/api/stream/${s.source}/${s.id}`);
           if (!r.ok) continue;
@@ -854,7 +855,7 @@ function SportsPlayer({
       if (dead || collected.length === 0) return;
       // De-dup
       const seen = new Set<string>();
-      const dedup = collected.filter((s) => !seen.has(s.embedUrl) && seen.add(s.embedUrl));
+      const dedup = orderedStreams(collected).filter((s) => !seen.has(s.embedUrl) && seen.add(s.embedUrl));
       const startIdx = Math.max(0, dedup.findIndex((s) => s.embedUrl === stream.embedUrl));
       setAlts(dedup);
       setAltIdx(startIdx);
