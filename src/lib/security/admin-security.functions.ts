@@ -1,4 +1,7 @@
+type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
+type ProfileLite = { id: string; username: string | null; display_name: string | null; is_owner: boolean; is_banned: boolean } & { [k: string]: Json };
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader, getRequestIP } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -21,6 +24,147 @@ async function getMyUsername(userId: string): Promise<string | null> {
     .maybeSingle();
   return data?.username ?? null;
 }
+
+function clientIp(): string {
+  const cf = getRequestHeader("cf-connecting-ip");
+  if (cf) return cf;
+  const xri = getRequestHeader("x-real-ip");
+  if (xri) return xri;
+  const xff = getRequestHeader("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  return getRequestIP({ xForwardedFor: true }) ?? "";
+}
+
+async function geo(ip: string) {
+  const token = process.env.IPINFO_TOKEN;
+  if (!ip || !token) return null;
+  try {
+    const r = await fetch(`https://ipinfo.io/${ip}?token=${token}`);
+    if (!r.ok) return null;
+    const j = (await r.json()) as Record<string, unknown>;
+    const [lat, lon] = String(j.loc ?? ",").split(",").map((v) => Number(v) || null);
+    const priv = (j.privacy as { vpn?: boolean; proxy?: boolean; tor?: boolean; hosting?: boolean } | undefined);
+    return {
+      country: (j.country as string) ?? null,
+      region: (j.region as string) ?? null,
+      city: (j.city as string) ?? null,
+      postal: (j.postal as string) ?? null,
+      timezone: (j.timezone as string) ?? null,
+      org: (j.org as string) ?? null,
+      asn: ((j.org as string) ?? "").split(" ")[0] || null,
+      hostname: (j.hostname as string) ?? null,
+      latitude: lat,
+      longitude: lon,
+      is_vpn: priv?.vpn ?? false,
+      is_proxy: priv?.proxy ?? false,
+      is_tor: priv?.tor ?? false,
+      is_hosting: priv?.hosting ?? false,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** "Your IP" card — owner-only. */
+export const whoAmI = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertOwner(context.userId);
+    const ip = clientIp();
+    const ua = getRequestHeader("user-agent") ?? "";
+    const lang = getRequestHeader("accept-language") ?? "";
+    const g = await geo(ip);
+    return { ip, userAgent: ua, language: lang, geo: g };
+  });
+
+/** FBI-style dossier on any target. Searches by username, user id, IP, or device fingerprint. */
+export const adminLookupTarget = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        query: z.string().min(1).max(255),
+        filters: z
+          .object({
+            country: z.string().max(8).optional(),
+            vpnOnly: z.boolean().optional(),
+            since: z.string().datetime().optional(),
+          })
+          .optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertOwner(context.userId);
+    const q = data.query.trim();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(q);
+    const looksLikeIp = /^[0-9a-f.:]+$/i.test(q) && (q.includes(".") || q.includes(":"));
+
+    // Resolve to a profile when possible
+    let profile: ProfileLite | null = null;
+    if (isUuid) {
+      const r = await supabaseAdmin.from("profiles").select("*").eq("id", q).maybeSingle();
+      profile = (r.data as unknown as ProfileLite) ?? null;
+    }
+    if (!profile) {
+      const r = await supabaseAdmin.from("profiles").select("*").ilike("username", q).maybeSingle();
+      profile = (r.data as unknown as ProfileLite) ?? null;
+    }
+
+    // Sessions: by user_id, username, ip, or fingerprint
+    let sessQ = supabaseAdmin.from("device_sessions").select("*").order("last_seen_at", { ascending: false }).limit(500);
+    if (profile?.id) sessQ = sessQ.eq("user_id", profile.id);
+    else if (looksLikeIp) sessQ = sessQ.eq("ip", q);
+    else sessQ = sessQ.or(`username.ilike.${q},device_fingerprint.eq.${q}`);
+    if (data.filters?.country) sessQ = sessQ.eq("country", data.filters.country);
+    if (data.filters?.vpnOnly) sessQ = sessQ.eq("is_vpn", true);
+    if (data.filters?.since) sessQ = sessQ.gte("last_seen_at", data.filters.since);
+    const { data: sessions } = await sessQ;
+
+    // Events
+    let evQ = supabaseAdmin.from("security_events").select("*").order("created_at", { ascending: false }).limit(500);
+    if (profile?.id) evQ = evQ.eq("user_id", profile.id);
+    else if (looksLikeIp) evQ = evQ.eq("ip", q);
+    else evQ = evQ.or(`username.ilike.${q},device_fingerprint.eq.${q}`);
+    if (data.filters?.since) evQ = evQ.gte("created_at", data.filters.since);
+    const { data: events } = await evQ;
+
+    // Distinct identifiers
+    const ips = Array.from(new Set((sessions ?? []).map((s) => s.ip).filter(Boolean))) as string[];
+    const fps = Array.from(new Set((sessions ?? []).map((s) => s.device_fingerprint).filter(Boolean))) as string[];
+    const countries = Array.from(new Set((sessions ?? []).map((s) => s.country).filter(Boolean))) as string[];
+    const asns = Array.from(new Set((sessions ?? []).map((s) => s.asn).filter(Boolean))) as string[];
+
+    // Related bans
+    const orParts: string[] = [];
+    if (profile?.id) orParts.push(`and(scope.eq.user,value.eq.${profile.id})`);
+    for (const ip of ips) orParts.push(`and(scope.eq.ip,value.eq.${ip})`);
+    for (const fp of fps) orParts.push(`and(scope.eq.device,value.eq.${fp})`);
+    let bans: Json[] = [];
+    if (orParts.length) {
+      const { data: targets } = await supabaseAdmin
+        .from("ban_targets")
+        .select("*, bans(*)")
+        .or(orParts.join(","));
+      bans = (targets ?? []) as unknown as Json[];
+    }
+
+    return {
+      profile,
+      sessions: sessions ?? [],
+      events: events ?? [],
+      bans,
+      summary: {
+        ips,
+        fingerprints: fps,
+        countries,
+        asns,
+        vpnHits: (sessions ?? []).filter((s) => s.is_vpn || s.is_proxy || s.is_tor).length,
+        sessionCount: sessions?.length ?? 0,
+        eventCount: events?.length ?? 0,
+      },
+    };
+  });
 
 /** List recent bans with their targets (joined). */
 export const adminListBans = createServerFn({ method: "GET" })

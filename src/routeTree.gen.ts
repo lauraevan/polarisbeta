@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SecurityRouteImport } from './routes/security'
 import { Route as RecsRouteImport } from './routes/recs'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as MylistRouteImport } from './routes/mylist'
@@ -33,6 +34,11 @@ const ShopRoute = ShopRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SecurityRoute = SecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecsRoute = RecsRouteImport.update({
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
   '/recs': typeof RecsRoute
+  '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
   '/recs': typeof RecsRoute
+  '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
   '/recs': typeof RecsRoute
+  '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/mylist'
     | '/partners'
     | '/recs'
+    | '/security'
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/mylist'
     | '/partners'
     | '/recs'
+    | '/security'
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/mylist'
     | '/partners'
     | '/recs'
+    | '/security'
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
@@ -220,6 +232,7 @@ export interface RootRouteChildren {
   MylistRoute: typeof MylistRoute
   PartnersRoute: typeof PartnersRoute
   RecsRoute: typeof RecsRoute
+  SecurityRoute: typeof SecurityRoute
   SettingsRoute: typeof SettingsRoute
   ShopRoute: typeof ShopRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
@@ -239,6 +252,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/security': {
+      id: '/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof SecurityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recs': {
@@ -348,6 +368,7 @@ const rootRouteChildren: RootRouteChildren = {
   MylistRoute: MylistRoute,
   PartnersRoute: PartnersRoute,
   RecsRoute: RecsRoute,
+  SecurityRoute: SecurityRoute,
   SettingsRoute: SettingsRoute,
   ShopRoute: ShopRoute,
   ApiAiChatRoute: ApiAiChatRoute,
