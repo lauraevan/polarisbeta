@@ -5,11 +5,11 @@ import { useAuth } from "@/lib/auth-context";
 import { useAdmin } from "@/lib/admin-context";
 import {
   adminListSessions, adminListEvents, adminListBans, adminSecurityStats,
-  adminQuickBan, adminLiftBan, whoAmI, adminLookupTarget,
+  adminQuickBan, adminLiftBan, whoAmI, adminLookupTarget, adminCreateBan,
 } from "@/lib/security/admin-security.functions";
 import {
   Shield, Search, Ban, RefreshCw, AlertTriangle, Fingerprint, Activity,
-  Eye, ChevronLeft, X,
+  Eye, ChevronLeft, X, MonitorSmartphone,
 } from "lucide-react";
 
 export const Route = createFileRoute("/security")({
@@ -41,7 +41,7 @@ type Stats = {
   activeBans: number; totalBans: number; events24h: number; blocked24h: number;
   newDevices24h: number; vpnAttempts24h: number; totalSessions: number; pendingAppeals: number;
 };
-type Panel = "feed" | "lookup" | "me" | "bans" | null;
+type Panel = "feed" | "lookup" | "me" | "bans" | "devices" | null;
 
 function SecurityPage() {
   const { user, loading } = useAuth();
@@ -56,6 +56,7 @@ function SecurityPage() {
   const fnLift = useServerFn(adminLiftBan);
   const fnWhoAmI = useServerFn(whoAmI);
   const fnLookup = useServerFn(adminLookupTarget);
+  const fnCreateBan = useServerFn(adminCreateBan);
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [events, setEvents] = useState<SecEvent[]>([]);
@@ -203,6 +204,7 @@ function SecurityPage() {
       {/* Bottom dock */}
       <nav className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/60 p-1 backdrop-blur-xl">
         <DockBtn icon={<Activity className="h-4 w-4" />} label="Feed" active={panel === "feed"} onClick={() => setPanel(panel === "feed" ? null : "feed")} />
+        <DockBtn icon={<MonitorSmartphone className="h-4 w-4" />} label={`Devices · ${sessions.length}`} active={panel === "devices"} onClick={() => setPanel(panel === "devices" ? null : "devices")} />
         <DockBtn icon={<Ban className="h-4 w-4" />} label={`Bans · ${activeBans}`} active={panel === "bans"} onClick={() => setPanel(panel === "bans" ? null : "bans")} />
         <DockBtn icon={<Fingerprint className="h-4 w-4" />} label="Me" active={panel === "me"} onClick={() => setPanel(panel === "me" ? null : "me")} />
       </nav>
@@ -299,6 +301,93 @@ function SecurityPage() {
               </div>
             </div>
           ) : <div className="mt-2 text-xs text-white/40">Geo lookup unavailable</div>}
+        </FloatingPanel>
+      )}
+
+      {panel === "devices" && (
+        <FloatingPanel title={`Devices ever seen · ${sessions.length}`} onClose={() => setPanel(null)} wide>
+          <div className="mb-2 text-[11px] text-white/55">
+            Every device fingerprint that has ever loaded the site, with the IP, location and account they were on the first time we saw them. Ban a device or its first IP directly — works even if the visitor never signs in.
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto rounded-xl border border-white/10">
+            <table className="w-full text-[11px]">
+              <thead className="sticky top-0 bg-black/85 text-left text-white/55">
+                <tr>
+                  <th className="px-2 py-1.5">First seen</th>
+                  <th className="px-2 py-1.5">User</th>
+                  <th className="px-2 py-1.5">Fingerprint</th>
+                  <th className="px-2 py-1.5">IP</th>
+                  <th className="px-2 py-1.5">Geo</th>
+                  <th className="px-2 py-1.5">Device</th>
+                  <th className="px-2 py-1.5">Flags</th>
+                  <th className="px-2 py-1.5 text-right">Ban</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...sessions]
+                  .sort((a, b) => a.first_seen_at.localeCompare(b.first_seen_at))
+                  .map((s) => (
+                    <tr key={s.id} className="border-t border-white/5 hover:bg-white/[0.03]">
+                      <td className="px-2 py-1 text-white/55">{new Date(s.first_seen_at).toLocaleString()}</td>
+                      <td className="px-2 py-1">
+                        {s.username ? <span className="text-cyan-300">@{s.username}</span> : <span className="text-white/40">guest</span>}
+                      </td>
+                      <td className="px-2 py-1 font-mono text-white/70" title={s.device_fingerprint}>
+                        {s.device_fingerprint.slice(0, 12)}…
+                      </td>
+                      <td className="px-2 py-1 font-mono">{s.ip ?? "—"}</td>
+                      <td className="px-2 py-1">{[s.city, s.country].filter(Boolean).join(", ") || "—"}</td>
+                      <td className="px-2 py-1 text-white/55">{s.browser ?? "?"} · {s.os ?? "?"}</td>
+                      <td className="px-2 py-1">
+                        {s.is_vpn && <Tag c="red">VPN</Tag>}{" "}
+                        {s.is_proxy && <Tag c="red">PX</Tag>}{" "}
+                        {s.is_tor && <Tag c="red">Tor</Tag>}
+                      </td>
+                      <td className="px-2 py-1 text-right">
+                        <div className="flex justify-end gap-1">
+                          <button
+                            disabled={busy}
+                            title="Ban this device fingerprint (works on guests)"
+                            onClick={async () => {
+                              setBusy(true);
+                              try {
+                                const targets: Array<{ scope: "device" | "ip" | "user"; value: string }> = [
+                                  { scope: "device", value: s.device_fingerprint },
+                                ];
+                                if (s.ip) targets.push({ scope: "ip", value: s.ip });
+                                if (s.user_id) targets.push({ scope: "user", value: s.user_id });
+                                await fnCreateBan({ data: { type: "full_site", reason: "Banned from Devices panel", targets } });
+                                await refresh();
+                              } finally { setBusy(false); }
+                            }}
+                            className="rounded-full bg-red-500/30 px-2 py-0.5 text-[10px] text-red-100 hover:bg-red-500/50 disabled:opacity-40">
+                            Device + IP
+                          </button>
+                          {s.ip && (
+                            <button
+                              disabled={busy}
+                              title="Ban only this IP"
+                              onClick={async () => {
+                                setBusy(true);
+                                try {
+                                  await fnCreateBan({ data: { type: "full_site", reason: "IP ban from Devices panel", targets: [{ scope: "ip", value: s.ip! }] } });
+                                  await refresh();
+                                } finally { setBusy(false); }
+                              }}
+                              className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] hover:bg-white/20 disabled:opacity-40">
+                              IP
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                {sessions.length === 0 && (
+                  <tr><td colSpan={8} className="py-6 text-center text-white/40">No devices logged yet</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </FloatingPanel>
       )}
 
