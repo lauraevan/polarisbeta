@@ -92,6 +92,7 @@ const CHANNELS: Channel[] = (() => {
 function ChannelLogo({ c, size = 40, className = "" }: { c: Channel; size?: number; className?: string }) {
   const [stage, setStage] = useState(0);
   const srcs = [
+    ...(c.logo ? [c.logo] : []),
     `https://icons.duckduckgo.com/ip3/${c.domain}.ico`,
     `https://www.google.com/s2/favicons?sz=128&domain=${c.domain}`,
     `https://logo.clearbit.com/${c.domain}`,
