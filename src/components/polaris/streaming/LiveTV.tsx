@@ -560,9 +560,8 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
 }
 
 // ----------------------------------------------------------------------------
-// Live & upcoming sports — auto-discovered from streamed.pk public API.
-// Each match exposes one or more "sources" (servers); we pick the first
-// available stream and embed its pure player iframe.
+// Live & upcoming sports — auto-discovered from SportSRC, matching the
+// player/source pattern used by Tyflix for game-specific streams.
 // ----------------------------------------------------------------------------
 type SportMatch = {
   id: string;
@@ -885,7 +884,7 @@ function SportsPlayer({
           <div className="min-w-0">
             <div className="truncate text-sm font-black text-amber-50">{match.title || "Live match"}</div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">
-              {category.replace(/-/g, " ")} · Stream {altIdx + 1}/{alts.length}
+              {category.replace(/-/g, " ")} · {alts[altIdx]?.language || `Stream ${altIdx + 1}`} · {alts[altIdx]?.source || "source"}
             </div>
           </div>
         </div>
@@ -896,7 +895,7 @@ function SportsPlayer({
               className="liquid-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white"
               title="Try another server"
             >
-              <RefreshCw className="h-3.5 w-3.5" /> Server
+              <RefreshCw className="h-3.5 w-3.5" /> Stream {altIdx + 1}/{alts.length}
             </button>
           )}
           <button onClick={onClose} className="liquid-glass rounded-full p-2 text-white" aria-label="Close player">
@@ -911,7 +910,7 @@ function SportsPlayer({
           title={match.title}
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
-              referrerPolicy="no-referrer"
+          referrerPolicy="no-referrer"
           className="absolute inset-0 h-full w-full"
         />
       </div>
