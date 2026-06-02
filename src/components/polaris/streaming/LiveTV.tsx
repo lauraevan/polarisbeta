@@ -139,6 +139,7 @@ export function LiveTV() {
   const [cat, setCat] = useState<Category>("All");
   const [q, setQ] = useState("");
   const [playing, setPlaying] = useState<Channel | null>(null);
+  const [playingMatch, setPlayingMatch] = useState<{ match: SportMatch; stream: SportStream } | null>(null);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -272,6 +273,11 @@ export function LiveTV() {
         </Section>
       )}
 
+      {/* Live & upcoming sports (auto-discovered) */}
+      {(cat === "All" || cat === "Sports") && !q && (
+        <LiveSportsSection onPlay={(match, stream) => setPlayingMatch({ match, stream })} />
+      )}
+
       {/* Filtered grid */}
       <Section title={cat === "All" && !q ? "All Channels" : `${cat}${q ? ` · "${q}"` : ""}`}>
         <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:px-6 md:grid-cols-4 lg:grid-cols-6">
@@ -291,7 +297,16 @@ export function LiveTV() {
         </p>
       </div>
 
-      {playing && <LivePlayer channel={playing} all={CHANNELS} onPick={setPlaying} onClose={() => setPlaying(null)} />}
+      {playing && (
+        <LivePlayer channel={playing} all={CHANNELS} onPick={setPlaying} onClose={() => setPlaying(null)} />
+      )}
+      {playingMatch && (
+        <SportsPlayer
+          match={playingMatch.match}
+          stream={playingMatch.stream}
+          onClose={() => setPlayingMatch(null)}
+        />
+      )}
     </div>
   );
 }
