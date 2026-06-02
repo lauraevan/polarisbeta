@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VpnRouteImport } from './routes/vpn'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SecurityRouteImport } from './routes/security'
@@ -27,6 +28,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
 
+const VpnRoute = VpnRouteImport.update({
+  id: '/vpn',
+  path: '/vpn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
+  '/vpn': typeof VpnRoute
   '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
 }
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
+  '/vpn': typeof VpnRoute
   '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
 }
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
+  '/vpn': typeof VpnRoute
   '/api/ai-chat': typeof ApiAiChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
 }
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/settings'
     | '/shop'
+    | '/vpn'
     | '/api/ai-chat'
     | '/api/generate-image'
   fileRoutesByTo: FileRoutesByTo
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/settings'
     | '/shop'
+    | '/vpn'
     | '/api/ai-chat'
     | '/api/generate-image'
   id:
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/settings'
     | '/shop'
+    | '/vpn'
     | '/api/ai-chat'
     | '/api/generate-image'
   fileRoutesById: FileRoutesById
@@ -247,12 +259,20 @@ export interface RootRouteChildren {
   SecurityRoute: typeof SecurityRoute
   SettingsRoute: typeof SettingsRoute
   ShopRoute: typeof ShopRoute
+  VpnRoute: typeof VpnRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vpn': {
+      id: '/vpn'
+      path: '/vpn'
+      fullPath: '/vpn'
+      preLoaderRoute: typeof VpnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop': {
       id: '/shop'
       path: '/shop'
@@ -391,9 +411,20 @@ const rootRouteChildren: RootRouteChildren = {
   SecurityRoute: SecurityRoute,
   SettingsRoute: SettingsRoute,
   ShopRoute: ShopRoute,
+  VpnRoute: VpnRoute,
   ApiAiChatRoute: ApiAiChatRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
