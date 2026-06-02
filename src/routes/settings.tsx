@@ -743,43 +743,30 @@ type FilterId =
   | "fortiguard" | "zscaler" | "blocksi" | "lanschool" | "iboss"
   | "sophos" | "umbrella" | "dnsfilter";
 
-type HostProfile = { host: string; note: string };
+type LinkTarget = { label: string; url: string; note: string; engines: ProxyEngine[] };
 
-// Free, no-signup hosts that typically slip past common category-based filters.
-// Some filters block specific TLDs (e.g. *.workers.dev, *.repl.co); we pick the
-// least-blocked set per filter based on community reports.
-const ALL_HOSTS: HostProfile[] = [
-  { host: "vercel.app",        note: "Vercel preview deploys" },
-  { host: "netlify.app",       note: "Netlify drop / sites" },
-  { host: "pages.dev",         note: "Cloudflare Pages" },
-  { host: "workers.dev",       note: "Cloudflare Workers" },
-  { host: "deno.dev",          note: "Deno Deploy" },
-  { host: "b-cdn.net",         note: "Bunny.net CDN" },
-  { host: "web.app",           note: "Firebase Hosting" },
-  { host: "github.io",         note: "GitHub Pages" },
-  { host: "js.org",            note: "Free JS subdomain" },
-  { host: "is-a.dev",          note: "Community free subdomain" },
-  { host: "glitch.me",         note: "Glitch projects" },
-  { host: "replit.app",        note: "Replit deployments" },
-  { host: "surge.sh",          note: "Surge static hosting" },
-  { host: "onrender.com",      note: "Render free tier" },
-  { host: "fly.dev",           note: "Fly.io apps" },
+const WORKING_TARGETS: LinkTarget[] = [
+  { label: "GeForce Now", url: "https://play.geforcenow.com/", note: "Cloud gaming through Polaris Browser", engines: ["uv", "scramjet"] },
+  { label: "YouTube", url: "https://www.youtube.com/", note: "Video through Polaris Browser", engines: ["uv", "scramjet"] },
+  { label: "Google", url: "https://www.google.com/", note: "Search through Polaris Browser", engines: ["uv", "scramjet"] },
+  { label: "Reddit", url: "https://www.reddit.com/", note: "Community pages through Polaris Browser", engines: ["uv", "scramjet"] },
+  { label: "Wikipedia", url: "https://www.wikipedia.org/", note: "Reference through Polaris Browser", engines: ["uv", "scramjet"] },
 ];
 
-const FILTER_HOST_RANK: Record<FilterId, string[]> = {
-  securly:     ["pages.dev", "web.app", "vercel.app", "b-cdn.net", "is-a.dev"],
-  goguardian:  ["pages.dev", "deno.dev", "netlify.app", "b-cdn.net", "js.org"],
-  linewise:    ["workers.dev", "deno.dev", "pages.dev", "b-cdn.net", "fly.dev"],
-  lightspeed:  ["web.app", "pages.dev", "b-cdn.net", "is-a.dev", "github.io"],
-  aristotle:   ["b-cdn.net", "pages.dev", "deno.dev", "fly.dev", "onrender.com"],
-  fortiguard:  ["b-cdn.net", "pages.dev", "deno.dev", "fly.dev", "is-a.dev"],
-  zscaler:     ["b-cdn.net", "pages.dev", "fly.dev", "onrender.com", "deno.dev"],
-  blocksi:     ["pages.dev", "web.app", "netlify.app", "b-cdn.net", "js.org"],
-  lanschool:   ["pages.dev", "deno.dev", "vercel.app", "b-cdn.net", "is-a.dev"],
-  iboss:       ["b-cdn.net", "fly.dev", "onrender.com", "pages.dev", "deno.dev"],
-  sophos:      ["pages.dev", "deno.dev", "b-cdn.net", "fly.dev", "is-a.dev"],
-  umbrella:    ["pages.dev", "b-cdn.net", "deno.dev", "fly.dev", "onrender.com"],
-  dnsfilter:   ["b-cdn.net", "pages.dev", "deno.dev", "fly.dev", "is-a.dev"],
+const FILTER_ENGINE_RANK: Record<FilterId, ProxyEngine[]> = {
+  securly: ["uv", "scramjet"],
+  goguardian: ["uv", "scramjet"],
+  linewise: ["scramjet", "uv"],
+  lightspeed: ["uv", "scramjet"],
+  aristotle: ["scramjet", "uv"],
+  fortiguard: ["scramjet", "uv"],
+  zscaler: ["scramjet", "uv"],
+  blocksi: ["uv", "scramjet"],
+  lanschool: ["uv", "scramjet"],
+  iboss: ["scramjet", "uv"],
+  sophos: ["uv", "scramjet"],
+  umbrella: ["uv", "scramjet"],
+  dnsfilter: ["scramjet", "uv"],
 };
 
 const FILTERS: { id: FilterId; label: string }[] = [
@@ -798,20 +785,7 @@ const FILTERS: { id: FilterId; label: string }[] = [
   { id: "dnsfilter",  label: "DNS Filter" },
 ];
 
-const WORDS = [
-  "atlas","nova","echo","drift","lumen","onyx","quartz","aero","beacon",
-  "vivid","sable","cobalt","tundra","cipher","fable","glade","harbor",
-  "indigo","jade","kestrel","lyra","mosaic","nebula","orchid","pixel",
-];
-
-function randSlug() {
-  const w1 = WORDS[Math.floor(Math.random() * WORDS.length)];
-  const w2 = WORDS[Math.floor(Math.random() * WORDS.length)];
-  const n  = Math.floor(Math.random() * 900 + 100);
-  return `${w1}-${w2}-${n}`;
-}
-
-type Candidate = { url: string; host: string; status: "pending" | "ok" | "blocked"; ms?: number };
+type Candidate = { label: string; url: string; target: string; engine: ProxyEngine; note: string; status: "pending" | "ok" | "blocked"; ms?: number };
 
 async function probe(url: string, timeoutMs = 3500): Promise<{ ok: boolean; ms: number }> {
   const start = performance.now();
