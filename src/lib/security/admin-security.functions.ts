@@ -466,3 +466,46 @@ export const adminSecurityStats = createServerFn({ method: "GET" })
       pendingAppeals: appealsRes.count ?? 0,
     };
   });
+
+/** Autocomplete for the Security HQ search bar. Returns users + matching guests. */
+export const adminSuggestTargets = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ q: z.string().min(1).max(64) }).parse(input))
+  .handler(async ({ context, data }) => {
+    await assertOwner(context.userId);
+    const q = data.query ? data.query : data.q;
+    const term = `%${q.replace(/[%_]/g, "")}%`;
+    const [profilesRes, guestsRes] = await Promise.all([
+      supabaseAdmin
+        .from("profiles")
+        .select("id, username, display_name, avatar_emoji, is_banned, is_owner")
+        .or(`username.ilike.${term},display_name.ilike.${term}`)
+        .order("username", { ascending: true })
+        .limit(8),
+      supabaseAdmin
+        .from("device_sessions")
+        .select("device_fingerprint, ip, city, country, visit_count, last_seen_at, user_id")
+        .is("user_id", null)
+        .or(`ip.ilike.${term},device_fingerprint.ilike.${term},city.ilike.${term},country.ilike.${term}`)
+        .order("last_seen_at", { ascending: false })
+        .limit(6),
+    ]);
+    return {
+      users: (profilesRes.data ?? []).map((p) => ({
+        id: p.id,
+        username: p.username,
+        display_name: p.display_name,
+        avatar_emoji: p.avatar_emoji,
+        is_banned: p.is_banned,
+        is_owner: p.is_owner,
+      })),
+      guests: (guestsRes.data ?? []).map((g) => ({
+        fingerprint: g.device_fingerprint,
+        ip: g.ip,
+        city: g.city,
+        country: g.country,
+        visit_count: g.visit_count,
+        last_seen_at: g.last_seen_at,
+      })),
+    };
+  });
