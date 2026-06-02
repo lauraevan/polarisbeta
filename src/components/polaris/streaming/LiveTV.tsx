@@ -495,7 +495,7 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
       </div>
     );
   }
-  const src = dlhdEmbed(channel.dlhd, hostIdx);
+  const src = streamEmbed(channel.dlhd, hostIdx);
   return (
     <>
       <iframe
@@ -510,11 +510,11 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
       />
       <div className="absolute right-3 top-3 flex items-center gap-1.5">
         <button
-          onClick={() => { setHostIdx((i) => (i + 1) % DLHD_HOSTS.length); setNonce((n) => n + 1); }}
+          onClick={() => { setHostIdx((i) => (i + 1) % STREAM_SERVERS.length); setNonce((n) => n + 1); }}
           className="liquid-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-white"
           title="Try another stream server"
         >
-          <RefreshCw className="h-3 w-3" /> Server {hostIdx + 1}/{DLHD_HOSTS.length}
+          <RefreshCw className="h-3 w-3" /> Server {hostIdx + 1}/{STREAM_SERVERS.length} · {STREAM_SERVERS[hostIdx].label}
         </button>
       </div>
     </>
