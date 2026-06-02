@@ -75,6 +75,8 @@ function SecurityPage() {
   const [lookupQ, setLookupQ] = useState("");
   const [dossier, setDossier] = useState<Awaited<ReturnType<typeof adminLookupTarget>> | null>(null);
   const [busy, setBusy] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
 
   // Viewport sizing so the globe truly fills the screen
   const [vp, setVp] = useState({ w: 0, h: 0 });
