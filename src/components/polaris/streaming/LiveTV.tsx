@@ -454,41 +454,104 @@ function LivePlayer({ channel, all, onPick, onClose }: { channel: Channel; all: 
 }
 
 // ----------------------------------------------------------------------------
-// Player frame for 24/7 channels — rotates through DaddyLive mirrors so a
-// single host outage doesn't kill playback. The iframe is the upstream's
-// bare HTML5 player (no website chrome).
+// Player frame for 24/7 channels — direct HLS video, no DaddyLive iframe hosts.
 // ----------------------------------------------------------------------------
 function ChannelPlayerFrame({ channel }: { channel: Channel }) {
-  const [hostIdx, setHostIdx] = useState(0);
-  const [nonce, setNonce] = useState(0);
-  if (channel.dlhd == null) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [streamIdx, setStreamIdx] = useState(0);
+  const [status, setStatus] = useState("Connecting…");
+  const stream = channel.streams[streamIdx % channel.streams.length];
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !stream) return;
+
+    let cancelled = false;
+    let hls: { destroy: () => void } | null = null;
+    setStatus("Connecting…");
+
+    const tryPlay = async () => {
+      try {
+        await video.play();
+        if (!cancelled) setStatus("");
+      } catch {
+        if (!cancelled) setStatus("Press play if autoplay is blocked.");
+      }
+    };
+
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    video.onerror = () => {
+      if (!cancelled) setStatus("Stream failed — try another source.");
+    };
+
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = stream.url;
+      video.onloadedmetadata = tryPlay;
+    } else {
+      void import("hls.js").then(({ default: Hls }) => {
+        if (cancelled || !video) return;
+        if (!Hls.isSupported()) {
+          setStatus("This browser can't play this live stream.");
+          return;
+        }
+        hls = new Hls({ lowLatencyMode: true, maxBufferLength: 24, enableWorker: true });
+        hls.loadSource(stream.url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, tryPlay);
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          if (data.fatal && !cancelled) setStatus("Stream failed — try another source.");
+        });
+      }).catch(() => {
+        if (!cancelled) setStatus("Player failed to load.");
+      });
+    }
+
+    return () => {
+      cancelled = true;
+      video.onerror = null;
+      video.onloadedmetadata = null;
+      hls?.destroy();
+    };
+  }, [channel.id, stream]);
+
+  if (!stream) {
     return (
       <div className="absolute inset-0 grid place-items-center text-sm text-white/60">
-        This channel doesn't have a direct player yet.
+        This channel doesn't have a direct stream yet.
       </div>
     );
   }
-  const src = streamEmbed(channel.dlhd, hostIdx);
+
   return (
     <>
-      <iframe
-        key={`${channel.id}-${hostIdx}-${nonce}`}
-        src={src}
-        title={`${channel.name} — Live`}
-        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-        allowFullScreen
-        referrerPolicy="no-referrer"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        className="absolute inset-0 h-full w-full"
+      <video
+        key={`${channel.id}-${streamIdx}`}
+        ref={videoRef}
+        className="absolute inset-0 h-full w-full bg-black object-contain"
+        controls
+        autoPlay
+        playsInline
       />
+      {status && (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/35 text-sm font-semibold text-white/80">
+          <span className="liquid-glass flex items-center gap-2 rounded-full px-4 py-2">
+            {status === "Connecting…" && <Loader2 className="h-4 w-4 animate-spin" />}
+            {status}
+          </span>
+        </div>
+      )}
       <div className="absolute right-3 top-3 flex items-center gap-1.5">
-        <button
-          onClick={() => { setHostIdx((i) => (i + 1) % STREAM_SERVERS.length); setNonce((n) => n + 1); }}
-          className="liquid-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-white"
-          title="Try another stream server"
-        >
-          <RefreshCw className="h-3 w-3" /> Server {hostIdx + 1}/{STREAM_SERVERS.length} · {STREAM_SERVERS[hostIdx].label}
-        </button>
+        {channel.streams.length > 1 && (
+          <button
+            onClick={() => setStreamIdx((i) => (i + 1) % channel.streams.length)}
+            className="liquid-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-white"
+            title="Try another stream source"
+          >
+            <RefreshCw className="h-3 w-3" /> Source {streamIdx + 1}/{channel.streams.length} · {stream.label}
+          </button>
+        )}
       </div>
     </>
   );
