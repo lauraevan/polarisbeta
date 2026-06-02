@@ -8,6 +8,7 @@ import { GameTile } from "./GameTile";
 import { SteamSplash } from "./SteamSplash";
 import { POLARIS_GAMES } from "@/lib/polaris-games";
 import { hydraSearch, hydraFeatured, steamHeader, type HydraEdge, type HydraFeatured } from "@/lib/hydra-api";
+import { useShowDiscord } from "@/lib/ui-prefs";
 
 type TabId = "home" | "polaris" | "cine" | "hydra" | "gnmath" | "gfn";
 
@@ -37,6 +38,7 @@ function HomeFeed({
   onJump: (id: TabId) => void;
   onPlay: (p: Play) => void;
 }) {
+  const [showDiscord] = useShowDiscord();
   const [hydra, setHydra] = useState<HydraEdge[] | null>(null);
   const [gn, setGn] = useState<GnZone[] | null>(null);
   const [featured, setFeatured] = useState<HydraFeatured[] | null>(null);
@@ -77,7 +79,7 @@ function HomeFeed({
 
   return (
     <div className="space-y-10">
-      <DiscordCallout />
+      {showDiscord && <DiscordCallout />}
       {/* Rotating hero — cycles through Hydra featured titles */}
       <div className="relative overflow-hidden rounded-2xl border border-white/10 min-h-[280px] sm:min-h-[340px]">
         {featured?.map((f, i) => (
