@@ -80,15 +80,15 @@ export function Roulette({ embedded = false }: { embedded?: boolean } = {}) {
   const done = !isLoading && index >= cards.length && cards.length > 0;
 
   return (
-    <div className={`mx-auto flex max-w-6xl flex-col gap-6 ${embedded ? "px-4 pt-2 pb-10 sm:px-6" : "px-5 py-8"}`}>
+    <div className={`mx-auto flex w-full max-w-6xl flex-col gap-6 ${embedded ? "px-3 pt-2 pb-10 sm:px-6" : "px-3 py-6 sm:px-5 sm:py-8"}`}>
       {/* Header */}
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-white/40">
             <Shuffle className="h-3 w-3" /> Polaris Cinema
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Roulette</h1>
-          <p className="mt-1 max-w-lg text-xs text-white/55">
+          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Roulette</h1>
+          <p className="mt-1 max-w-lg text-[11px] text-white/55 sm:text-xs">
             A curated stack of movies and shows. Swipe right to save, left to pass. Decide what to watch
             in under sixty seconds.
           </p>
@@ -111,9 +111,9 @@ export function Roulette({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_280px]">
         {/* Deck */}
-        <div className="liquid-glass-ghost relative flex h-[560px] flex-col items-center justify-center overflow-hidden rounded-3xl p-6">
+        <div className="liquid-glass-ghost relative flex h-[480px] flex-col items-center justify-center overflow-hidden rounded-3xl p-3 sm:h-[560px] sm:p-6">
           {/* Ambient backdrop blur of current card */}
           {current?.backdrop_path && (
             <img
@@ -147,7 +147,7 @@ export function Roulette({ embedded = false }: { embedded?: boolean } = {}) {
           )}
 
           {!isLoading && !done && current && (
-            <div className="relative h-full w-full max-w-[360px]">
+            <div className="relative h-full w-full max-w-[280px] sm:max-w-[360px]">
               {after && <StackCard card={after} depth={2} />}
               {next && <StackCard card={next} depth={1} />}
               <SwipeCard

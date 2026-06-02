@@ -14,6 +14,8 @@ import {
   Handshake,
   ChevronLeft,
   ChevronRight,
+  PanelTop,
+  PanelLeft,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useSidebarState } from "@/lib/sidebar-context";
@@ -36,33 +38,71 @@ const nav = [
 
 export function Sidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const { collapsed, toggle } = useSidebarState();
-  const width = collapsed ? "w-[68px]" : "w-60";
+  const { collapsed, toggle, orientation, toggleOrientation } = useSidebarState();
 
+  return (
+    <>
+      {/* Mobile: always a compact top bar so phones get nav (and so content can't slip under) */}
+      <MobileTopNav path={path} />
+      {/* Desktop: side rail OR full-width top bar based on orientation */}
+      {orientation === "side" ? (
+        <DesktopSide
+          path={path}
+          collapsed={collapsed}
+          toggle={toggle}
+          toggleOrientation={toggleOrientation}
+        />
+      ) : (
+        <DesktopTop path={path} toggleOrientation={toggleOrientation} />
+      )}
+    </>
+  );
+}
+
+function Brand({ small = false }: { small?: boolean }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="relative shrink-0">
+        <img
+          src={logo}
+          alt="Polaris One"
+          className={small ? "h-7 w-7 object-contain" : "h-9 w-9 object-contain"}
+          style={{ mixBlendMode: "plus-lighter" }}
+        />
+        <div
+          className="absolute inset-0 -z-10 rounded-lg blur-xl opacity-70"
+          style={{ background: `rgba(var(--polaris-accent)/0.55)` }}
+        />
+      </div>
+      {!small && (
+        <div className="overflow-hidden leading-tight">
+          <div className="truncate text-[15px] font-semibold tracking-wide text-white">Polaris One</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-white/40">Web OS</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DesktopSide({
+  path,
+  collapsed,
+  toggle,
+  toggleOrientation,
+}: {
+  path: string;
+  collapsed: boolean;
+  toggle: () => void;
+  toggleOrientation: () => void;
+}) {
+  const width = collapsed ? "w-[68px]" : "w-60";
   return (
     <aside
       className={`liquid-glass-strong sticky top-0 z-20 hidden h-screen ${width} shrink-0 flex-col self-start rounded-none transition-[width] duration-300 ease-out md:flex`}
     >
       {/* Brand */}
       <div className={`flex items-center pt-6 pb-2 ${collapsed ? "justify-center px-2" : "gap-3 px-5"}`}>
-        <div className="relative shrink-0">
-          <img
-            src={logo}
-            alt="Polaris One"
-            className="h-9 w-9 object-contain"
-            style={{ mixBlendMode: "plus-lighter" }}
-          />
-          <div
-            className="absolute inset-0 -z-10 rounded-lg blur-xl opacity-70"
-            style={{ background: `rgba(var(--polaris-accent)/0.55)` }}
-          />
-        </div>
-        {!collapsed && (
-          <div className="overflow-hidden leading-tight">
-            <div className="truncate text-[15px] font-semibold tracking-wide text-white">Polaris One</div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-white/40">Web OS</div>
-          </div>
-        )}
+        <Brand small={collapsed} />
       </div>
 
       {/* Collapse toggle */}
@@ -72,6 +112,15 @@ export function Sidebar() {
         className="liquid-glass absolute -right-3 top-7 z-30 hidden h-6 w-6 items-center justify-center rounded-full text-white/85 hover:text-white md:flex"
       >
         {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+      </button>
+      {/* Orientation toggle (switch to top bar) */}
+      <button
+        onClick={toggleOrientation}
+        aria-label="Switch to top bar"
+        title="Switch to top bar"
+        className="liquid-glass absolute -right-3 top-16 z-30 hidden h-6 w-6 items-center justify-center rounded-full text-white/85 hover:text-white md:flex"
+      >
+        <PanelTop className="h-3.5 w-3.5" />
       </button>
 
       <nav className={`mt-5 flex-1 space-y-1 ${collapsed ? "px-2" : "px-3"}`}>
@@ -107,5 +156,93 @@ export function Sidebar() {
         <ProfileButton collapsed={collapsed} />
       </div>
     </aside>
+  );
+}
+
+function DesktopTop({
+  path,
+  toggleOrientation,
+}: {
+  path: string;
+  toggleOrientation: () => void;
+}) {
+  return (
+    <header className="liquid-glass-strong sticky top-0 z-20 hidden w-full items-center gap-3 rounded-none border-b border-white/5 px-4 py-2 md:flex">
+      <Brand small />
+      <span className="mx-1 h-6 w-px bg-white/15" />
+      <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
+        {nav.map((item) => {
+          const active = path === item.to;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition ${
+                active ? "text-white" : "text-white/65 hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              {active && (
+                <span
+                  className="pointer-events-none absolute inset-0 rounded-lg"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, rgba(var(--polaris-accent)/0.22), rgba(var(--polaris-accent)/0.05))",
+                    boxShadow: "inset 0 0 0 1px rgba(var(--polaris-accent)/0.45)",
+                  }}
+                />
+              )}
+              <Icon className="relative h-4 w-4" />
+              <span className="relative font-medium">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+      <button
+        onClick={toggleOrientation}
+        aria-label="Switch to side bar"
+        title="Switch to side bar"
+        className="liquid-glass grid h-8 w-8 place-items-center rounded-lg text-white/85 hover:text-white"
+      >
+        <PanelLeft className="h-4 w-4" />
+      </button>
+      <ProfileButton collapsed />
+    </header>
+  );
+}
+
+function MobileTopNav({ path }: { path: string }) {
+  return (
+    <header className="liquid-glass-strong sticky top-0 z-20 flex w-full items-center gap-2 rounded-none border-b border-white/5 px-3 py-2 md:hidden">
+      <Brand small />
+      <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
+        {nav.map((item) => {
+          const active = path === item.to;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              title={item.label}
+              className={`relative grid h-9 w-9 shrink-0 place-items-center rounded-lg transition ${
+                active ? "text-white" : "text-white/60 hover:text-white"
+              }`}
+            >
+              {active && (
+                <span
+                  className="pointer-events-none absolute inset-0 rounded-lg"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(var(--polaris-accent)/0.28), rgba(var(--polaris-accent)/0.08))",
+                    boxShadow: "inset 0 0 0 1px rgba(var(--polaris-accent)/0.5)",
+                  }}
+                />
+              )}
+              <Icon className="relative h-[18px] w-[18px]" />
+            </Link>
+          );
+        })}
+      </nav>
+    </header>
   );
 }
