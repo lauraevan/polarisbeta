@@ -179,10 +179,11 @@ export const recordVisitAndCheckBan = createServerFn({ method: "POST" })
       });
     }
 
-    // Check active bans against user / ip / device
+    // Check active bans against user / ip / device.
+    // Types from generated client may not reflect nullable args yet; cast args.
     const { data: hits } = await supabaseAdmin.rpc("check_ban_status", {
-      _user_id: data.userId ?? null,
-      _ip: ip || null,
+      _user_id: (data.userId ?? null) as unknown as string,
+      _ip: (ip || null) as unknown as string,
       _device_fingerprint: data.deviceFingerprint,
     });
 
