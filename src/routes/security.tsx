@@ -6,10 +6,11 @@ import { useAdmin } from "@/lib/admin-context";
 import {
   adminListSessions, adminListEvents, adminListBans, adminSecurityStats,
   adminQuickBan, adminLiftBan, whoAmI, adminLookupTarget, adminCreateBan,
+  adminSuggestTargets,
 } from "@/lib/security/admin-security.functions";
 import {
   Shield, Search, Ban, RefreshCw, AlertTriangle, Fingerprint, Activity,
-  Eye, ChevronLeft, X, MonitorSmartphone,
+  Eye, ChevronLeft, X, MonitorSmartphone, UserX,
 } from "lucide-react";
 
 export const Route = createFileRoute("/security")({
@@ -41,7 +42,11 @@ type Stats = {
   activeBans: number; totalBans: number; events24h: number; blocked24h: number;
   newDevices24h: number; vpnAttempts24h: number; totalSessions: number; pendingAppeals: number;
 };
-type Panel = "feed" | "lookup" | "me" | "bans" | "devices" | null;
+type Panel = "feed" | "lookup" | "me" | "bans" | "devices" | "guests" | null;
+
+type Suggestion =
+  | { kind: "user"; label: string; sub: string; query: string; emoji: string | null; banned: boolean }
+  | { kind: "guest"; label: string; sub: string; query: string };
 
 function SecurityPage() {
   const { user, loading } = useAuth();
@@ -57,6 +62,7 @@ function SecurityPage() {
   const fnWhoAmI = useServerFn(whoAmI);
   const fnLookup = useServerFn(adminLookupTarget);
   const fnCreateBan = useServerFn(adminCreateBan);
+  const fnSuggest = useServerFn(adminSuggestTargets);
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [events, setEvents] = useState<SecEvent[]>([]);
@@ -69,6 +75,8 @@ function SecurityPage() {
   const [lookupQ, setLookupQ] = useState("");
   const [dossier, setDossier] = useState<Awaited<ReturnType<typeof adminLookupTarget>> | null>(null);
   const [busy, setBusy] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
 
   // Viewport sizing so the globe truly fills the screen
   const [vp, setVp] = useState({ w: 0, h: 0 });
@@ -92,6 +100,37 @@ function SecurityPage() {
     } catch (err) { console.error(err); }
   };
   useEffect(() => { if (isOwner) refresh(); /* eslint-disable-next-line */ }, [isOwner]);
+
+  // Search autocomplete (debounced)
+  useEffect(() => {
+    const q = lookupQ.trim();
+    if (!isOwner || q.length < 1) { setSuggestions([]); return; }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const r = await fnSuggest({ data: { q } });
+        if (cancelled) return;
+        const out: Suggestion[] = [
+          ...r.users.map((u) => ({
+            kind: "user" as const,
+            label: u.display_name || u.username || "—",
+            sub: u.username ? `@${u.username}` : u.id.slice(0, 8),
+            query: u.username ?? u.id,
+            emoji: u.avatar_emoji,
+            banned: u.is_banned,
+          })),
+          ...r.guests.map((g) => ({
+            kind: "guest" as const,
+            label: g.ip ?? g.fingerprint.slice(0, 12),
+            sub: [g.city, g.country].filter(Boolean).join(", ") || `${g.visit_count} visits`,
+            query: g.ip ?? g.fingerprint,
+          })),
+        ];
+        setSuggestions(out);
+      } catch { /* ignore */ }
+    }, 180);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [lookupQ, isOwner, fnSuggest]);
 
   const points = useMemo(() => sessions
     .filter((s) => typeof s.latitude === "number" && typeof s.longitude === "number")
@@ -175,16 +214,44 @@ function SecurityPage() {
           </div>
         </div>
 
-        {/* Floating search */}
+        {/* Floating search with autocomplete */}
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/40" />
           <input
             value={lookupQ}
-            onChange={(e) => setLookupQ(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && runLookup()}
+            onChange={(e) => { setLookupQ(e.target.value); setSuggestOpen(true); }}
+            onFocus={() => setSuggestOpen(true)}
+            onBlur={() => setTimeout(() => setSuggestOpen(false), 150)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (suggestions[0]) { setLookupQ(suggestions[0].query); setSuggestOpen(false); setTimeout(runLookup, 0); }
+                else runLookup();
+              } else if (e.key === "Escape") setSuggestOpen(false);
+            }}
             placeholder="Lookup user, IP, or fingerprint…"
             className="w-full rounded-full border border-white/10 bg-black/40 py-2 pl-9 pr-3 font-mono text-xs outline-none backdrop-blur placeholder:text-white/30 focus:border-white/30"
           />
+          {suggestOpen && suggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1 max-h-80 overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-1 text-xs backdrop-blur-xl">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { setLookupQ(s.query); setSuggestOpen(false); setTimeout(runLookup, 0); }}
+                  className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left hover:bg-white/10"
+                >
+                  <span className={`grid h-6 w-6 place-items-center rounded-full ${s.kind === "user" ? "bg-cyan-500/20" : "bg-white/10"}`}>
+                    {s.kind === "user" ? (s.emoji ?? "👤") : "👻"}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{s.label}{s.kind === "user" && s.banned && <span className="ml-1 text-red-300">· banned</span>}</span>
+                    <span className="block truncate text-[10px] text-white/45">{s.sub}</span>
+                  </span>
+                  <span className="text-[9px] uppercase tracking-wider text-white/35">{s.kind}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <button onClick={refresh} className="rounded-full bg-white/5 p-2 backdrop-blur hover:bg-white/10" title="Refresh">
@@ -205,6 +272,7 @@ function SecurityPage() {
       <nav className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/60 p-1 backdrop-blur-xl">
         <DockBtn icon={<Activity className="h-4 w-4" />} label="Feed" active={panel === "feed"} onClick={() => setPanel(panel === "feed" ? null : "feed")} />
         <DockBtn icon={<MonitorSmartphone className="h-4 w-4" />} label={`Devices · ${sessions.length}`} active={panel === "devices"} onClick={() => setPanel(panel === "devices" ? null : "devices")} />
+        <DockBtn icon={<UserX className="h-4 w-4" />} label={`Guests · ${sessions.filter((s) => !s.user_id).length}`} active={panel === "guests"} onClick={() => setPanel(panel === "guests" ? null : "guests")} />
         <DockBtn icon={<Ban className="h-4 w-4" />} label={`Bans · ${activeBans}`} active={panel === "bans"} onClick={() => setPanel(panel === "bans" ? null : "bans")} />
         <DockBtn icon={<Fingerprint className="h-4 w-4" />} label="Me" active={panel === "me"} onClick={() => setPanel(panel === "me" ? null : "me")} />
       </nav>
@@ -286,6 +354,13 @@ function SecurityPage() {
       {panel === "me" && (
         <FloatingPanel title="Your connection" onClose={() => setPanel(null)}>
           <div className="font-mono text-lg font-bold tabular-nums">{me?.ip || "—"}</div>
+          {me?.candidates && me.candidates.length > 1 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {me.candidates.map((c) => (
+                <span key={c} className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${c === me.ip ? "bg-cyan-500/20 text-cyan-100" : "bg-white/5 text-white/60"}`}>{c}</span>
+              ))}
+            </div>
+          )}
           {me?.geo ? (
             <div className="mt-2 space-y-1 text-[11px] text-white/70">
               <Row k="Location" v={`${me.geo.city ?? "?"}, ${me.geo.region ?? ""} ${me.geo.country ?? ""}`} />
@@ -301,6 +376,91 @@ function SecurityPage() {
               </div>
             </div>
           ) : <div className="mt-2 text-xs text-white/40">Geo lookup unavailable</div>}
+        </FloatingPanel>
+      )}
+
+      {panel === "guests" && (
+        <FloatingPanel title={`Guests · ${sessions.filter((s) => !s.user_id).length}`} onClose={() => setPanel(null)} wide>
+          <div className="mb-2 text-[11px] text-white/55">
+            Everyone who has ever visited without signing in. Each row is a device fingerprint + the IP we've recorded for it — ban either (or both) to keep them out as guests.
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto rounded-xl border border-white/10">
+            <table className="w-full text-[11px]">
+              <thead className="sticky top-0 bg-black/85 text-left text-white/55">
+                <tr>
+                  <th className="px-2 py-1.5">First seen</th>
+                  <th className="px-2 py-1.5">Last seen</th>
+                  <th className="px-2 py-1.5">Fingerprint</th>
+                  <th className="px-2 py-1.5">IP</th>
+                  <th className="px-2 py-1.5">Geo</th>
+                  <th className="px-2 py-1.5">Device</th>
+                  <th className="px-2 py-1.5">Visits</th>
+                  <th className="px-2 py-1.5">Flags</th>
+                  <th className="px-2 py-1.5 text-right">Ban</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...sessions]
+                  .filter((s) => !s.user_id)
+                  .sort((a, b) => b.last_seen_at.localeCompare(a.last_seen_at))
+                  .map((s) => (
+                    <tr key={s.id} className="border-t border-white/5 hover:bg-white/[0.03]">
+                      <td className="px-2 py-1 text-white/55">{new Date(s.first_seen_at).toLocaleString()}</td>
+                      <td className="px-2 py-1 text-white/55">{new Date(s.last_seen_at).toLocaleString()}</td>
+                      <td className="px-2 py-1 font-mono text-white/70" title={s.device_fingerprint}>{s.device_fingerprint.slice(0, 12)}…</td>
+                      <td className="px-2 py-1 font-mono">{s.ip ?? "—"}</td>
+                      <td className="px-2 py-1">{[s.city, s.country].filter(Boolean).join(", ") || "—"}</td>
+                      <td className="px-2 py-1 text-white/55">{s.browser ?? "?"} · {s.os ?? "?"}</td>
+                      <td className="px-2 py-1 tabular-nums">{s.visit_count}</td>
+                      <td className="px-2 py-1">
+                        {s.is_vpn && <Tag c="red">VPN</Tag>}{" "}
+                        {s.is_proxy && <Tag c="red">PX</Tag>}{" "}
+                        {s.is_tor && <Tag c="red">Tor</Tag>}
+                      </td>
+                      <td className="px-2 py-1 text-right">
+                        <div className="flex justify-end gap-1">
+                          <button
+                            disabled={busy}
+                            title="Ban this guest device + IP"
+                            onClick={async () => {
+                              setBusy(true);
+                              try {
+                                const targets: Array<{ scope: "device" | "ip"; value: string }> = [
+                                  { scope: "device", value: s.device_fingerprint },
+                                ];
+                                if (s.ip) targets.push({ scope: "ip", value: s.ip });
+                                await fnCreateBan({ data: { type: "full_site", reason: "Guest ban from Guests panel", targets } });
+                                await refresh();
+                              } finally { setBusy(false); }
+                            }}
+                            className="rounded-full bg-red-500/30 px-2 py-0.5 text-[10px] text-red-100 hover:bg-red-500/50 disabled:opacity-40">
+                            Device + IP
+                          </button>
+                          {s.ip && (
+                            <button
+                              disabled={busy}
+                              title="Ban only this IP"
+                              onClick={async () => {
+                                setBusy(true);
+                                try {
+                                  await fnCreateBan({ data: { type: "full_site", reason: "Guest IP ban", targets: [{ scope: "ip", value: s.ip! }] } });
+                                  await refresh();
+                                } finally { setBusy(false); }
+                              }}
+                              className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] hover:bg-white/20 disabled:opacity-40">
+                              IP
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                {sessions.filter((s) => !s.user_id).length === 0 && (
+                  <tr><td colSpan={9} className="py-6 text-center text-white/40">No guest visits recorded yet</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </FloatingPanel>
       )}
 

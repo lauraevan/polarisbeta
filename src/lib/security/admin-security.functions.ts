@@ -25,14 +25,51 @@ async function getMyUsername(userId: string): Promise<string | null> {
   return data?.username ?? null;
 }
 
-function clientIp(): string {
-  const cf = getRequestHeader("cf-connecting-ip");
-  if (cf) return cf;
-  const xri = getRequestHeader("x-real-ip");
-  if (xri) return xri;
+function normalizeIp(raw: string): string {
+  let ip = (raw || "").trim();
+  if (!ip) return "";
+  ip = ip.replace(/^\[|\]$/g, "").split("%")[0];
+  if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(ip)) ip = ip.split(":")[0];
+  return ip;
+}
+function isPublicIp(ip: string): boolean {
+  if (!ip) return false;
+  if (ip === "::1" || ip === "127.0.0.1" || ip === "0.0.0.0") return false;
+  if (/^10\./.test(ip)) return false;
+  if (/^192\.168\./.test(ip)) return false;
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return false;
+  if (/^169\.254\./.test(ip)) return false;
+  if (/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(ip)) return false;
+  if (/^(fc|fd)/i.test(ip)) return false;
+  if (/^fe80:/i.test(ip)) return false;
+  return true;
+}
+function collectIps(): string[] {
+  const out: string[] = [];
+  const single = [
+    "cf-connecting-ip", "true-client-ip", "x-real-ip", "fly-client-ip",
+    "fastly-client-ip", "x-client-ip", "x-cluster-client-ip", "x-azure-clientip",
+  ];
+  for (const h of single) {
+    const v = getRequestHeader(h);
+    if (v) out.push(normalizeIp(v));
+  }
   const xff = getRequestHeader("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return getRequestIP({ xForwardedFor: true }) ?? "";
+  if (xff) xff.split(",").forEach((p) => out.push(normalizeIp(p)));
+  const fwd = getRequestHeader("forwarded");
+  if (fwd) {
+    fwd.split(",").forEach((p) => {
+      const m = p.match(/for="?([^;,"]+)"?/i);
+      if (m) out.push(normalizeIp(m[1]));
+    });
+  }
+  const helper = getRequestIP({ xForwardedFor: true });
+  if (helper) out.push(normalizeIp(helper));
+  return Array.from(new Set(out.filter(Boolean)));
+}
+function clientIp(): string {
+  const all = collectIps();
+  return all.find(isPublicIp) ?? all[0] ?? "";
 }
 
 async function geo(ip: string) {
@@ -71,10 +108,11 @@ export const whoAmI = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertOwner(context.userId);
     const ip = clientIp();
+    const candidates = collectIps();
     const ua = getRequestHeader("user-agent") ?? "";
     const lang = getRequestHeader("accept-language") ?? "";
     const g = await geo(ip);
-    return { ip, userAgent: ua, language: lang, geo: g };
+    return { ip, candidates, userAgent: ua, language: lang, geo: g };
   });
 
 /** FBI-style dossier on any target. Searches by username, user id, IP, or device fingerprint. */
@@ -426,5 +464,48 @@ export const adminSecurityStats = createServerFn({ method: "GET" })
       vpnAttempts24h: events.filter((e) => e.is_vpn).length,
       totalSessions: sessionsRes.count ?? 0,
       pendingAppeals: appealsRes.count ?? 0,
+    };
+  });
+
+/** Autocomplete for the Security HQ search bar. Returns users + matching guests. */
+export const adminSuggestTargets = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ q: z.string().min(1).max(64) }).parse(input))
+  .handler(async ({ context, data }) => {
+    await assertOwner(context.userId);
+    const q = data.q.trim();
+    const term = `%${q.replace(/[%_]/g, "")}%`;
+    const [profilesRes, guestsRes] = await Promise.all([
+      supabaseAdmin
+        .from("profiles")
+        .select("id, username, display_name, avatar_emoji, is_banned, is_owner")
+        .or(`username.ilike.${term},display_name.ilike.${term}`)
+        .order("username", { ascending: true })
+        .limit(8),
+      supabaseAdmin
+        .from("device_sessions")
+        .select("device_fingerprint, ip, city, country, visit_count, last_seen_at, user_id")
+        .is("user_id", null)
+        .or(`ip.ilike.${term},device_fingerprint.ilike.${term},city.ilike.${term},country.ilike.${term}`)
+        .order("last_seen_at", { ascending: false })
+        .limit(6),
+    ]);
+    return {
+      users: (profilesRes.data ?? []).map((p) => ({
+        id: p.id,
+        username: p.username,
+        display_name: p.display_name,
+        avatar_emoji: p.avatar_emoji,
+        is_banned: p.is_banned,
+        is_owner: p.is_owner,
+      })),
+      guests: (guestsRes.data ?? []).map((g) => ({
+        fingerprint: g.device_fingerprint,
+        ip: g.ip,
+        city: g.city,
+        country: g.country,
+        visit_count: g.visit_count,
+        last_seen_at: g.last_seen_at,
+      })),
     };
   });
