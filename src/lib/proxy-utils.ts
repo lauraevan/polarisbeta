@@ -5,11 +5,12 @@ export type ProxyEngine = "uv" | "scramjet" | "dioxide";
 // 404s or refuses upgrades, drop it from the front of this list.
 const WISP_POOL = [
   "wss://wisp.mercurywork.shop/",
-  "wss://anura.pro/wisp/",
+  "wss://anura.pro/",
+  "wss://wisp.terbiumon.top/",
   "wss://nebulaproxy.io/wisp/",
-  "wss://wisp.terbiumon.top/wisp/",
-  "wss://wisp.shadowproxy.workers.dev/",
   "wss://wisp.lunaproxy.org/",
+  "wss://wisp.lewd.tube/",
+  "wss://wisp.shadowproxy.workers.dev/",
 ] as const;
 export let POLARIS_WISP_URL: string = WISP_POOL[0];
 // Serve bare-mux + epoxy from our own origin so the SW and page agree on the

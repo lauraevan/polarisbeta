@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
-import { ArrowRight, RotateCcw, Search, Shield, Zap } from "lucide-react";
+import { ArrowRight, RotateCcw, Search, Shield, Zap, AlertTriangle } from "lucide-react";
 import { getProxyUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
 import logo from "@/assets/polaris-logo.png";
 
@@ -22,11 +22,18 @@ export function PolarisBrowser() {
   const [target, setTarget] = useState(search.url ? normalizeUrl(search.url) : "https://www.google.com");
   const [ready, setReady] = useState(false);
   const [activeSrc, setActiveSrc] = useState<string | null>(null);
+  const [setupError, setSetupError] = useState<string | null>(null);
 
   useEffect(() => {
     setReady(false);
     setActiveSrc(null);
-    registerStaticProxies(engine).finally(() => setReady(true));
+    setSetupError(null);
+    registerStaticProxies(engine)
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : "Could not start proxy workers";
+        setSetupError(msg);
+      })
+      .finally(() => setReady(true));
   }, [engine]);
 
   const src = useMemo(() => getProxyUrl(engine, target), [engine, target]);
@@ -107,12 +114,20 @@ export function PolarisBrowser() {
         </div>
 
         {activeSrc ? (
-          <iframe
-            key={activeSrc}
-            title="Polaris Browser"
-            src={activeSrc}
-            className="min-h-0 flex-1 border-0 bg-black/40"
-          />
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            {setupError && (
+              <div className="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Proxy setup hiccup: {setupError}. Try switching engines or retrying — public relays sometimes go down.
+              </div>
+            )}
+            <iframe
+              key={activeSrc}
+              title="Polaris Browser"
+              src={activeSrc}
+              className="min-h-0 flex-1 border-0 bg-black/40"
+            />
+          </div>
         ) : ready ? (
           <div className="grid min-h-0 flex-1 place-items-center bg-black/35 text-center">
             <div className="max-w-md space-y-4 px-6">
