@@ -25,14 +25,51 @@ async function getMyUsername(userId: string): Promise<string | null> {
   return data?.username ?? null;
 }
 
-function clientIp(): string {
-  const cf = getRequestHeader("cf-connecting-ip");
-  if (cf) return cf;
-  const xri = getRequestHeader("x-real-ip");
-  if (xri) return xri;
+function normalizeIp(raw: string): string {
+  let ip = (raw || "").trim();
+  if (!ip) return "";
+  ip = ip.replace(/^\[|\]$/g, "").split("%")[0];
+  if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(ip)) ip = ip.split(":")[0];
+  return ip;
+}
+function isPublicIp(ip: string): boolean {
+  if (!ip) return false;
+  if (ip === "::1" || ip === "127.0.0.1" || ip === "0.0.0.0") return false;
+  if (/^10\./.test(ip)) return false;
+  if (/^192\.168\./.test(ip)) return false;
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return false;
+  if (/^169\.254\./.test(ip)) return false;
+  if (/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(ip)) return false;
+  if (/^(fc|fd)/i.test(ip)) return false;
+  if (/^fe80:/i.test(ip)) return false;
+  return true;
+}
+function collectIps(): string[] {
+  const out: string[] = [];
+  const single = [
+    "cf-connecting-ip", "true-client-ip", "x-real-ip", "fly-client-ip",
+    "fastly-client-ip", "x-client-ip", "x-cluster-client-ip", "x-azure-clientip",
+  ];
+  for (const h of single) {
+    const v = getRequestHeader(h);
+    if (v) out.push(normalizeIp(v));
+  }
   const xff = getRequestHeader("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return getRequestIP({ xForwardedFor: true }) ?? "";
+  if (xff) xff.split(",").forEach((p) => out.push(normalizeIp(p)));
+  const fwd = getRequestHeader("forwarded");
+  if (fwd) {
+    fwd.split(",").forEach((p) => {
+      const m = p.match(/for="?([^;,"]+)"?/i);
+      if (m) out.push(normalizeIp(m[1]));
+    });
+  }
+  const helper = getRequestIP({ xForwardedFor: true });
+  if (helper) out.push(normalizeIp(helper));
+  return Array.from(new Set(out.filter(Boolean)));
+}
+function clientIp(): string {
+  const all = collectIps();
+  return all.find(isPublicIp) ?? all[0] ?? "";
 }
 
 async function geo(ip: string) {
@@ -71,10 +108,11 @@ export const whoAmI = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertOwner(context.userId);
     const ip = clientIp();
+    const candidates = collectIps();
     const ua = getRequestHeader("user-agent") ?? "";
     const lang = getRequestHeader("accept-language") ?? "";
     const g = await geo(ip);
-    return { ip, userAgent: ua, language: lang, geo: g };
+    return { ip, candidates, userAgent: ua, language: lang, geo: g };
   });
 
 /** FBI-style dossier on any target. Searches by username, user id, IP, or device fingerprint. */
