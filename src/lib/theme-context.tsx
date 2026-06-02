@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { safeGetItem, safeSetItem } from "./safe-storage";
 
 type Mode = "wallpaper" | "outline";
 type UITheme = "dark" | "light";
@@ -67,7 +68,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const raw = window.localStorage.getItem(KEY);
+      const raw = safeGetItem("localStorage", KEY);
       if (raw) {
         const v = JSON.parse(raw);
         if (v.mode) setMode(v.mode);
@@ -88,7 +89,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(
+    safeSetItem(
+      "localStorage",
       KEY,
       JSON.stringify({ mode, customAccent, outlineColor, dockSize, shortcutSize, dockPins, defaultEngine, dockPosition, homeAISwipe, uiTheme, liquidGlass, secondaryAccent }),
     );
