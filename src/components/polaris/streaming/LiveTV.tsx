@@ -483,9 +483,16 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
     video.pause();
     video.removeAttribute("src");
     video.load();
-    video.onerror = () => {
-      if (!cancelled) setStatus("Stream failed — try another source.");
+    const fail = () => {
+      if (cancelled) return;
+      if (channel.streams.length > 1 && streamIdx < channel.streams.length - 1) {
+        setStatus("Trying another source…");
+        setStreamIdx((i) => i + 1);
+        return;
+      }
+      setStatus("Stream failed — try another source.");
     };
+    video.onerror = fail;
 
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = stream.url;
@@ -503,7 +510,7 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
         player.attachMedia(video);
         player.on(Hls.Events.MANIFEST_PARSED, tryPlay);
         player.on(Hls.Events.ERROR, (_event, data) => {
-          if (data.fatal && !cancelled) setStatus("Stream failed — try another source.");
+          if (data.fatal) fail();
         });
       }).catch(() => {
         if (!cancelled) setStatus("Player failed to load.");
