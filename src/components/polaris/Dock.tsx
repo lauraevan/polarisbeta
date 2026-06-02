@@ -18,7 +18,13 @@ const PIN_CATALOG: Record<string, string> = {
   Twitch: "twitch.tv", Netflix: "netflix.com",
 };
 
-export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
+export function Dock({
+  onOpenWallpaper,
+  showWallpaperButton = false,
+}: {
+  onOpenWallpaper: () => void;
+  showWallpaperButton?: boolean;
+}) {
   const [now, setNow] = useState<Date | null>(null);
   const [launchpadOpen, setLaunchpadOpen] = useState(false);
   const { dockSize, dockPins, defaultEngine, dockPosition, setDockPosition, uiTheme, setUITheme, liquidGlass, setLiquidGlass } = useTheme();
@@ -117,9 +123,11 @@ export function Dock({ onOpenWallpaper }: { onOpenWallpaper: () => void }) {
         <Link to="/browser" className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Polaris Browser">
           <Compass className="h-4 w-4" />
         </Link>
-        <button onClick={onOpenWallpaper} className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Change wallpaper">
-          <SlidersHorizontal className="h-4 w-4" />
-        </button>
+        {showWallpaperButton && (
+          <button onClick={onOpenWallpaper} className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white" aria-label="Change wallpaper" title="Change wallpaper">
+            <SlidersHorizontal className="h-4 w-4" />
+          </button>
+        )}
         <button
           onClick={() => setUITheme(uiTheme === "dark" ? "light" : "dark")}
           className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"

@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <AppShell>
+    <AppShell wallpaperButton>
       <Home />
     </AppShell>
   );
