@@ -467,12 +467,7 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
     if (!video || !stream) return;
 
     let cancelled = false;
-    let hls: {
-      destroy: () => void;
-      loadSource: (url: string) => void;
-      attachMedia: (media: HTMLMediaElement) => void;
-      on: (event: string, callback: (...args: any[]) => void) => void;
-    } | null = null;
+    let hls: import("hls.js").default | null = null;
     setStatus("Connecting…");
 
     const tryPlay = async () => {
@@ -501,11 +496,12 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
           setStatus("This browser can't play this live stream.");
           return;
         }
-        hls = new Hls({ lowLatencyMode: true, maxBufferLength: 24, enableWorker: true });
-        hls.loadSource(stream.url);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, tryPlay);
-        hls.on(Hls.Events.ERROR, (_event, data) => {
+        const player = new Hls({ lowLatencyMode: true, maxBufferLength: 24, enableWorker: true });
+        hls = player;
+        player.loadSource(stream.url);
+        player.attachMedia(video);
+        player.on(Hls.Events.MANIFEST_PARSED, tryPlay);
+        player.on(Hls.Events.ERROR, (_event, data) => {
           if (data.fatal && !cancelled) setStatus("Stream failed — try another source.");
         });
       }).catch(() => {
