@@ -68,6 +68,8 @@ type Channel = {
   description: string | null; emoji: string | null;
   filter_enabled?: boolean | null;
   allowed_role?: string | null;
+  visibility?: "public" | "private" | "role" | null;
+  created_by?: string | null;
 };
 type Attachment = { kind: "image" | "gif" | "drawing" | "link"; url: string };
 type Message = {
