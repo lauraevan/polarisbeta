@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package, PanelTop } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
+import { useSidebarState } from "@/lib/sidebar-context";
 import { useTabCloak } from "@/lib/tab-cloaker";
 import { useAdmin } from "@/lib/admin-context";
 import { useAuth } from "@/lib/auth-context";
@@ -91,6 +92,7 @@ function SettingsPage() {
   } = useTheme();
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const { cloak, setCloakId, cloaks } = useTabCloak();
+  const { orientation, setOrientation } = useSidebarState();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
   const { isAdmin, isOwner, unlock, lock } = useAdmin();
   const { refreshProfile, user, profile, updateProfile } = useAuth();
@@ -337,6 +339,31 @@ function SettingsPage() {
                 <span
                   className={`absolute top-0.5 h-6 w-6 rounded-full transition-all ${
                     liquidGlass ? "left-5 bg-black" : "left-0.5 bg-white"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+          <div className="mt-4">
+            <SectionTitle icon={PanelTop} title="Top bar layout" subtitle="Desktop only — replaces the side rail with a top bar" />
+            <div className="mt-3 flex items-start justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-white">Use top bar navigation</div>
+                <p className="mt-0.5 text-[11px] text-white/55">
+                  When on, the navigation sits as a horizontal bar across the top.
+                  When off, it stays on the left as a sidebar. Phones always use the top bar.
+                </p>
+              </div>
+              <button
+                onClick={() => setOrientation(orientation === "top" ? "side" : "top")}
+                aria-pressed={orientation === "top"}
+                className={`relative h-7 w-12 shrink-0 rounded-full border transition ${
+                  orientation === "top" ? "border-white/20 bg-white" : "border-white/15 bg-white/10"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-6 w-6 rounded-full transition-all ${
+                    orientation === "top" ? "left-5 bg-black" : "left-0.5 bg-white"
                   }`}
                 />
               </button>

@@ -14,8 +14,6 @@ import {
   Handshake,
   ChevronLeft,
   ChevronRight,
-  PanelTop,
-  PanelLeft,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useSidebarState } from "@/lib/sidebar-context";
@@ -38,7 +36,7 @@ const nav = [
 
 export function Sidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const { collapsed, toggle, orientation, toggleOrientation } = useSidebarState();
+  const { collapsed, toggle, orientation } = useSidebarState();
 
   return (
     <>
@@ -46,14 +44,9 @@ export function Sidebar() {
       <MobileTopNav path={path} />
       {/* Desktop (lg+): side rail OR full-width top bar based on orientation */}
       {orientation === "side" ? (
-        <DesktopSide
-          path={path}
-          collapsed={collapsed}
-          toggle={toggle}
-          toggleOrientation={toggleOrientation}
-        />
+        <DesktopSide path={path} collapsed={collapsed} toggle={toggle} />
       ) : (
-        <DesktopTop path={path} toggleOrientation={toggleOrientation} />
+        <DesktopTop path={path} />
       )}
     </>
   );
@@ -88,12 +81,10 @@ function DesktopSide({
   path,
   collapsed,
   toggle,
-  toggleOrientation,
 }: {
   path: string;
   collapsed: boolean;
   toggle: () => void;
-  toggleOrientation: () => void;
 }) {
   const width = collapsed ? "w-[68px]" : "w-60";
   return (
@@ -112,15 +103,6 @@ function DesktopSide({
         className="liquid-glass absolute -right-3 top-7 z-30 hidden h-6 w-6 items-center justify-center rounded-full text-white/85 hover:text-white lg:flex"
       >
         {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-      </button>
-      {/* Orientation toggle (switch to top bar) */}
-      <button
-        onClick={toggleOrientation}
-        aria-label="Switch to top bar"
-        title="Switch to top bar"
-        className="liquid-glass absolute -right-3 top-16 z-30 hidden h-6 w-6 items-center justify-center rounded-full text-white/85 hover:text-white lg:flex"
-      >
-        <PanelTop className="h-3.5 w-3.5" />
       </button>
 
       <nav className={`mt-5 flex-1 space-y-1 ${collapsed ? "px-2" : "px-3"}`}>
@@ -159,13 +141,7 @@ function DesktopSide({
   );
 }
 
-function DesktopTop({
-  path,
-  toggleOrientation,
-}: {
-  path: string;
-  toggleOrientation: () => void;
-}) {
+function DesktopTop({ path }: { path: string }) {
   return (
     <header className="liquid-glass-strong sticky top-0 z-20 hidden w-full items-center gap-3 rounded-none border-b border-white/5 px-4 py-2 lg:flex">
       <div className="shrink-0">
@@ -201,14 +177,6 @@ function DesktopTop({
           );
         })}
       </nav>
-      <button
-        onClick={toggleOrientation}
-        aria-label="Switch to side bar"
-        title="Switch to side bar"
-        className="liquid-glass grid h-8 w-8 shrink-0 place-items-center rounded-lg text-white/85 hover:text-white"
-      >
-        <PanelLeft className="h-4 w-4" />
-      </button>
       <div className="shrink-0">
         <ProfileButton collapsed />
       </div>

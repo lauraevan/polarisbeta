@@ -473,9 +473,11 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
 
     let cancelled = false;
     let hls: import("hls.js").default | null = null;
+    let connectTimer: ReturnType<typeof setTimeout> | null = null;
     setStatus("Connecting…");
 
     const tryPlay = async () => {
+      if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
       try {
         await video.play();
         if (!cancelled) setStatus("");
@@ -489,6 +491,7 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
     video.load();
     const fail = () => {
       if (cancelled) return;
+      if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
       // First, try the same stream through a CORS proxy — fixes channels
       // whose CDN blocks cross-origin or requires a referrer.
       if (!proxyAttempt) {
@@ -506,8 +509,31 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
     };
     video.onerror = fail;
 
+    // Mixed content: HTTP streams are blocked on HTTPS pages, so we MUST
+    // route them through a same-origin/HTTPS proxy from the very first try.
+    const isHttp = stream.url.startsWith("http://");
+    const usingProxy = proxyAttempt || isHttp;
     const proxied = (u: string) =>
-      proxyAttempt ? `https://corsproxy.io/?url=${encodeURIComponent(u)}` : u;
+      usingProxy ? `https://corsproxy.io/?url=${encodeURIComponent(u)}` : u;
+
+    // DASH (.mpd) is not supported by the HLS player — fast-skip to the
+    // next stream so Asian/European channels that ship MPEG-DASH don't hang.
+    if (/\.mpd(\?|$)/i.test(stream.url)) {
+      if (channel.streams.length > 1 && streamIdx < channel.streams.length - 1) {
+        setStreamIdx((i) => i + 1);
+        setProxyAttempt(false);
+      } else {
+        setStatus("This channel uses DASH — not supported yet.");
+      }
+      return;
+    }
+
+    // Connect watchdog: if the manifest never parses within 10s, treat as a
+    // failure and move to the proxy / next source. Many Euro/Asia CDNs hang
+    // silently behind geo gates instead of returning an HTTP error.
+    connectTimer = setTimeout(() => {
+      if (!cancelled) fail();
+    }, 10000);
 
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = proxied(stream.url);
@@ -519,7 +545,7 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
           setStatus("This browser can't play this live stream.");
           return;
         }
-        const Loader = proxyAttempt
+        const Loader = usingProxy
           ? class extends (Hls.DefaultConfig.loader as any) {
               load(context: any, config: any, callbacks: any) {
                 if (context?.url && !context.url.includes("corsproxy.io")) {
@@ -529,9 +555,18 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
               }
             }
           : Hls.DefaultConfig.loader;
-        const player = new Hls({ lowLatencyMode: true, maxBufferLength: 24, enableWorker: true, loader: Loader as any });
+        const player = new Hls({
+          lowLatencyMode: true,
+          maxBufferLength: 24,
+          enableWorker: true,
+          loader: Loader as any,
+          manifestLoadingTimeOut: 12000,
+          manifestLoadingMaxRetry: 2,
+          levelLoadingTimeOut: 12000,
+          fragLoadingTimeOut: 15000,
+        });
         hls = player;
-        player.loadSource(stream.url);
+        player.loadSource(proxied(stream.url));
         player.attachMedia(video);
         player.on(Hls.Events.MANIFEST_PARSED, tryPlay);
         player.on(Hls.Events.ERROR, (_event, data) => {
@@ -544,6 +579,7 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
 
     return () => {
       cancelled = true;
+      if (connectTimer) clearTimeout(connectTimer);
       video.onerror = null;
       video.onloadedmetadata = null;
       hls?.destroy();
