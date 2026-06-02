@@ -663,8 +663,6 @@ function SettingsPage() {
           </div>
         </section>
 
-        {/* Link Maker */}
-        <LinkMakerSection defaultEngine={defaultEngine} />
       </div>
     </div>
   );
