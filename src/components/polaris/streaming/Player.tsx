@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, List, Play, SkipForward } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, List, Play, SkipForward, Users } from "lucide-react";
 import { PROVIDERS } from "@/lib/streaming-providers";
 import { tmdbApi, IMG, type MediaKind } from "@/lib/tmdb";
 import { useQuery } from "@tanstack/react-query";
 import { MovieChat } from "./MovieChat";
+import { WatchPartyPanel } from "./WatchPartyPanel";
 
 type Props = {
   kind: MediaKind;
@@ -18,6 +19,7 @@ export function Player({ kind, id, title, onClose }: Props) {
   const [episode, setEpisode] = useState(1);
   const [chatOpen, setChatOpen] = useState(false);
   const [episodesOpen, setEpisodesOpen] = useState(false);
+  const [partyOpen, setPartyOpen] = useState(false);
 
   const { data: details } = useQuery({
     queryKey: ["details", kind, id],
@@ -144,6 +146,19 @@ export function Player({ kind, id, title, onClose }: Props) {
           <span className="hidden sm:inline">Chat</span>
         </button>
 
+        <button
+          onClick={() => setPartyOpen((o) => !o)}
+          className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
+            partyOpen
+              ? "bg-[rgb(var(--polaris-accent))] text-black"
+              : "bg-gradient-to-r from-[rgb(var(--polaris-accent))]/80 to-pink-500/70 text-white hover:brightness-110"
+          }`}
+          aria-label="Watch party"
+        >
+          <Users className="h-4 w-4" />
+          <span className="hidden sm:inline">Party</span>
+        </button>
+
       </div>
 
       <div className="relative flex flex-1 overflow-hidden bg-black">
@@ -226,6 +241,27 @@ export function Player({ kind, id, title, onClose }: Props) {
               room={`${kind}-${id}${kind === "tv" ? `-s${season}e${episode}` : ""}`}
               title={title}
               onClose={() => setChatOpen(false)}
+            />
+          </aside>
+        )}
+
+        {partyOpen && (
+          <aside className="absolute inset-y-0 right-0 z-20 w-full max-w-sm border-l border-white/10 md:static md:w-[360px] md:max-w-none">
+            <WatchPartyPanel
+              kind={kind}
+              tmdbId={id}
+              title={title}
+              season={season}
+              episode={episode}
+              providerIdx={providerIdx}
+              isPlaying={true}
+              positionSeconds={0}
+              onRemoteState={(s) => {
+                if (s.season != null) setSeason(s.season);
+                if (s.episode != null) setEpisode(s.episode);
+                if (typeof s.provider_idx === "number") setProviderIdx(s.provider_idx);
+              }}
+              onClose={() => setPartyOpen(false)}
             />
           </aside>
         )}
