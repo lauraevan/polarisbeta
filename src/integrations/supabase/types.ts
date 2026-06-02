@@ -980,6 +980,92 @@ export type Database = {
         }
         Relationships: []
       }
+      watch_parties: {
+        Row: {
+          code: string
+          created_at: string
+          episode: number | null
+          host_id: string
+          id: string
+          is_playing: boolean
+          kind: string
+          position_seconds: number
+          provider_idx: number
+          season: number | null
+          state_updated_at: string
+          title: string
+          tmdb_id: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          episode?: number | null
+          host_id: string
+          id?: string
+          is_playing?: boolean
+          kind: string
+          position_seconds?: number
+          provider_idx?: number
+          season?: number | null
+          state_updated_at?: string
+          title: string
+          tmdb_id: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          episode?: number | null
+          host_id?: string
+          id?: string
+          is_playing?: boolean
+          kind?: string
+          position_seconds?: number
+          provider_idx?: number
+          season?: number | null
+          state_updated_at?: string
+          title?: string
+          tmdb_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      watch_party_members: {
+        Row: {
+          avatar_emoji: string | null
+          id: string
+          joined_at: string
+          party_id: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          avatar_emoji?: string | null
+          id?: string
+          joined_at?: string
+          party_id: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          avatar_emoji?: string | null
+          id?: string
+          joined_at?: string
+          party_id?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_party_members_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "watch_parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
