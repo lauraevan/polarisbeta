@@ -1,5 +1,9 @@
-import { useMemo, useState } from "react";
-import { Radio, Search, X, Tv2, Trophy, Newspaper, Film, Music2, Baby, FlaskConical, Globe2, Flame, Star, Volume2, Maximize2, ListVideo, ChevronRight } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Radio, Search, X, Tv2, Trophy, Newspaper, Film, Music2, Baby, FlaskConical,
+  Globe2, Flame, Star, Volume2, Maximize2, ListVideo, ChevronRight,
+  Loader2, RefreshCw, Calendar,
+} from "lucide-react";
 
 type Channel = {
   id: string;
@@ -13,60 +17,70 @@ type Channel = {
   highlight?: boolean;
   now?: string;            // what's airing now (display-only)
   next?: string;           // up next
+  /** DaddyLive numeric stream id — pure player iframe, no website chrome. */
+  dlhd?: number;
 };
 
 type Category = "All" | "Sports" | "News" | "Entertainment" | "Movies" | "Kids" | "Music" | "Documentary";
 
-// toustream.xyz exposes per-channel pages; we point each tile at its slug
-// instead of dumping users on the homepage. The custom Polaris chrome
-// (top bar, guide, controls) wraps the stream so it never feels like a
-// raw embed.
-const SRC_BASE = "https://toustream.xyz";
-function channelSrc(c: Channel) {
-  return `${SRC_BASE}/watch/${c.id}`;
+// Pure-player iframes only — no third-party website chrome. DaddyLive
+// (dlhd.pk) serves a bare HTML5 player at /embed/stream-{id}.php, which is
+// exactly what we want: the user sees the video, not a wrapper site. We
+// keep a rotating mirror list so a single DNS hiccup doesn't kill playback.
+const DLHD_HOSTS = ["dlhd.pk", "thedaddy.top", "dlhd.click", "thedaddy.click"];
+function dlhdEmbed(id: number, hostIndex = 0) {
+  const host = DLHD_HOSTS[hostIndex % DLHD_HOSTS.length];
+  return `https://${host}/embed/stream-${id}.php`;
 }
 
 const CHANNELS: Channel[] = [
+// Only channels with known DaddyLive IDs are kept — every tile maps to a
+// pure HTML5 player iframe (no third-party website wrapper).
+const CHANNELS: Channel[] = [
   // Sports
-  { id: "sky-sports",      name: "Sky Sports",            category: "Sports",        domain: "skysports.com",        emoji: "⚽", accent: "5 95 200",   tagline: "Premier League · F1 · Boxing", popular: true, highlight: true, now: "Premier League Live",        next: "Saturday Football Highlights" },
-  { id: "espn",            name: "ESPN",                  category: "Sports",        domain: "espn.com",             emoji: "🏈", accent: "200 30 30",  tagline: "NFL · NBA · UFC",              popular: true, highlight: true, now: "NBA Tonight",                next: "SportsCenter" },
-  { id: "bt-sport",        name: "TNT Sports",            category: "Sports",        domain: "tntsports.co.uk",      emoji: "🥊", accent: "230 60 30",  tagline: "UCL · Premiership Rugby",                                  now: "Champions League Magazine",   next: "Boxing Tonight" },
-  { id: "fox-sports",      name: "FOX Sports",            category: "Sports",        domain: "foxsports.com",        emoji: "⚾", accent: "30 50 160",  tagline: "MLB · College Football",                                    now: "MLB Game of the Week",        next: "College Gameday" },
-  { id: "nba-tv",          name: "NBA TV",                category: "Sports",        domain: "nba.com",              emoji: "🏀", accent: "200 80 30",  tagline: "League Pass · Live Games",      popular: true,                  now: "NBA League Pass",             next: "GameTime" },
-  { id: "dazn",            name: "DAZN",                  category: "Sports",        domain: "dazn.com",             emoji: "🥋", accent: "240 220 40", tagline: "Boxing · MMA",                                                now: "Fight Night",                 next: "DAZN Boxing Show" },
+  { id: "sky-sports-main",   name: "Sky Sports Main Event", category: "Sports",        domain: "skysports.com",        emoji: "⚽", accent: "5 95 200",   tagline: "Premier League · F1 · Boxing", popular: true, highlight: true, dlhd: 130 },
+  { id: "sky-sports-pl",     name: "Sky Sports Premier League", category: "Sports",    domain: "skysports.com",        emoji: "🏟️", accent: "5 95 200",   tagline: "Live Premier League",          popular: true,                  dlhd: 131 },
+  { id: "sky-sports-football", name: "Sky Sports Football", category: "Sports",        domain: "skysports.com",        emoji: "⚽", accent: "5 95 200",   tagline: "EFL · International",                                          dlhd: 134 },
+  { id: "sky-sports-f1",     name: "Sky Sports F1",         category: "Sports",        domain: "skysports.com",        emoji: "🏎️", accent: "200 30 30",  tagline: "Formula 1 · MotoGP",                                          dlhd: 137 },
+  { id: "tnt-sports-1",      name: "TNT Sports 1",          category: "Sports",        domain: "tntsports.co.uk",      emoji: "🥊", accent: "230 60 30",  tagline: "UCL · Premiership Rugby",      highlight: true,                dlhd: 132 },
+  { id: "tnt-sports-2",      name: "TNT Sports 2",          category: "Sports",        domain: "tntsports.co.uk",      emoji: "🏉", accent: "230 60 30",  tagline: "Champions League nights",                                     dlhd: 133 },
+  { id: "espn",              name: "ESPN",                  category: "Sports",        domain: "espn.com",             emoji: "🏈", accent: "200 30 30",  tagline: "NFL · NBA · UFC",              popular: true, highlight: true, dlhd: 44 },
+  { id: "espn2",             name: "ESPN2",                 category: "Sports",        domain: "espn.com",             emoji: "🥎", accent: "200 30 30",  tagline: "College · Tennis",                                            dlhd: 45 },
+  { id: "fs1",               name: "FOX Sports 1",          category: "Sports",        domain: "foxsports.com",        emoji: "⚾", accent: "30 50 160",  tagline: "MLB · College Football",                                      dlhd: 51 },
+  { id: "nba-tv",            name: "NBA TV",                category: "Sports",        domain: "nba.com",              emoji: "🏀", accent: "200 80 30",  tagline: "League Pass · Live Games",     popular: true,                  dlhd: 75 },
+  { id: "nfl-network",       name: "NFL Network",           category: "Sports",        domain: "nfl.com",              emoji: "🏈", accent: "30 30 30",   tagline: "24/7 NFL",                                                    dlhd: 100 },
+  { id: "mlb-network",       name: "MLB Network",           category: "Sports",        domain: "mlb.com",              emoji: "⚾", accent: "30 60 160",  tagline: "Baseball nightly",                                            dlhd: 76 },
 
-  { id: "bbc-news",        name: "BBC News",              category: "News",          domain: "bbc.co.uk",            emoji: "🌍", accent: "190 20 20",  tagline: "Global news · 24/7",            popular: true, highlight: true, now: "BBC Newsroom Live",           next: "World News Today" },
-  { id: "cnn",             name: "CNN",                   category: "News",          domain: "cnn.com",              emoji: "📰", accent: "200 30 30",  tagline: "Breaking news",                 popular: true,                  now: "CNN Newsroom",                next: "Anderson Cooper 360" },
-  { id: "sky-news",        name: "Sky News",              category: "News",          domain: "sky.com",              emoji: "📡", accent: "10 90 200",  tagline: "UK & World",                                                  now: "Sky News Tonight",            next: "The World" },
-  { id: "al-jazeera",      name: "Al Jazeera",            category: "News",          domain: "aljazeera.com",        emoji: "🕌", accent: "210 150 40", tagline: "International perspectives",                                  now: "Newshour",                    next: "Inside Story" },
-  { id: "fox-news",        name: "FOX News",              category: "News",          domain: "foxnews.com",          emoji: "🦅", accent: "30 60 160",  tagline: "US politics",                                                 now: "America Reports",             next: "Special Report" },
-  { id: "msnbc",           name: "MSNBC",                 category: "News",          domain: "msnbc.com",            emoji: "🎙️", accent: "20 130 220", tagline: "Analysis & commentary",                                       now: "Morning Joe",                 next: "Deadline: White House" },
+  // News
+  { id: "bbc-news",          name: "BBC News",              category: "News",          domain: "bbc.co.uk",            emoji: "🌍", accent: "190 20 20",  tagline: "Global news · 24/7",           popular: true, highlight: true, dlhd: 80 },
+  { id: "sky-news",          name: "Sky News",              category: "News",          domain: "sky.com",              emoji: "📡", accent: "10 90 200",  tagline: "UK & World",                                                  dlhd: 514 },
+  { id: "cnn",               name: "CNN",                   category: "News",          domain: "cnn.com",              emoji: "📰", accent: "200 30 30",  tagline: "Breaking news",                popular: true,                  dlhd: 13 },
+  { id: "fox-news",          name: "FOX News",              category: "News",          domain: "foxnews.com",          emoji: "🦅", accent: "30 60 160",  tagline: "US politics",                                                 dlhd: 27 },
+  { id: "msnbc",             name: "MSNBC",                 category: "News",          domain: "msnbc.com",            emoji: "🎙️", accent: "20 130 220", tagline: "Analysis & commentary",                                       dlhd: 121 },
+  { id: "al-jazeera",        name: "Al Jazeera English",    category: "News",          domain: "aljazeera.com",        emoji: "🕌", accent: "210 150 40", tagline: "International perspectives",                                  dlhd: 36 },
 
-  { id: "bbc-one",         name: "BBC One",               category: "Entertainment", domain: "bbc.co.uk",            emoji: "🎭", accent: "180 30 90",  tagline: "Flagship UK channel",           popular: true, highlight: true, now: "EastEnders",                  next: "Strictly Come Dancing" },
-  { id: "itv",             name: "ITV",                   category: "Entertainment", domain: "itv.com",              emoji: "📺", accent: "230 60 130", tagline: "Drama · Reality",                                             now: "Coronation Street",           next: "Britain's Got Talent" },
-  { id: "channel4",        name: "Channel 4",             category: "Entertainment", domain: "channel4.com",         emoji: "🎬", accent: "240 80 130", tagline: "Bold storytelling",                                           now: "Channel 4 News",              next: "Gogglebox" },
-  { id: "abc",             name: "ABC",                   category: "Entertainment", domain: "abc.com",              emoji: "🎤", accent: "30 30 30",   tagline: "US prime time",                                               now: "Jeopardy!",                   next: "ABC World News Tonight" },
-  { id: "nbc",             name: "NBC",                   category: "Entertainment", domain: "nbc.com",              emoji: "🦚", accent: "120 60 200", tagline: "SNL · Late Night",                                            now: "The Tonight Show",            next: "Saturday Night Live" },
-  { id: "cbs",             name: "CBS",                   category: "Entertainment", domain: "cbs.com",              emoji: "👁️", accent: "30 80 180",  tagline: "Drama · Comedy",                                              now: "60 Minutes",                  next: "The Late Show" },
+  // Entertainment
+  { id: "bbc-one",           name: "BBC One",               category: "Entertainment", domain: "bbc.co.uk",            emoji: "🎭", accent: "180 30 90",  tagline: "Flagship UK channel",          popular: true,                  dlhd: 81 },
+  { id: "itv1",              name: "ITV1",                  category: "Entertainment", domain: "itv.com",              emoji: "📺", accent: "230 60 130", tagline: "Drama · Reality",                                             dlhd: 12 },
+  { id: "channel4",          name: "Channel 4",             category: "Entertainment", domain: "channel4.com",         emoji: "🎬", accent: "240 80 130", tagline: "Bold storytelling",                                           dlhd: 14 },
 
-  { id: "hbo",             name: "HBO",                   category: "Movies",        domain: "hbo.com",              emoji: "🎞️", accent: "120 60 200", tagline: "Premium cinema",                popular: true, highlight: true, now: "Succession Marathon",         next: "House of the Dragon" },
-  { id: "amc",             name: "AMC",                   category: "Movies",        domain: "amc.com",              emoji: "🍿", accent: "200 30 30",  tagline: "Cinematic series",                                            now: "Breaking Bad Marathon",       next: "The Walking Dead" },
-  { id: "tcm",             name: "Turner Classics",       category: "Movies",        domain: "tcm.com",              emoji: "🎟️", accent: "180 120 30", tagline: "Classic cinema",                                              now: "Casablanca",                  next: "Citizen Kane" },
-  { id: "fxm",             name: "FX Movies",             category: "Movies",        domain: "fxnetworks.com",       emoji: "🎥", accent: "20 20 20",   tagline: "Blockbusters & cult",                                         now: "Logan",                       next: "The Revenant" },
+  // Movies
+  { id: "hbo",               name: "HBO",                   category: "Movies",        domain: "hbo.com",              emoji: "🎞️", accent: "120 60 200", tagline: "Premium cinema",               popular: true, highlight: true, dlhd: 169 },
+  { id: "amc",               name: "AMC",                   category: "Movies",        domain: "amc.com",              emoji: "🍿", accent: "200 30 30",  tagline: "Cinematic series",                                            dlhd: 174 },
 
-  { id: "cartoon-network", name: "Cartoon Network",       category: "Kids",          domain: "cartoonnetwork.com",   emoji: "🐰", accent: "30 30 30",   tagline: "Animation hub",                 popular: true,                  now: "Adventure Time",              next: "Regular Show" },
-  { id: "disney-channel",  name: "Disney Channel",        category: "Kids",          domain: "disney.com",           emoji: "🏰", accent: "40 60 200",  tagline: "Family favorites",              popular: true,                  now: "Bluey",                       next: "Mickey Mouse Funhouse" },
-  { id: "nick",            name: "Nickelodeon",           category: "Kids",          domain: "nick.com",             emoji: "🟧", accent: "230 110 30", tagline: "SpongeBob & more",                                            now: "SpongeBob SquarePants",       next: "PAW Patrol" },
-  { id: "boomerang",       name: "Boomerang",             category: "Kids",          domain: "boomerang.com",        emoji: "🪃", accent: "240 180 40", tagline: "Retro toons",                                                 now: "Looney Tunes",                next: "Tom and Jerry" },
+  // Kids
+  { id: "cartoon-network",   name: "Cartoon Network",       category: "Kids",          domain: "cartoonnetwork.com",   emoji: "🐰", accent: "30 30 30",   tagline: "Animation hub",                popular: true,                  dlhd: 11 },
+  { id: "disney-channel",    name: "Disney Channel",        category: "Kids",          domain: "disney.com",           emoji: "🏰", accent: "40 60 200",  tagline: "Family favorites",             popular: true,                  dlhd: 19 },
+  { id: "nick",              name: "Nickelodeon",           category: "Kids",          domain: "nick.com",             emoji: "🟧", accent: "230 110 30", tagline: "SpongeBob & more",                                            dlhd: 88 },
 
-  { id: "mtv",             name: "MTV",                   category: "Music",         domain: "mtv.com",              emoji: "🎵", accent: "230 60 30",  tagline: "Pop & culture",                 popular: true,                  now: "MTV Hits Hour",               next: "Ridiculousness" },
-  { id: "vh1",             name: "VH1",                   category: "Music",         domain: "vh1.com",              emoji: "🎼", accent: "240 50 130", tagline: "Hits & throwbacks",                                           now: "2000s Hip-Hop Hour",          next: "Behind the Music" },
-  { id: "mtv-live",        name: "MTV Live",              category: "Music",         domain: "mtv.com",              emoji: "🎤", accent: "230 60 30",  tagline: "Concert specials",                                            now: "Coachella Replay",            next: "Unplugged" },
+  // Music
+  { id: "mtv",               name: "MTV",                   category: "Music",         domain: "mtv.com",              emoji: "🎵", accent: "230 60 30",  tagline: "Pop & culture",                                                dlhd: 26 },
 
-  { id: "natgeo",          name: "National Geographic",   category: "Documentary",   domain: "nationalgeographic.com", emoji: "🌋", accent: "230 200 30", tagline: "Earth · Science",             popular: true, highlight: true, now: "Wild Yellowstone",            next: "Cosmos" },
-  { id: "discovery",       name: "Discovery",             category: "Documentary",   domain: "discovery.com",        emoji: "🔭", accent: "30 80 180",  tagline: "Real-world adventures",                                       now: "Deadliest Catch",             next: "Gold Rush" },
-  { id: "history",         name: "History",               category: "Documentary",   domain: "history.com",          emoji: "📜", accent: "180 100 40", tagline: "Stories that shaped us",                                      now: "Forged in Fire",              next: "Ancient Aliens" },
-  { id: "animal-planet",   name: "Animal Planet",         category: "Documentary",   domain: "animalplanet.com",     emoji: "🦁", accent: "120 180 40", tagline: "Wildlife stories",                                            now: "The Zoo",                     next: "North Woods Law" },
+  // Documentary
+  { id: "natgeo",            name: "National Geographic",   category: "Documentary",   domain: "nationalgeographic.com", emoji: "🌋", accent: "230 200 30", tagline: "Earth · Science",            popular: true, highlight: true, dlhd: 79 },
+  { id: "discovery",         name: "Discovery",             category: "Documentary",   domain: "discovery.com",        emoji: "🔭", accent: "30 80 180",  tagline: "Real-world adventures",                                       dlhd: 18 },
+  { id: "history",           name: "History",               category: "Documentary",   domain: "history.com",          emoji: "📜", accent: "180 100 40", tagline: "Stories that shaped us",                                      dlhd: 23 },
+  { id: "animal-planet",     name: "Animal Planet",         category: "Documentary",   domain: "animalplanet.com",     emoji: "🦁", accent: "120 180 40", tagline: "Wildlife stories",                                            dlhd: 21 },
 ];
 
 const CATEGORIES: { id: Category; label: string; icon: typeof Tv2 }[] = [
