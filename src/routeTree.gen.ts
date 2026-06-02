@@ -14,6 +14,7 @@ import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as RecsRouteImport } from './routes/recs'
+import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as MylistRouteImport } from './routes/mylist'
 import { Route as MusicRouteImport } from './routes/music'
@@ -52,6 +53,11 @@ const SecurityRoute = SecurityRouteImport.update({
 const RecsRoute = RecsRouteImport.update({
   id: '/recs',
   path: '/recs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PremiumRoute = PremiumRouteImport.update({
+  id: '/premium',
+  path: '/premium',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PartnersRoute = PartnersRouteImport.update({
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
+  '/premium': typeof PremiumRoute
   '/recs': typeof RecsRoute
   '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
+  '/premium': typeof PremiumRoute
   '/recs': typeof RecsRoute
   '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
+  '/premium': typeof PremiumRoute
   '/recs': typeof RecsRoute
   '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
@@ -204,6 +213,7 @@ export interface FileRouteTypes {
     | '/music'
     | '/mylist'
     | '/partners'
+    | '/premium'
     | '/recs'
     | '/security'
     | '/settings'
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/music'
     | '/mylist'
     | '/partners'
+    | '/premium'
     | '/recs'
     | '/security'
     | '/settings'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/music'
     | '/mylist'
     | '/partners'
+    | '/premium'
     | '/recs'
     | '/security'
     | '/settings'
@@ -268,6 +280,7 @@ export interface RootRouteChildren {
   MusicRoute: typeof MusicRoute
   MylistRoute: typeof MylistRoute
   PartnersRoute: typeof PartnersRoute
+  PremiumRoute: typeof PremiumRoute
   RecsRoute: typeof RecsRoute
   SecurityRoute: typeof SecurityRoute
   SettingsRoute: typeof SettingsRoute
@@ -312,6 +325,13 @@ declare module '@tanstack/react-router' {
       path: '/recs'
       fullPath: '/recs'
       preLoaderRoute: typeof RecsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/premium': {
+      id: '/premium'
+      path: '/premium'
+      fullPath: '/premium'
+      preLoaderRoute: typeof PremiumRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/partners': {
@@ -428,6 +448,7 @@ const rootRouteChildren: RootRouteChildren = {
   MusicRoute: MusicRoute,
   MylistRoute: MylistRoute,
   PartnersRoute: PartnersRoute,
+  PremiumRoute: PremiumRoute,
   RecsRoute: RecsRoute,
   SecurityRoute: SecurityRoute,
   SettingsRoute: SettingsRoute,
@@ -439,3 +460,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
