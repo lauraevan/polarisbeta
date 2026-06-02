@@ -13,6 +13,8 @@ import {
   Bookmark,
   Handshake,
   Shield,
+  Crown,
+  Music,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -31,6 +33,8 @@ const nav = [
   { to: "/mylist", label: "My List", icon: Bookmark },
   { to: "/emulator", label: "Emulator", icon: Joystick },
   { to: "/chat", label: "Chat", icon: MessageCircle },
+  { to: "/music", label: "Music", icon: Music },
+  { to: "/premium", label: "Premium", icon: Crown },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/partners", label: "Partners", icon: Handshake },
   { to: "/vpn", label: "VPN", icon: Shield },
