@@ -88,17 +88,7 @@ function Hero({
       ))}
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent" />
-      <div className="relative flex h-full items-end gap-5 p-6 sm:p-8">
-        {item.poster_path && (
-          <img
-            src={IMG(item.poster_path, "w300")}
-            alt={item.title || item.name}
-            loading="lazy"
-            decoding="async"
-            className="hidden h-[260px] w-[175px] shrink-0 rounded-xl object-cover shadow-2xl ring-1 ring-white/15 sm:block"
-            style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.7)" }}
-          />
-        )}
+      <div className="relative flex h-full items-end p-6 sm:p-8">
         <div className="flex max-w-2xl flex-col justify-end">
         <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/65">Featured · Top 5 this week</div>
         <h1 className="text-3xl font-black text-white drop-shadow md:text-5xl">
