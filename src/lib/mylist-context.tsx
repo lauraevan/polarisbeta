@@ -36,11 +36,15 @@ export function MyListProvider({ children }: { children: ReactNode }) {
     try {
       const raw = safeGetItem("localStorage", KEY);
       if (raw) setList(JSON.parse(raw));
-    } catch {}
+    } catch {
+      // Ignore malformed saved media list.
+    }
     try {
       const raw = safeGetItem("localStorage", GKEY);
       if (raw) setGames(JSON.parse(raw));
-    } catch {}
+    } catch {
+      // Ignore malformed saved games list.
+    }
   }, []);
 
   useEffect(() => {
