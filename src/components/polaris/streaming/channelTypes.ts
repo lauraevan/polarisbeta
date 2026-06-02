@@ -15,6 +15,7 @@ export type Channel = {
   domain: string;
   emoji: string;
   accent: string;
+  logo?: string;
   tagline?: string;
   popular?: boolean;
   highlight?: boolean;

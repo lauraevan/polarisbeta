@@ -92,6 +92,7 @@ const CHANNELS: Channel[] = (() => {
 function ChannelLogo({ c, size = 40, className = "" }: { c: Channel; size?: number; className?: string }) {
   const [stage, setStage] = useState(0);
   const srcs = [
+    ...(c.logo ? [c.logo] : []),
     `https://icons.duckduckgo.com/ip3/${c.domain}.ico`,
     `https://www.google.com/s2/favicons?sz=128&domain=${c.domain}`,
     `https://logo.clearbit.com/${c.domain}`,
@@ -462,6 +463,7 @@ function LivePlayer({ channel, all, onPick, onClose }: { channel: Channel; all: 
 function ChannelPlayerFrame({ channel }: { channel: Channel }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [streamIdx, setStreamIdx] = useState(0);
+  const [proxyAttempt, setProxyAttempt] = useState(false);
   const [status, setStatus] = useState("Connecting…");
   const stream = channel.streams[streamIdx % channel.streams.length];
 
@@ -487,17 +489,28 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
     video.load();
     const fail = () => {
       if (cancelled) return;
+      // First, try the same stream through a CORS proxy — fixes channels
+      // whose CDN blocks cross-origin or requires a referrer.
+      if (!proxyAttempt) {
+        setStatus("Reconnecting via proxy…");
+        setProxyAttempt(true);
+        return;
+      }
       if (channel.streams.length > 1 && streamIdx < channel.streams.length - 1) {
         setStatus("Trying another source…");
         setStreamIdx((i) => i + 1);
+        setProxyAttempt(false);
         return;
       }
       setStatus("Stream failed — try another source.");
     };
     video.onerror = fail;
 
+    const proxied = (u: string) =>
+      proxyAttempt ? `https://corsproxy.io/?url=${encodeURIComponent(u)}` : u;
+
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = stream.url;
+      video.src = proxied(stream.url);
       video.onloadedmetadata = tryPlay;
     } else {
       void import("hls.js").then(({ default: Hls }) => {
@@ -506,7 +519,17 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
           setStatus("This browser can't play this live stream.");
           return;
         }
-        const player = new Hls({ lowLatencyMode: true, maxBufferLength: 24, enableWorker: true });
+        const Loader = proxyAttempt
+          ? class extends (Hls.DefaultConfig.loader as any) {
+              load(context: any, config: any, callbacks: any) {
+                if (context?.url && !context.url.includes("corsproxy.io")) {
+                  context.url = `https://corsproxy.io/?url=${encodeURIComponent(context.url)}`;
+                }
+                super.load(context, config, callbacks);
+              }
+            }
+          : Hls.DefaultConfig.loader;
+        const player = new Hls({ lowLatencyMode: true, maxBufferLength: 24, enableWorker: true, loader: Loader as any });
         hls = player;
         player.loadSource(stream.url);
         player.attachMedia(video);
@@ -525,7 +548,13 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
       video.onloadedmetadata = null;
       hls?.destroy();
     };
-  }, [channel.id, stream]);
+  }, [channel.id, stream, proxyAttempt]);
+
+  // Reset proxy flag when user switches channel
+  useEffect(() => {
+    setProxyAttempt(false);
+    setStreamIdx(0);
+  }, [channel.id]);
 
   if (!stream) {
     return (
