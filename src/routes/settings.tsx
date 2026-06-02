@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package, PanelTop, MessageCircle, Link2, Copy, RefreshCw, Check } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package, PanelTop, MessageCircle, Link2, Copy, RefreshCw, Check, ExternalLink } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
+import { getPolarisBrowserUrl, getProxyUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
@@ -664,7 +665,7 @@ function SettingsPage() {
         </section>
 
         {/* Link Maker */}
-        <LinkMakerSection />
+        <LinkMakerSection defaultEngine={defaultEngine} />
       </div>
     </div>
   );
@@ -742,43 +743,30 @@ type FilterId =
   | "fortiguard" | "zscaler" | "blocksi" | "lanschool" | "iboss"
   | "sophos" | "umbrella" | "dnsfilter";
 
-type HostProfile = { host: string; note: string };
+type LinkTarget = { label: string; url: string; note: string; engines: ProxyEngine[] };
 
-// Free, no-signup hosts that typically slip past common category-based filters.
-// Some filters block specific TLDs (e.g. *.workers.dev, *.repl.co); we pick the
-// least-blocked set per filter based on community reports.
-const ALL_HOSTS: HostProfile[] = [
-  { host: "vercel.app",        note: "Vercel preview deploys" },
-  { host: "netlify.app",       note: "Netlify drop / sites" },
-  { host: "pages.dev",         note: "Cloudflare Pages" },
-  { host: "workers.dev",       note: "Cloudflare Workers" },
-  { host: "deno.dev",          note: "Deno Deploy" },
-  { host: "b-cdn.net",         note: "Bunny.net CDN" },
-  { host: "web.app",           note: "Firebase Hosting" },
-  { host: "github.io",         note: "GitHub Pages" },
-  { host: "js.org",            note: "Free JS subdomain" },
-  { host: "is-a.dev",          note: "Community free subdomain" },
-  { host: "glitch.me",         note: "Glitch projects" },
-  { host: "replit.app",        note: "Replit deployments" },
-  { host: "surge.sh",          note: "Surge static hosting" },
-  { host: "onrender.com",      note: "Render free tier" },
-  { host: "fly.dev",           note: "Fly.io apps" },
+const WORKING_TARGETS: LinkTarget[] = [
+  { label: "GeForce Now", url: "https://play.geforcenow.com/", note: "Cloud gaming through Polaris Browser", engines: ["uv", "scramjet"] },
+  { label: "YouTube", url: "https://www.youtube.com/", note: "Video through Polaris Browser", engines: ["uv", "scramjet"] },
+  { label: "Google", url: "https://www.google.com/", note: "Search through Polaris Browser", engines: ["uv", "scramjet"] },
+  { label: "Reddit", url: "https://www.reddit.com/", note: "Community pages through Polaris Browser", engines: ["uv", "scramjet"] },
+  { label: "Wikipedia", url: "https://www.wikipedia.org/", note: "Reference through Polaris Browser", engines: ["uv", "scramjet"] },
 ];
 
-const FILTER_HOST_RANK: Record<FilterId, string[]> = {
-  securly:     ["pages.dev", "web.app", "vercel.app", "b-cdn.net", "is-a.dev"],
-  goguardian:  ["pages.dev", "deno.dev", "netlify.app", "b-cdn.net", "js.org"],
-  linewise:    ["workers.dev", "deno.dev", "pages.dev", "b-cdn.net", "fly.dev"],
-  lightspeed:  ["web.app", "pages.dev", "b-cdn.net", "is-a.dev", "github.io"],
-  aristotle:   ["b-cdn.net", "pages.dev", "deno.dev", "fly.dev", "onrender.com"],
-  fortiguard:  ["b-cdn.net", "pages.dev", "deno.dev", "fly.dev", "is-a.dev"],
-  zscaler:     ["b-cdn.net", "pages.dev", "fly.dev", "onrender.com", "deno.dev"],
-  blocksi:     ["pages.dev", "web.app", "netlify.app", "b-cdn.net", "js.org"],
-  lanschool:   ["pages.dev", "deno.dev", "vercel.app", "b-cdn.net", "is-a.dev"],
-  iboss:       ["b-cdn.net", "fly.dev", "onrender.com", "pages.dev", "deno.dev"],
-  sophos:      ["pages.dev", "deno.dev", "b-cdn.net", "fly.dev", "is-a.dev"],
-  umbrella:    ["pages.dev", "b-cdn.net", "deno.dev", "fly.dev", "onrender.com"],
-  dnsfilter:   ["b-cdn.net", "pages.dev", "deno.dev", "fly.dev", "is-a.dev"],
+const FILTER_ENGINE_RANK: Record<FilterId, ProxyEngine[]> = {
+  securly: ["uv", "scramjet"],
+  goguardian: ["uv", "scramjet"],
+  linewise: ["scramjet", "uv"],
+  lightspeed: ["uv", "scramjet"],
+  aristotle: ["scramjet", "uv"],
+  fortiguard: ["scramjet", "uv"],
+  zscaler: ["scramjet", "uv"],
+  blocksi: ["uv", "scramjet"],
+  lanschool: ["uv", "scramjet"],
+  iboss: ["scramjet", "uv"],
+  sophos: ["uv", "scramjet"],
+  umbrella: ["uv", "scramjet"],
+  dnsfilter: ["scramjet", "uv"],
 };
 
 const FILTERS: { id: FilterId; label: string }[] = [
@@ -797,28 +785,15 @@ const FILTERS: { id: FilterId; label: string }[] = [
   { id: "dnsfilter",  label: "DNS Filter" },
 ];
 
-const WORDS = [
-  "atlas","nova","echo","drift","lumen","onyx","quartz","aero","beacon",
-  "vivid","sable","cobalt","tundra","cipher","fable","glade","harbor",
-  "indigo","jade","kestrel","lyra","mosaic","nebula","orchid","pixel",
-];
-
-function randSlug() {
-  const w1 = WORDS[Math.floor(Math.random() * WORDS.length)];
-  const w2 = WORDS[Math.floor(Math.random() * WORDS.length)];
-  const n  = Math.floor(Math.random() * 900 + 100);
-  return `${w1}-${w2}-${n}`;
-}
-
-type Candidate = { url: string; host: string; status: "pending" | "ok" | "blocked"; ms?: number };
+type Candidate = { label: string; url: string; target: string; engine: ProxyEngine; note: string; status: "pending" | "ok" | "blocked"; ms?: number };
 
 async function probe(url: string, timeoutMs = 3500): Promise<{ ok: boolean; ms: number }> {
   const start = performance.now();
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    await fetch(url, { mode: "no-cors", signal: ctrl.signal, cache: "no-store" });
-    return { ok: true, ms: Math.round(performance.now() - start) };
+    const res = await fetch(url, { mode: "no-cors", signal: ctrl.signal, cache: "no-store" });
+    return { ok: res.type === "opaque" || res.ok, ms: Math.round(performance.now() - start) };
   } catch {
     return { ok: false, ms: Math.round(performance.now() - start) };
   } finally {
@@ -826,19 +801,27 @@ async function probe(url: string, timeoutMs = 3500): Promise<{ ok: boolean; ms: 
   }
 }
 
-function LinkMakerSection() {
+function LinkMakerSection({ defaultEngine }: { defaultEngine: ProxyEngine }) {
   const [filter, setFilter] = useState<FilterId>("securly");
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [scanning, setScanning] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   function generate() {
-    const hosts = FILTER_HOST_RANK[filter];
-    const next: Candidate[] = hosts.map((h) => ({
-      url: `https://${randSlug()}.${h}`,
-      host: h,
-      status: "pending",
-    }));
+    const rankedEngines = FILTER_ENGINE_RANK[filter];
+    const targets = WORKING_TARGETS.slice(0, 5);
+    const next: Candidate[] = targets.map((target, idx) => {
+      const preferred = rankedEngines[idx % rankedEngines.length];
+      const engine = target.engines.includes(preferred) ? preferred : defaultEngine;
+      return {
+        label: target.label,
+        target: normalizeUrl(target.url),
+        url: getPolarisBrowserUrl(engine, target.url),
+        engine,
+        note: target.note,
+        status: "pending",
+      };
+    });
     setCandidates(next);
   }
 
@@ -847,15 +830,24 @@ function LinkMakerSection() {
     setScanning(true);
     const list = candidates.length
       ? candidates
-      : FILTER_HOST_RANK[filter].map((h) => ({
-          url: `https://${randSlug()}.${h}`,
-          host: h,
-          status: "pending" as const,
-        }));
+      : WORKING_TARGETS.slice(0, 5).map((target, idx) => {
+          const rankedEngines = FILTER_ENGINE_RANK[filter];
+          const preferred = rankedEngines[idx % rankedEngines.length];
+          const engine = target.engines.includes(preferred) ? preferred : defaultEngine;
+          return {
+            label: target.label,
+            target: normalizeUrl(target.url),
+            url: getPolarisBrowserUrl(engine, target.url),
+            engine,
+            note: target.note,
+            status: "pending" as const,
+          };
+        });
     setCandidates(list);
+    await Promise.all([registerStaticProxies("uv"), registerStaticProxies("scramjet")]);
     const results = await Promise.all(
       list.map(async (c) => {
-        const r = await probe(c.url);
+        const r = await probe(getProxyUrl(c.engine, c.target));
         return { ...c, status: r.ok ? ("ok" as const) : ("blocked" as const), ms: r.ms };
       }),
     );
@@ -871,14 +863,12 @@ function LinkMakerSection() {
     } catch { /* ignore */ }
   }
 
-  const hostInfo = (h: string) => ALL_HOSTS.find((x) => x.host === h)?.note ?? "";
-
   return (
     <section className="liquid-glass-themed rounded-2xl p-5">
       <SectionTitle
         icon={Link2}
         title="Link Maker"
-        subtitle="Generate fresh, free, no-signup host URLs tuned per school filter"
+        subtitle="Create working Polaris Browser links and check which proxy engine works here"
       />
 
       <div className="mt-4">
@@ -905,7 +895,7 @@ function LinkMakerSection() {
           onClick={generate}
           className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-black hover:bg-white/90"
         >
-          <RefreshCw className="h-3.5 w-3.5" /> Generate links
+          <RefreshCw className="h-3.5 w-3.5" /> Generate working links
         </button>
         <button
           onClick={scan}
@@ -913,7 +903,7 @@ function LinkMakerSection() {
           className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15 disabled:opacity-50"
         >
           <Shield className="h-3.5 w-3.5" />
-          {scanning ? "Scanning…" : "Scan reachability"}
+          {scanning ? "Scanning…" : "Test links"}
         </button>
       </div>
 
@@ -936,9 +926,9 @@ function LinkMakerSection() {
                 {c.status === "ok" ? "Open" : c.status === "blocked" ? "Blocked" : "Idle"}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="truncate font-mono text-xs text-white">{c.url}</div>
+                <div className="truncate text-xs font-bold text-white">{c.label}</div>
                 <div className="truncate text-[10px] text-white/45">
-                  {hostInfo(c.host)}{c.ms != null ? ` · ${c.ms} ms` : ""}
+                  {c.engine === "uv" ? "Ultraviolet" : "Scramjet"} · {c.note}{c.ms != null ? ` · ${c.ms} ms` : ""}
                 </div>
               </div>
               <button
@@ -954,7 +944,7 @@ function LinkMakerSection() {
                 rel="noreferrer"
                 className="inline-flex shrink-0 items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/15"
               >
-                Open
+                Open <ExternalLink className="h-3 w-3" />
               </a>
             </div>
           ))}
@@ -962,10 +952,8 @@ function LinkMakerSection() {
       )}
 
       <p className="mt-4 text-[11px] leading-relaxed text-white/45">
-        Links are randomized subdomains on free, no-signup hosts (Cloudflare Pages, Bunny CDN,
-        Deno Deploy, etc.). "Scan reachability" pings each candidate from your network so you
-        can tell at a glance which hosts your filter is letting through right now. Lovable
-        doesn't host these endpoints — you'd point a free deploy at any of these URLs yourself.
+        These are real Polaris Browser URLs, not random empty domains. "Test links" starts the
+        local proxy workers and checks the selected sites through your current network.
       </p>
     </section>
   );
