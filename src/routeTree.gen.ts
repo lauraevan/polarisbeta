@@ -14,8 +14,10 @@ import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as RecsRouteImport } from './routes/recs'
+import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as MylistRouteImport } from './routes/mylist'
+import { Route as MusicRouteImport } from './routes/music'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as EmulatorRouteImport } from './routes/emulator'
@@ -53,6 +55,11 @@ const RecsRoute = RecsRouteImport.update({
   path: '/recs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PremiumRoute = PremiumRouteImport.update({
+  id: '/premium',
+  path: '/premium',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PartnersRoute = PartnersRouteImport.update({
   id: '/partners',
   path: '/partners',
@@ -61,6 +68,11 @@ const PartnersRoute = PartnersRouteImport.update({
 const MylistRoute = MylistRouteImport.update({
   id: '/mylist',
   path: '/mylist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MusicRoute = MusicRouteImport.update({
+  id: '/music',
+  path: '/music',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MediaRoute = MediaRouteImport.update({
@@ -129,8 +141,10 @@ export interface FileRoutesByFullPath {
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
+  '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
+  '/premium': typeof PremiumRoute
   '/recs': typeof RecsRoute
   '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
@@ -149,8 +163,10 @@ export interface FileRoutesByTo {
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
+  '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
+  '/premium': typeof PremiumRoute
   '/recs': typeof RecsRoute
   '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
@@ -170,8 +186,10 @@ export interface FileRoutesById {
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
+  '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
+  '/premium': typeof PremiumRoute
   '/recs': typeof RecsRoute
   '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
@@ -192,8 +210,10 @@ export interface FileRouteTypes {
     | '/emulator'
     | '/games'
     | '/media'
+    | '/music'
     | '/mylist'
     | '/partners'
+    | '/premium'
     | '/recs'
     | '/security'
     | '/settings'
@@ -212,8 +232,10 @@ export interface FileRouteTypes {
     | '/emulator'
     | '/games'
     | '/media'
+    | '/music'
     | '/mylist'
     | '/partners'
+    | '/premium'
     | '/recs'
     | '/security'
     | '/settings'
@@ -232,8 +254,10 @@ export interface FileRouteTypes {
     | '/emulator'
     | '/games'
     | '/media'
+    | '/music'
     | '/mylist'
     | '/partners'
+    | '/premium'
     | '/recs'
     | '/security'
     | '/settings'
@@ -253,8 +277,10 @@ export interface RootRouteChildren {
   EmulatorRoute: typeof EmulatorRoute
   GamesRoute: typeof GamesRoute
   MediaRoute: typeof MediaRoute
+  MusicRoute: typeof MusicRoute
   MylistRoute: typeof MylistRoute
   PartnersRoute: typeof PartnersRoute
+  PremiumRoute: typeof PremiumRoute
   RecsRoute: typeof RecsRoute
   SecurityRoute: typeof SecurityRoute
   SettingsRoute: typeof SettingsRoute
@@ -301,6 +327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/premium': {
+      id: '/premium'
+      path: '/premium'
+      fullPath: '/premium'
+      preLoaderRoute: typeof PremiumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/partners': {
       id: '/partners'
       path: '/partners'
@@ -313,6 +346,13 @@ declare module '@tanstack/react-router' {
       path: '/mylist'
       fullPath: '/mylist'
       preLoaderRoute: typeof MylistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/music': {
+      id: '/music'
+      path: '/music'
+      fullPath: '/music'
+      preLoaderRoute: typeof MusicRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/media': {
@@ -405,8 +445,10 @@ const rootRouteChildren: RootRouteChildren = {
   EmulatorRoute: EmulatorRoute,
   GamesRoute: GamesRoute,
   MediaRoute: MediaRoute,
+  MusicRoute: MusicRoute,
   MylistRoute: MylistRoute,
   PartnersRoute: PartnersRoute,
+  PremiumRoute: PremiumRoute,
   RecsRoute: RecsRoute,
   SecurityRoute: SecurityRoute,
   SettingsRoute: SettingsRoute,

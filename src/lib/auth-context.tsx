@@ -38,6 +38,8 @@ export type Profile = {
   is_banned?: boolean;
   ban_reason?: string | null;
   spent_coins?: number;
+  pro_until?: string | null;
+  pro_tier?: string | null;
 };
 
 type Ctx = {

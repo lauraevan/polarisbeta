@@ -546,6 +546,45 @@ export type Database = {
         }
         Relationships: []
       }
+      pro_keys: {
+        Row: {
+          code: string
+          created_at: string
+          duration_days: number | null
+          expires_at: string | null
+          id: string
+          note: string | null
+          redeemed_at: string | null
+          redeemed_by: string | null
+          source: string | null
+          tier: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          duration_days?: number | null
+          expires_at?: string | null
+          id?: string
+          note?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          source?: string | null
+          tier: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          duration_days?: number | null
+          expires_at?: string | null
+          id?: string
+          note?: string | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          source?: string | null
+          tier?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           about_me: string | null
@@ -566,6 +605,8 @@ export type Database = {
           is_banned: boolean
           is_owner: boolean
           play_history: Json
+          pro_tier: string | null
+          pro_until: string | null
           pronouns: string | null
           roles: string[]
           spent_coins: number
@@ -592,6 +633,8 @@ export type Database = {
           is_banned?: boolean
           is_owner?: boolean
           play_history?: Json
+          pro_tier?: string | null
+          pro_until?: string | null
           pronouns?: string | null
           roles?: string[]
           spent_coins?: number
@@ -618,6 +661,8 @@ export type Database = {
           is_banned?: boolean
           is_owner?: boolean
           play_history?: Json
+          pro_tier?: string | null
+          pro_until?: string | null
           pronouns?: string | null
           roles?: string[]
           spent_coins?: number
@@ -913,6 +958,8 @@ export type Database = {
         }[]
       }
       is_owner: { Args: never; Returns: boolean }
+      is_pro: { Args: { _user_id: string }; Returns: boolean }
+      redeem_pro_key: { Args: { _code: string }; Returns: Json }
     }
     Enums: {
       ban_scope: "user" | "ip" | "ip_range" | "device" | "asn" | "country"
