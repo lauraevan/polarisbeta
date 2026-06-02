@@ -213,11 +213,9 @@ function DateStamp() {
   }, []);
   const label = now.toLocaleDateString(undefined, {
     weekday: "long",
-    month: "long",
-    day: "numeric",
   });
   return (
-    <div className="mb-1 text-[10px] lg:text-[11px] font-medium tracking-wide text-white/50">
+    <div className="mb-3 lg:mb-4 text-2xl lg:text-4xl font-light tracking-wide text-white/80">
       {label}
     </div>
   );
