@@ -68,7 +68,7 @@ function Hero({
   const item = items[i];
   if (!item) return null;
   return (
-    <div className="relative mb-6 h-[52vh] min-h-[340px] overflow-hidden rounded-2xl mx-4 sm:mx-6">
+    <div className="relative mb-6 h-[48vh] min-h-[300px] overflow-hidden rounded-2xl mx-3 sm:mx-6 sm:h-[52vh] sm:min-h-[340px]">
       {items.slice(0, 5).map((it, idx) => (
         <div
           key={it.id}
@@ -88,26 +88,26 @@ function Hero({
       ))}
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent" />
-      <div className="relative flex h-full items-end p-6 sm:p-8">
+      <div className="relative flex h-full items-end p-4 sm:p-8">
         <div className="flex max-w-2xl flex-col justify-end">
         <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/65">Featured · Top 5 this week</div>
-        <h1 className="text-3xl font-black text-white drop-shadow md:text-5xl">
+        <h1 className="text-2xl font-black text-white drop-shadow sm:text-3xl md:text-5xl">
           {item.title || item.name}
         </h1>
-        <p className="mt-2 line-clamp-2 text-sm text-white/80 md:text-base">{item.overview}</p>
-        <div className="mt-5 flex items-center gap-2.5">
+        <p className="mt-2 line-clamp-2 text-xs text-white/80 sm:text-sm md:text-base">{item.overview}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-5 sm:gap-2.5">
           <button
             onClick={() => onPlay(item)}
-            className="flex items-center gap-2 rounded-xl px-7 py-3 text-base font-bold text-white transition hover:brightness-110"
+            className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-110 sm:px-7 sm:py-3 sm:text-base"
             style={{ background: "#ea580c" }}
           >
-            <Play className="h-5 w-5 fill-white" /> Watch Now
+            <Play className="h-4 w-4 fill-white sm:h-5 sm:w-5" /> Watch Now
           </button>
           <button
             onClick={() => onInfo(item)}
-            className="liquid-glass flex items-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-white"
+            className="liquid-glass flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white sm:px-6 sm:py-3 sm:text-base"
           >
-            <Info className="h-5 w-5" /> More Info
+            <Info className="h-4 w-4 sm:h-5 sm:w-5" /> More Info
           </button>
           <div className="ml-3 hidden gap-1.5 sm:flex">
             {items.slice(0, 5).map((_, idx) => (
