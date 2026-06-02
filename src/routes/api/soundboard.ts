@@ -23,14 +23,14 @@ export const Route = createFileRoute("/api/soundboard")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const kind = url.searchParams.get("kind") ?? "main";
+        const page = url.searchParams.get("page") ?? "1";
+        const pageSize = url.searchParams.get("pageSize") ?? "60";
         if (kind === "main") return upstream("/api/memes/main");
         if (kind === "categories") return upstream("/api/categories/getall");
-        if (kind === "category") {
-          const id = url.searchParams.get("id") ?? "3";
-          const page = url.searchParams.get("page") ?? "1";
-          // memes by category — query format reverse-engineered from the SPA
-          return upstream(`/api/memes/category?categoryId=${encodeURIComponent(id)}&page=${encodeURIComponent(page)}`);
-        }
+        if (kind === "trends")
+          return upstream(`/api/memes/trends?page=${encodeURIComponent(page)}&pageSize=${encodeURIComponent(pageSize)}`);
+        if (kind === "new")
+          return upstream(`/api/memes/new?page=${encodeURIComponent(page)}&pageSize=${encodeURIComponent(pageSize)}`);
         if (kind === "search") {
           const q = url.searchParams.get("q") ?? "";
           return upstream(`/api/search?q=${encodeURIComponent(q)}`);
