@@ -3,28 +3,50 @@
     <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
       <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <title>Loading…</title>
         <style><![CDATA[
           html, body {
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
             overflow: hidden;
             background: #000;
             color: #fff;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            -webkit-text-size-adjust: 100%;
+            touch-action: manipulation;
           }
 
           iframe {
             position: fixed;
-            inset: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
             border: 0;
+            margin: 0;
+            padding: 0;
             display: block;
             background: #000;
+          }
+
+          /* Mobile */
+          @media (max-width: 767px) {
+            #fsbtn { top: env(safe-area-inset-top, 8px); right: 8px; font-size: 12px; padding: 6px 10px; }
+          }
+          /* iPad / tablets */
+          @media (min-width: 768px) and (max-width: 1366px) {
+            #fsbtn { top: 12px; right: 12px; font-size: 14px; padding: 8px 14px; }
+          }
+          /* Desktop / PC */
+          @media (min-width: 1367px) {
+            #fsbtn { top: 16px; right: 16px; font-size: 15px; padding: 10px 16px; }
           }
 
           #loading {
