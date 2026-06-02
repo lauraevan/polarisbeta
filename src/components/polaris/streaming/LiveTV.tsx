@@ -744,11 +744,13 @@ function MatchCard({
 }: {
   match: SportMatch; live?: boolean; loading?: boolean; onPlay: () => void;
 }) {
-  const icon = SPORTS_ICONS[match.category] ?? SPORTS_ICONS.other;
-  const accent = CAT_ACCENT[match.category] ?? CAT_ACCENT.other;
-  const when = new Date(match.date);
-  const timeLabel = when.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const category = match.category || "other";
+  const icon = SPORTS_ICONS[category] ?? SPORTS_ICONS.other;
+  const accent = CAT_ACCENT[category] ?? CAT_ACCENT.other;
+  const when = match.date ? new Date(match.date) : null;
+  const timeLabel = when ? when.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "TBD";
   const home = match.teams?.home; const away = match.teams?.away;
+  const title = match.title || "Live match";
   return (
     <button
       onClick={onPlay}
@@ -759,7 +761,7 @@ function MatchCard({
       <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">
         <span className="flex items-center gap-1.5">
           <span className="text-base leading-none">{icon}</span>
-          <span>{match.category.replace(/-/g, " ")}</span>
+          <span>{category.replace(/-/g, " ")}</span>
         </span>
         {live ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/90 px-1.5 py-0.5 text-[9px] font-black text-white">
@@ -769,16 +771,16 @@ function MatchCard({
           <span className="text-amber-200/80">{timeLabel}</span>
         )}
       </div>
-      {home && away ? (
+      {home?.name && away?.name ? (
         <div className="flex items-center justify-between gap-2 py-1">
           <TeamBlock name={home.name} badge={home.badge} />
           <span className="text-[10px] font-black text-white/40">VS</span>
           <TeamBlock name={away.name} badge={away.badge} />
         </div>
       ) : (
-        <div className="line-clamp-2 py-1 text-sm font-bold text-amber-50">{match.title}</div>
+        <div className="line-clamp-2 py-1 text-sm font-bold text-amber-50">{title}</div>
       )}
-      <div className="line-clamp-1 text-[11px] font-semibold text-amber-50/90">{match.title}</div>
+      <div className="line-clamp-1 text-[11px] font-semibold text-amber-50/90">{title}</div>
       <div className="flex items-center justify-between text-[10px] text-white/45">
         <span>{match.sources.length} server{match.sources.length === 1 ? "" : "s"}</span>
         <span className="inline-flex items-center gap-1 font-semibold text-amber-200/80">
@@ -819,7 +821,8 @@ function SportsPlayer({
   const [src, setSrc] = useState(stream.embedUrl);
   const [alts, setAlts] = useState<SportStream[]>([stream]);
   const [altIdx, setAltIdx] = useState(0);
-  const icon = SPORTS_ICONS[match.category] ?? SPORTS_ICONS.other;
+  const category = match.category || "other";
+  const icon = SPORTS_ICONS[category] ?? SPORTS_ICONS.other;
 
   useEffect(() => {
     let dead = false;
@@ -827,10 +830,11 @@ function SportsPlayer({
       const collected: SportStream[] = [];
       for (const s of match.sources) {
         try {
-          const streams = (await fetch(
-            `${STREAMED_API}/api/stream/${s.source}/${s.id}`,
-          ).then((r) => r.json())) as SportStream[];
-          collected.push(...streams.filter((x) => x.embedUrl));
+          const r = await fetch(`${STREAMED_API}/api/stream/${s.source}/${s.id}`);
+          if (!r.ok) continue;
+          const json = await r.json();
+          const streams = (Array.isArray(json) ? json : []) as SportStream[];
+          collected.push(...streams.filter((x) => x?.embedUrl));
         } catch { /* skip */ }
       }
       if (dead || collected.length === 0) return;
@@ -860,9 +864,9 @@ function SportsPlayer({
         <div className="flex min-w-0 items-center gap-3">
           <span className="text-2xl leading-none">{icon}</span>
           <div className="min-w-0">
-            <div className="truncate text-sm font-black text-amber-50">{match.title}</div>
+            <div className="truncate text-sm font-black text-amber-50">{match.title || "Live match"}</div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">
-              {match.category.replace(/-/g, " ")} · Stream {altIdx + 1}/{alts.length}
+              {category.replace(/-/g, " ")} · Stream {altIdx + 1}/{alts.length}
             </div>
           </div>
         </div>
