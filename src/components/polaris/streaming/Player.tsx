@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, List, Play, SkipForward, Maximize2, Minimize2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, List, Play, SkipForward } from "lucide-react";
 import { PROVIDERS } from "@/lib/streaming-providers";
 import { tmdbApi, IMG, type MediaKind } from "@/lib/tmdb";
 import { useQuery } from "@tanstack/react-query";
@@ -18,7 +18,6 @@ export function Player({ kind, id, title, onClose }: Props) {
   const [episode, setEpisode] = useState(1);
   const [chatOpen, setChatOpen] = useState(false);
   const [episodesOpen, setEpisodesOpen] = useState(false);
-  const [fs, setFs] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const { data: details } = useQuery({
@@ -67,23 +66,10 @@ export function Player({ kind, id, title, onClose }: Props) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) =>
-      e.key === "Escape" && !document.fullscreenElement && onClose();
+      e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-
-  useEffect(() => {
-    const onFs = () => setFs(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", onFs);
-    return () => document.removeEventListener("fullscreenchange", onFs);
-  }, []);
-
-  const toggleFs = async () => {
-    const el = wrapRef.current;
-    if (!el) return;
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else await el.requestFullscreen?.();
-  };
 
   return (
     <div ref={wrapRef} className="fixed inset-0 z-[55] flex flex-col bg-black/95 backdrop-blur-xl">
@@ -159,13 +145,6 @@ export function Player({ kind, id, title, onClose }: Props) {
           <span className="hidden sm:inline">Chat</span>
         </button>
 
-        <button
-          onClick={toggleFs}
-          className="rounded-lg p-1.5 text-white/85 transition hover:bg-white/10"
-          aria-label="Fullscreen"
-        >
-          {fs ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        </button>
       </div>
 
       <div className="relative flex flex-1 overflow-hidden bg-black">
