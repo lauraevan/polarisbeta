@@ -621,19 +621,30 @@ function LiveSportsSection({
 
   useEffect(() => {
     let dead = false;
+    const ctrl = new AbortController();
     const load = async () => {
       setErr(null);
       try {
+        const safeFetch = async (url: string): Promise<SportMatch[]> => {
+          try {
+            const r = await fetch(url, { signal: ctrl.signal });
+            if (!r.ok) return [];
+            const json = await r.json();
+            return Array.isArray(json) ? (json as SportMatch[]) : [];
+          } catch { return []; }
+        };
         const [liveRes, todayRes] = await Promise.all([
-          fetch(`${STREAMED_API}/api/matches/live`).then((r) => r.json() as Promise<SportMatch[]>),
-          fetch(`${STREAMED_API}/api/matches/all-today`).then((r) => r.json() as Promise<SportMatch[]>),
+          safeFetch(`${STREAMED_API}/api/matches/live`),
+          safeFetch(`${STREAMED_API}/api/matches/all-today`),
         ]);
         if (dead) return;
         const now = Date.now();
-        setLive(liveRes.filter((m) => m.sources?.length).slice(0, 18));
+        const valid = (m: SportMatch) =>
+          m && typeof m.id === "string" && Array.isArray(m.sources) && m.sources.length > 0;
+        setLive(liveRes.filter(valid).slice(0, 18));
         setUpcoming(
           todayRes
-            .filter((m) => m.sources?.length && m.date > now)
+            .filter((m) => valid(m) && typeof m.date === "number" && m.date > now)
             .sort((a, b) => a.date - b.date)
             .slice(0, 18),
         );
@@ -645,7 +656,7 @@ function LiveSportsSection({
     };
     void load();
     const t = setInterval(load, 90_000);
-    return () => { dead = true; clearInterval(t); };
+    return () => { dead = true; clearInterval(t); ctrl.abort(); };
   }, []);
 
   const handlePlay = async (m: SportMatch) => {
@@ -653,10 +664,11 @@ function LiveSportsSection({
     try {
       for (const src of m.sources) {
         try {
-          const streams = (await fetch(
-            `${STREAMED_API}/api/stream/${src.source}/${src.id}`,
-          ).then((r) => r.json())) as SportStream[];
-          const hd = streams.find((s) => s.hd) ?? streams[0];
+          const r = await fetch(`${STREAMED_API}/api/stream/${src.source}/${src.id}`);
+          if (!r.ok) continue;
+          const json = await r.json();
+          const streams = (Array.isArray(json) ? json : []) as SportStream[];
+          const hd = streams.find((s) => s?.hd && s.embedUrl) ?? streams.find((s) => s?.embedUrl);
           if (hd?.embedUrl) {
             onPlay(m, hd);
             return;
