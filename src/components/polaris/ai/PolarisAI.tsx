@@ -934,7 +934,7 @@ function MessageBubble({ role, content, modelLabel }: { role: Role; content: str
           }
           return (
         <div
-          className="relative whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed text-white/95 backdrop-blur-xl"
+          className="relative break-words rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed text-white/95 backdrop-blur-xl"
           style={{
             background: isUser
               ? "linear-gradient(140deg, rgba(var(--polaris-accent)/0.22), rgba(var(--polaris-accent)/0.08))"
@@ -943,7 +943,47 @@ function MessageBubble({ role, content, modelLabel }: { role: Role; content: str
             boxShadow: `0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 30px -16px rgba(var(--polaris-accent)/${isUser ? 0.45 : 0.22})`,
           }}
         >
-          {content || <span className="text-white/40">…</span>}
+          {content ? (
+            isUser ? (
+              <span className="whitespace-pre-wrap">{content}</span>
+            ) : (
+              <div className="prose-chat">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                    h1: ({ children }) => <h3 className="mb-2 mt-1 text-base font-bold">{children}</h3>,
+                    h2: ({ children }) => <h3 className="mb-2 mt-1 text-base font-bold">{children}</h3>,
+                    h3: ({ children }) => <h4 className="mb-1.5 mt-1 text-[15px] font-semibold">{children}</h4>,
+                    ul: ({ children }) => <ul className="mb-2 list-disc space-y-0.5 pl-5">{children}</ul>,
+                    ol: ({ children }) => <ol className="mb-2 list-decimal space-y-0.5 pl-5">{children}</ol>,
+                    li: ({ children }) => <li className="leading-snug">{children}</li>,
+                    a: ({ children, href }) => (
+                      <a href={href} target="_blank" rel="noreferrer" className="underline" style={{ color: "rgb(var(--polaris-accent))" }}>{children}</a>
+                    ),
+                    code: ({ children, className }) => {
+                      const isBlock = /language-/.test(className || "");
+                      if (isBlock) {
+                        return (
+                          <pre className="my-2 overflow-x-auto rounded-lg bg-black/50 p-3 text-[12px] leading-relaxed ring-1 ring-white/10">
+                            <code>{children}</code>
+                          </pre>
+                        );
+                      }
+                      return <code className="rounded bg-white/10 px-1 py-0.5 text-[12.5px]">{children}</code>;
+                    },
+                    strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                    em: ({ children }) => <em className="italic text-white/90">{children}</em>,
+                    blockquote: ({ children }) => (
+                      <blockquote className="my-2 border-l-2 pl-3 text-white/80" style={{ borderColor: "rgb(var(--polaris-accent) / 0.6)" }}>{children}</blockquote>
+                    ),
+                  }}
+                >{content}</ReactMarkdown>
+              </div>
+            )
+          ) : (
+            <span className="text-white/40">…</span>
+          )}
         </div>
           );
         })()}
