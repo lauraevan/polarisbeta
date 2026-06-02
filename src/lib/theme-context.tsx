@@ -84,7 +84,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (typeof v.liquidGlass === "boolean") setLiquidGlass(v.liquidGlass);
         if (v.secondaryAccent !== undefined) setSecondaryAccent(v.secondaryAccent);
       }
-    } catch {}
+    } catch {
+      // Ignore malformed saved theme settings.
+    }
   }, []);
 
   useEffect(() => {
