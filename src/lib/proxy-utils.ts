@@ -1,14 +1,15 @@
 export type ProxyEngine = "uv" | "scramjet";
 
 // Pool of public wisp relays. We probe them and pick the first one that
-// opens cleanly. Mercury's relay is the canonical one but is intermittently
-// blocked/rate-limited; the others are public mirrors that speak the same
-// protocol. The first reachable URL wins.
+// opens cleanly. Order matters — fastest/most-reliable first. If a relay
+// 404s or refuses upgrades, drop it from the front of this list.
 const WISP_POOL = [
   "wss://wisp.mercurywork.shop/",
   "wss://anura.pro/wisp/",
   "wss://nebulaproxy.io/wisp/",
   "wss://wisp.terbiumon.top/wisp/",
+  "wss://wisp.shadowproxy.workers.dev/",
+  "wss://wisp.lunaproxy.org/",
 ] as const;
 export let POLARIS_WISP_URL: string = WISP_POOL[0];
 // Serve bare-mux + epoxy from our own origin so the SW and page agree on the
@@ -88,10 +89,15 @@ function probeWisp(url: string, timeoutMs = 2500) {
 }
 
 async function pickWisp(): Promise<string> {
-  for (const url of WISP_POOL) {
-    // eslint-disable-next-line no-await-in-loop
-    if (await probeWisp(url)) return url;
-  }
+  // Probe all relays in parallel; first to resolve `true` wins.
+  // Falling back to a dead relay (the old behavior) silently broke every
+  // proxied request with no surfaced error.
+  const results = await Promise.all(
+    WISP_POOL.map(async (url) => ({ url, ok: await probeWisp(url, 3500) })),
+  );
+  const winner = results.find((r) => r.ok);
+  if (winner) return winner.url;
+  console.warn("[polaris] no wisp relay reachable; defaulting to first entry — proxy will likely fail");
   return WISP_POOL[0];
 }
 
@@ -138,7 +144,9 @@ export async function registerStaticProxies(engine: ProxyEngine = "uv") {
     );
     await Promise.all(registrations.map(waitForActive));
   };
-  await Promise.race([setup(), new Promise((resolve) => setTimeout(resolve, 1800))]);
+  // Service worker registration can take 3–6s on cold loads; the previous
+  // 1.8s race silently dropped activation and every proxied request 404'd.
+  await Promise.race([setup(), new Promise((resolve) => setTimeout(resolve, 8000))]);
 
   // Wire bare-mux → epoxy → wisp before any proxied request is made.
   // Probing the wisp pool can take a few seconds on first load.
