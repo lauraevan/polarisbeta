@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Heart, X, Info, RotateCcw, Star, Play, Flame, Sparkles, Film, Tv2 } from "lucide-react";
 import { tmdbApi, IMG, type TmdbItem, type MediaKind } from "@/lib/tmdb";
@@ -456,6 +456,3 @@ function DetailsSheet({ card, onClose }: { card: Card; onClose: () => void }) {
     </div>
   );
 }
-
-// `useMemo` is imported but kept for potential future filtering — silence unused.
-void useMemo;
