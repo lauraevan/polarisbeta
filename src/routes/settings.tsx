@@ -636,6 +636,35 @@ function SettingsPage() {
             </button>
           </div>
         </section>
+
+        {/* Discord chip visibility */}
+        <section className="liquid-glass-themed rounded-2xl p-5">
+          <SectionTitle icon={MessageCircle} title="Discord shortcut" subtitle="Show the Join Discord chip in the sidebar & games hub" />
+          <div className="mt-3 flex items-start justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-white">Show Discord callout</div>
+              <p className="mt-0.5 text-[11px] text-white/55">
+                Hide it if you're on a network where Discord looks suspicious.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowDiscord(!showDiscord)}
+              aria-pressed={showDiscord}
+              className={`relative h-7 w-12 shrink-0 rounded-full border transition ${
+                showDiscord ? "border-white/20 bg-white" : "border-white/15 bg-white/10"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-6 w-6 rounded-full transition-all ${
+                  showDiscord ? "left-5 bg-black" : "left-0.5 bg-white"
+                }`}
+              />
+            </button>
+          </div>
+        </section>
+
+        {/* Link Maker */}
+        <LinkMakerSection />
       </div>
     </div>
   );
