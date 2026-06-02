@@ -90,7 +90,10 @@ function Hero({
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent" />
       <div className="relative flex h-full items-end p-4 sm:p-8">
         <div className="flex max-w-2xl flex-col justify-end">
-        <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/65">Featured · Top 5 this week</div>
+        <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/70">
+          <span className="grid h-5 w-5 place-items-center rounded-md bg-red-600 text-[10px] font-black text-white">P</span>
+          Polaris Top 5 · This Week
+        </div>
         <h1 className="text-2xl font-black text-white drop-shadow sm:text-3xl md:text-5xl">
           {item.title || item.name}
         </h1>
