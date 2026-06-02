@@ -316,8 +316,8 @@ function FlixInner() {
           }}
         />
         {/* Top bar */}
-        <header className="sticky top-0 z-30 flex items-center gap-3 px-4 pt-4 pb-3 sm:px-6">
-          <div className="liquid-glass-themed flex w-full items-center gap-2 rounded-2xl px-3 py-2">
+        <header className="sticky top-0 z-30 flex items-center gap-3 px-3 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-3">
+          <div className="liquid-glass-themed flex w-full min-w-0 items-center gap-2 rounded-2xl px-2 py-2 sm:px-3">
             <div className="flex items-center gap-2 pr-2">
               <span
                 className="text-lg font-black tracking-tight"
@@ -332,8 +332,8 @@ function FlixInner() {
                 PolarisFlix
               </span>
             </div>
-            <span className="h-5 w-px bg-white/15" />
-            <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
+            <span className="hidden h-5 w-px bg-white/15 sm:block" />
+            <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
               {tabs.map((t) => {
                 const Icon = t.icon;
                 const active = tab === t.id;
