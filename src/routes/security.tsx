@@ -304,9 +304,6 @@ function SecurityPage() {
         </FloatingPanel>
       )}
 
-      {panel === "lookup" && dossier && (
-        <></>
-      )}
       {panel === "devices" && (
         <FloatingPanel title={`Devices ever seen · ${sessions.length}`} onClose={() => setPanel(null)} wide>
           <div className="mb-2 text-[11px] text-white/55">
