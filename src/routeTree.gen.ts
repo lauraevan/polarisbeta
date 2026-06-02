@@ -30,19 +30,12 @@ import { Route as AppsRouteImport } from './routes/apps'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OsRouteImport } from './routes/os'
-import { Route as ImageGenRouteImport } from './routes/image-gen'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
 
 const VpnRoute = VpnRouteImport.update({
   id: '/vpn',
   path: '/vpn',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OsRoute = OsRouteImport.update({
-  id: '/os',
-  path: '/os',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SoundboardRoute = SoundboardRouteImport.update({
