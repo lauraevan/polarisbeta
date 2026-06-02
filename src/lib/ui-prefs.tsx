@@ -11,10 +11,11 @@ function read(key: string, fallback: boolean) {
 }
 
 export function useLocalToggle(key: string, fallback = true) {
-  const [v, setV] = useState<boolean>(() => read(key, fallback));
+  const [v, setV] = useState<boolean>(fallback);
 
   useEffect(() => {
     const sync = () => setV(read(key, fallback));
+    sync();
     const onCustom = (e: Event) => {
       if ((e as CustomEvent).detail?.key === key) sync();
     };

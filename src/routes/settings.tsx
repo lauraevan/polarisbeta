@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
-import { getPolarisBrowserUrl, getProxyUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
+import { getPolarisBrowserUrl, type ProxyEngine } from "@/lib/proxy-utils";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
@@ -738,121 +738,55 @@ export const Route = createFileRoute("/settings")({
 
 // ───────────────────────── Link Maker ─────────────────────────
 
-type FilterId =
-  | "securly" | "goguardian" | "linewise" | "lightspeed" | "aristotle"
-  | "fortiguard" | "zscaler" | "blocksi" | "lanschool" | "iboss"
-  | "sophos" | "umbrella" | "dnsfilter";
+const SITE_ORIGIN = "https://educationcatlearningandtutoring.com";
 
-type LinkTarget = { label: string; url: string; note: string; engines: ProxyEngine[] };
+type WebsiteLink = { label: string; path: string; note: string };
+type Candidate = { label: string; url: string; note: string };
 
-const WORKING_TARGETS: LinkTarget[] = [
-  { label: "GeForce Now", url: "https://play.geforcenow.com/", note: "Cloud gaming through Polaris Browser", engines: ["uv", "scramjet"] },
-  { label: "YouTube", url: "https://www.youtube.com/", note: "Video through Polaris Browser", engines: ["uv", "scramjet"] },
-  { label: "Google", url: "https://www.google.com/", note: "Search through Polaris Browser", engines: ["uv", "scramjet"] },
-  { label: "Reddit", url: "https://www.reddit.com/", note: "Community pages through Polaris Browser", engines: ["uv", "scramjet"] },
-  { label: "Wikipedia", url: "https://www.wikipedia.org/", note: "Reference through Polaris Browser", engines: ["uv", "scramjet"] },
+const WEBSITE_LINKS: WebsiteLink[] = [
+  { label: "Home", path: "/", note: "Main website" },
+  { label: "Games", path: "/games", note: "Game hub" },
+  { label: "GeForce Now", path: "/games?tab=gfn", note: "GeForce Now iframe" },
+  { label: "Browser", path: "/browser", note: "Polaris Browser" },
+  { label: "Apps", path: "/apps", note: "App launcher" },
+  { label: "Cinema", path: "/media", note: "Media page" },
 ];
 
-const FILTER_ENGINE_RANK: Record<FilterId, ProxyEngine[]> = {
-  securly: ["uv", "scramjet"],
-  goguardian: ["uv", "scramjet"],
-  linewise: ["scramjet", "uv"],
-  lightspeed: ["uv", "scramjet"],
-  aristotle: ["scramjet", "uv"],
-  fortiguard: ["scramjet", "uv"],
-  zscaler: ["scramjet", "uv"],
-  blocksi: ["uv", "scramjet"],
-  lanschool: ["uv", "scramjet"],
-  iboss: ["scramjet", "uv"],
-  sophos: ["uv", "scramjet"],
-  umbrella: ["uv", "scramjet"],
-  dnsfilter: ["scramjet", "uv"],
-};
-
-const FILTERS: { id: FilterId; label: string }[] = [
-  { id: "securly",    label: "Securly" },
-  { id: "goguardian", label: "GoGuardian" },
-  { id: "linewise",   label: "Linewise" },
-  { id: "lightspeed", label: "LightSpeed" },
-  { id: "aristotle",  label: "Aristotle K-12" },
-  { id: "fortiguard", label: "FortiGuard" },
-  { id: "zscaler",    label: "Zscaler" },
-  { id: "blocksi",    label: "Blocksi" },
-  { id: "lanschool",  label: "LanSchool" },
-  { id: "iboss",      label: "iBoss" },
-  { id: "sophos",     label: "Sophos" },
-  { id: "umbrella",   label: "Cisco Umbrella" },
-  { id: "dnsfilter",  label: "DNS Filter" },
+const QUICK_BROWSER_TARGETS = [
+  { label: "GeForce Now Browser", url: "https://play.geforcenow.com/", note: "Browser launch link" },
+  { label: "Google Browser", url: "https://www.google.com/", note: "Search launch link" },
+  { label: "Wikipedia Browser", url: "https://www.wikipedia.org/", note: "Reference launch link" },
 ];
 
-type Candidate = { label: string; url: string; target: string; engine: ProxyEngine; note: string; status: "pending" | "ok" | "blocked"; ms?: number };
-
-async function probe(url: string, timeoutMs = 3500): Promise<{ ok: boolean; ms: number }> {
-  const start = performance.now();
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { mode: "no-cors", signal: ctrl.signal, cache: "no-store" });
-    return { ok: res.type === "opaque" || res.ok, ms: Math.round(performance.now() - start) };
-  } catch {
-    return { ok: false, ms: Math.round(performance.now() - start) };
-  } finally {
-    clearTimeout(timer);
-  }
+function absoluteSiteUrl(path: string) {
+  return `${SITE_ORIGIN}${path}`;
 }
 
 function LinkMakerSection({ defaultEngine }: { defaultEngine: ProxyEngine }) {
-  const [filter, setFilter] = useState<FilterId>("securly");
+  const [customUrl, setCustomUrl] = useState("https://play.geforcenow.com/");
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [scanning, setScanning] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   function generate() {
-    const rankedEngines = FILTER_ENGINE_RANK[filter];
-    const targets = WORKING_TARGETS.slice(0, 5);
-    const next: Candidate[] = targets.map((target, idx) => {
-      const preferred = rankedEngines[idx % rankedEngines.length];
-      const engine = target.engines.includes(preferred) ? preferred : defaultEngine;
-      return {
-        label: target.label,
-        target: normalizeUrl(target.url),
-        url: getPolarisBrowserUrl(engine, target.url),
-        engine,
-        note: target.note,
-        status: "pending",
-      };
-    });
-    setCandidates(next);
-  }
-
-  async function scan() {
-    if (!candidates.length) generate();
-    setScanning(true);
-    const list = candidates.length
-      ? candidates
-      : WORKING_TARGETS.slice(0, 5).map((target, idx) => {
-          const rankedEngines = FILTER_ENGINE_RANK[filter];
-          const preferred = rankedEngines[idx % rankedEngines.length];
-          const engine = target.engines.includes(preferred) ? preferred : defaultEngine;
-          return {
-            label: target.label,
-            target: normalizeUrl(target.url),
-            url: getPolarisBrowserUrl(engine, target.url),
-            engine,
-            note: target.note,
-            status: "pending" as const,
-          };
-        });
-    setCandidates(list);
-    await Promise.all([registerStaticProxies("uv"), registerStaticProxies("scramjet")]);
-    const results = await Promise.all(
-      list.map(async (c) => {
-        const r = await probe(getProxyUrl(c.engine, c.target));
-        return { ...c, status: r.ok ? ("ok" as const) : ("blocked" as const), ms: r.ms };
-      }),
-    );
-    setCandidates(results);
-    setScanning(false);
+    const pageLinks: Candidate[] = WEBSITE_LINKS.map((link) => ({
+      label: link.label,
+      url: absoluteSiteUrl(link.path),
+      note: link.note,
+    }));
+    const browserLinks: Candidate[] = QUICK_BROWSER_TARGETS.map((target) => ({
+      label: target.label,
+      url: absoluteSiteUrl(getPolarisBrowserUrl(defaultEngine, target.url)),
+      note: `${defaultEngine === "uv" ? "Ultraviolet" : "Scramjet"} · ${target.note}`,
+    }));
+    const trimmed = customUrl.trim();
+    const customLink = trimmed
+      ? [{
+          label: "Custom Browser Link",
+          url: absoluteSiteUrl(getPolarisBrowserUrl(defaultEngine, trimmed)),
+          note: `${defaultEngine === "uv" ? "Ultraviolet" : "Scramjet"} · ${trimmed}`,
+        }]
+      : [];
+    setCandidates([...pageLinks, ...browserLinks, ...customLink]);
   }
 
   async function copy(url: string) {
@@ -867,45 +801,42 @@ function LinkMakerSection({ defaultEngine }: { defaultEngine: ProxyEngine }) {
     <section className="liquid-glass-themed rounded-2xl p-5">
       <SectionTitle
         icon={Link2}
-        title="Link Maker"
-        subtitle="Create working Polaris Browser links and check which proxy engine works here"
+        title="Website Link Maker"
+        subtitle="Create real links on educationcatlearningandtutoring.com"
       />
 
-      <div className="mt-4">
-        <div className="mb-2 text-[11px] uppercase tracking-[0.2em] text-white/55">School filter</div>
-        <div className="flex flex-wrap gap-1.5">
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => { setFilter(f.id); setCandidates([]); }}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                filter === f.id
-                  ? "bg-white text-black"
-                  : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+      <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+        <div className="mb-2 text-[11px] uppercase tracking-[0.2em] text-white/55">Custom browser link</div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            value={customUrl}
+            onChange={(e) => setCustomUrl(e.target.value)}
+            placeholder="https://example.com"
+            className="min-w-0 flex-1 rounded-xl bg-black/25 px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10 placeholder:text-white/35 focus:ring-white/30"
+          />
+          <button
+            onClick={generate}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-black hover:bg-white/90"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Make links
+          </button>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          onClick={generate}
-          className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-black hover:bg-white/90"
-        >
-          <RefreshCw className="h-3.5 w-3.5" /> Generate working links
-        </button>
-        <button
-          onClick={scan}
-          disabled={scanning}
-          className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15 disabled:opacity-50"
-        >
-          <Shield className="h-3.5 w-3.5" />
-          {scanning ? "Scanning…" : "Test links"}
-        </button>
-      </div>
+      {candidates.length === 0 && (
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {WEBSITE_LINKS.map((link) => (
+            <button
+              key={link.path}
+              onClick={generate}
+              className="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-left transition hover:bg-white/[0.08]"
+            >
+              <div className="text-xs font-bold text-white">{link.label}</div>
+              <div className="mt-1 truncate text-[10px] text-white/45">{absoluteSiteUrl(link.path)}</div>
+            </button>
+          ))}
+        </div>
+      )}
 
       {candidates.length > 0 && (
         <div className="mt-4 space-y-2">
@@ -914,22 +845,10 @@ function LinkMakerSection({ defaultEngine }: { defaultEngine: ProxyEngine }) {
               key={c.url}
               className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2"
             >
-              <span
-                className={`inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-bold uppercase tracking-wider ${
-                  c.status === "ok"
-                    ? "bg-emerald-500/20 text-emerald-300"
-                    : c.status === "blocked"
-                    ? "bg-red-500/20 text-red-300"
-                    : "bg-white/10 text-white/60"
-                }`}
-              >
-                {c.status === "ok" ? "Open" : c.status === "blocked" ? "Blocked" : "Idle"}
-              </span>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-xs font-bold text-white">{c.label}</div>
-                <div className="truncate text-[10px] text-white/45">
-                  {c.engine === "uv" ? "Ultraviolet" : "Scramjet"} · {c.note}{c.ms != null ? ` · ${c.ms} ms` : ""}
-                </div>
+                <div className="truncate text-[10px] text-white/45">{c.note}</div>
+                <div className="mt-0.5 truncate text-[10px] text-white/35">{c.url}</div>
               </div>
               <button
                 onClick={() => copy(c.url)}
@@ -950,11 +869,6 @@ function LinkMakerSection({ defaultEngine }: { defaultEngine: ProxyEngine }) {
           ))}
         </div>
       )}
-
-      <p className="mt-4 text-[11px] leading-relaxed text-white/45">
-        These are real Polaris Browser URLs, not random empty domains. "Test links" starts the
-        local proxy workers and checks the selected sites through your current network.
-      </p>
     </section>
   );
 }
