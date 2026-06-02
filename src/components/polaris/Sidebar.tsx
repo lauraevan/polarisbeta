@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useSidebarState } from "@/lib/sidebar-context";
+import { useShowDiscord } from "@/lib/ui-prefs";
 import { ProfileButton } from "./ProfileButton";
 
 const nav = [
@@ -88,6 +89,7 @@ function DesktopSide({
   collapsed: boolean;
   toggle: () => void;
 }) {
+  const [showDiscord] = useShowDiscord();
   const width = collapsed ? "w-[68px]" : "w-60";
   return (
     <aside
@@ -137,23 +139,25 @@ function DesktopSide({
       </nav>
 
       <div className={`border-t border-white/5 ${collapsed ? "px-2 py-3" : "p-3"}`}>
-        <a
-          href="https://discord.gg/fUhccQjbT"
-          target="_blank"
-          rel="noreferrer"
-          title="Join the Polaris Discord"
-          className={`mb-2 flex items-center rounded-xl text-sm transition ${
-            collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"
-          } text-white/80 hover:text-white`}
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(88,101,242,0.30), rgba(88,101,242,0.08))",
-            boxShadow: "inset 0 0 0 1px rgba(88,101,242,0.45)",
-          }}
-        >
-          <MessageCircle className="h-[18px] w-[18px] shrink-0" />
-          {!collapsed && <span className="font-semibold">Join Discord</span>}
-        </a>
+        {showDiscord && (
+          <a
+            href="https://discord.gg/fUhccQjbT"
+            target="_blank"
+            rel="noreferrer"
+            title="Join the Polaris Discord"
+            className={`mb-2 flex items-center rounded-xl text-sm transition ${
+              collapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"
+            } text-white/80 hover:text-white`}
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(88,101,242,0.30), rgba(88,101,242,0.08))",
+              boxShadow: "inset 0 0 0 1px rgba(88,101,242,0.45)",
+            }}
+          >
+            <MessageCircle className="h-[18px] w-[18px] shrink-0" />
+            {!collapsed && <span className="font-semibold">Join Discord</span>}
+          </a>
+        )}
         <ProfileButton collapsed={collapsed} />
       </div>
     </aside>
