@@ -33,7 +33,6 @@ function dlhdEmbed(id: number, hostIndex = 0) {
   return `https://${host}/embed/stream-${id}.php`;
 }
 
-const CHANNELS: Channel[] = [
 // Only channels with known DaddyLive IDs are kept — every tile maps to a
 // pure HTML5 player iframe (no third-party website wrapper).
 const CHANNELS: Channel[] = [
