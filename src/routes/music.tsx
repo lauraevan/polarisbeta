@@ -5,7 +5,7 @@ import { PolarisMusic } from "@/components/polaris/music/PolarisMusic";
 export const Route = createFileRoute("/music")({
   head: () => ({ meta: [{ title: "Music — Polaris One" }] }),
   component: () => (
-    <AppShell>
+    <AppShell hideDock>
       <PolarisMusic />
     </AppShell>
   ),
