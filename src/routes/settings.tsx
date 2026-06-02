@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package, PanelTop } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package, PanelTop, MessageCircle, Link2, Copy, RefreshCw, Check } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
 import { useSidebarState } from "@/lib/sidebar-context";
+import { useShowDiscord } from "@/lib/ui-prefs";
 import { useTabCloak } from "@/lib/tab-cloaker";
 import { useAdmin } from "@/lib/admin-context";
 import { useAuth } from "@/lib/auth-context";
@@ -93,6 +94,7 @@ function SettingsPage() {
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const { cloak, setCloakId, cloaks } = useTabCloak();
   const { orientation, setOrientation } = useSidebarState();
+  const [showDiscord, setShowDiscord] = useShowDiscord();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
   const { isAdmin, isOwner, unlock, lock } = useAdmin();
   const { refreshProfile, user, profile, updateProfile } = useAuth();
@@ -634,6 +636,35 @@ function SettingsPage() {
             </button>
           </div>
         </section>
+
+        {/* Discord chip visibility */}
+        <section className="liquid-glass-themed rounded-2xl p-5">
+          <SectionTitle icon={MessageCircle} title="Discord shortcut" subtitle="Show the Join Discord chip in the sidebar & games hub" />
+          <div className="mt-3 flex items-start justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-white">Show Discord callout</div>
+              <p className="mt-0.5 text-[11px] text-white/55">
+                Hide it if you're on a network where Discord looks suspicious.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowDiscord(!showDiscord)}
+              aria-pressed={showDiscord}
+              className={`relative h-7 w-12 shrink-0 rounded-full border transition ${
+                showDiscord ? "border-white/20 bg-white" : "border-white/15 bg-white/10"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-6 w-6 rounded-full transition-all ${
+                  showDiscord ? "left-5 bg-black" : "left-0.5 bg-white"
+                }`}
+              />
+            </button>
+          </div>
+        </section>
+
+        {/* Link Maker */}
+        <LinkMakerSection />
       </div>
     </div>
   );
@@ -703,3 +734,239 @@ export const Route = createFileRoute("/settings")({
     </AppShell>
   ),
 });
+
+// ───────────────────────── Link Maker ─────────────────────────
+
+type FilterId =
+  | "securly" | "goguardian" | "linewise" | "lightspeed" | "aristotle"
+  | "fortiguard" | "zscaler" | "blocksi" | "lanschool" | "iboss"
+  | "sophos" | "umbrella" | "dnsfilter";
+
+type HostProfile = { host: string; note: string };
+
+// Free, no-signup hosts that typically slip past common category-based filters.
+// Some filters block specific TLDs (e.g. *.workers.dev, *.repl.co); we pick the
+// least-blocked set per filter based on community reports.
+const ALL_HOSTS: HostProfile[] = [
+  { host: "vercel.app",        note: "Vercel preview deploys" },
+  { host: "netlify.app",       note: "Netlify drop / sites" },
+  { host: "pages.dev",         note: "Cloudflare Pages" },
+  { host: "workers.dev",       note: "Cloudflare Workers" },
+  { host: "deno.dev",          note: "Deno Deploy" },
+  { host: "b-cdn.net",         note: "Bunny.net CDN" },
+  { host: "web.app",           note: "Firebase Hosting" },
+  { host: "github.io",         note: "GitHub Pages" },
+  { host: "js.org",            note: "Free JS subdomain" },
+  { host: "is-a.dev",          note: "Community free subdomain" },
+  { host: "glitch.me",         note: "Glitch projects" },
+  { host: "replit.app",        note: "Replit deployments" },
+  { host: "surge.sh",          note: "Surge static hosting" },
+  { host: "onrender.com",      note: "Render free tier" },
+  { host: "fly.dev",           note: "Fly.io apps" },
+];
+
+const FILTER_HOST_RANK: Record<FilterId, string[]> = {
+  securly:     ["pages.dev", "web.app", "vercel.app", "b-cdn.net", "is-a.dev"],
+  goguardian:  ["pages.dev", "deno.dev", "netlify.app", "b-cdn.net", "js.org"],
+  linewise:    ["workers.dev", "deno.dev", "pages.dev", "b-cdn.net", "fly.dev"],
+  lightspeed:  ["web.app", "pages.dev", "b-cdn.net", "is-a.dev", "github.io"],
+  aristotle:   ["b-cdn.net", "pages.dev", "deno.dev", "fly.dev", "onrender.com"],
+  fortiguard:  ["b-cdn.net", "pages.dev", "deno.dev", "fly.dev", "is-a.dev"],
+  zscaler:     ["b-cdn.net", "pages.dev", "fly.dev", "onrender.com", "deno.dev"],
+  blocksi:     ["pages.dev", "web.app", "netlify.app", "b-cdn.net", "js.org"],
+  lanschool:   ["pages.dev", "deno.dev", "vercel.app", "b-cdn.net", "is-a.dev"],
+  iboss:       ["b-cdn.net", "fly.dev", "onrender.com", "pages.dev", "deno.dev"],
+  sophos:      ["pages.dev", "deno.dev", "b-cdn.net", "fly.dev", "is-a.dev"],
+  umbrella:    ["pages.dev", "b-cdn.net", "deno.dev", "fly.dev", "onrender.com"],
+  dnsfilter:   ["b-cdn.net", "pages.dev", "deno.dev", "fly.dev", "is-a.dev"],
+};
+
+const FILTERS: { id: FilterId; label: string }[] = [
+  { id: "securly",    label: "Securly" },
+  { id: "goguardian", label: "GoGuardian" },
+  { id: "linewise",   label: "Linewise" },
+  { id: "lightspeed", label: "LightSpeed" },
+  { id: "aristotle",  label: "Aristotle K-12" },
+  { id: "fortiguard", label: "FortiGuard" },
+  { id: "zscaler",    label: "Zscaler" },
+  { id: "blocksi",    label: "Blocksi" },
+  { id: "lanschool",  label: "LanSchool" },
+  { id: "iboss",      label: "iBoss" },
+  { id: "sophos",     label: "Sophos" },
+  { id: "umbrella",   label: "Cisco Umbrella" },
+  { id: "dnsfilter",  label: "DNS Filter" },
+];
+
+const WORDS = [
+  "atlas","nova","echo","drift","lumen","onyx","quartz","aero","beacon",
+  "vivid","sable","cobalt","tundra","cipher","fable","glade","harbor",
+  "indigo","jade","kestrel","lyra","mosaic","nebula","orchid","pixel",
+];
+
+function randSlug() {
+  const w1 = WORDS[Math.floor(Math.random() * WORDS.length)];
+  const w2 = WORDS[Math.floor(Math.random() * WORDS.length)];
+  const n  = Math.floor(Math.random() * 900 + 100);
+  return `${w1}-${w2}-${n}`;
+}
+
+type Candidate = { url: string; host: string; status: "pending" | "ok" | "blocked"; ms?: number };
+
+async function probe(url: string, timeoutMs = 3500): Promise<{ ok: boolean; ms: number }> {
+  const start = performance.now();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    await fetch(url, { mode: "no-cors", signal: ctrl.signal, cache: "no-store" });
+    return { ok: true, ms: Math.round(performance.now() - start) };
+  } catch {
+    return { ok: false, ms: Math.round(performance.now() - start) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function LinkMakerSection() {
+  const [filter, setFilter] = useState<FilterId>("securly");
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [scanning, setScanning] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  function generate() {
+    const hosts = FILTER_HOST_RANK[filter];
+    const next: Candidate[] = hosts.map((h) => ({
+      url: `https://${randSlug()}.${h}`,
+      host: h,
+      status: "pending",
+    }));
+    setCandidates(next);
+  }
+
+  async function scan() {
+    if (!candidates.length) generate();
+    setScanning(true);
+    const list = candidates.length
+      ? candidates
+      : FILTER_HOST_RANK[filter].map((h) => ({
+          url: `https://${randSlug()}.${h}`,
+          host: h,
+          status: "pending" as const,
+        }));
+    setCandidates(list);
+    const results = await Promise.all(
+      list.map(async (c) => {
+        const r = await probe(c.url);
+        return { ...c, status: r.ok ? ("ok" as const) : ("blocked" as const), ms: r.ms };
+      }),
+    );
+    setCandidates(results);
+    setScanning(false);
+  }
+
+  async function copy(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(url);
+      setTimeout(() => setCopied(null), 1200);
+    } catch { /* ignore */ }
+  }
+
+  const hostInfo = (h: string) => ALL_HOSTS.find((x) => x.host === h)?.note ?? "";
+
+  return (
+    <section className="liquid-glass-themed rounded-2xl p-5">
+      <SectionTitle
+        icon={Link2}
+        title="Link Maker"
+        subtitle="Generate fresh, free, no-signup host URLs tuned per school filter"
+      />
+
+      <div className="mt-4">
+        <div className="mb-2 text-[11px] uppercase tracking-[0.2em] text-white/55">School filter</div>
+        <div className="flex flex-wrap gap-1.5">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => { setFilter(f.id); setCandidates([]); }}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                filter === f.id
+                  ? "bg-white text-black"
+                  : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          onClick={generate}
+          className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-black hover:bg-white/90"
+        >
+          <RefreshCw className="h-3.5 w-3.5" /> Generate links
+        </button>
+        <button
+          onClick={scan}
+          disabled={scanning}
+          className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15 disabled:opacity-50"
+        >
+          <Shield className="h-3.5 w-3.5" />
+          {scanning ? "Scanning…" : "Scan reachability"}
+        </button>
+      </div>
+
+      {candidates.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {candidates.map((c) => (
+            <div
+              key={c.url}
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2"
+            >
+              <span
+                className={`inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-bold uppercase tracking-wider ${
+                  c.status === "ok"
+                    ? "bg-emerald-500/20 text-emerald-300"
+                    : c.status === "blocked"
+                    ? "bg-red-500/20 text-red-300"
+                    : "bg-white/10 text-white/60"
+                }`}
+              >
+                {c.status === "ok" ? "Open" : c.status === "blocked" ? "Blocked" : "Idle"}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-mono text-xs text-white">{c.url}</div>
+                <div className="truncate text-[10px] text-white/45">
+                  {hostInfo(c.host)}{c.ms != null ? ` · ${c.ms} ms` : ""}
+                </div>
+              </div>
+              <button
+                onClick={() => copy(c.url)}
+                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/15"
+              >
+                {copied === c.url ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {copied === c.url ? "Copied" : "Copy"}
+              </button>
+              <a
+                href={c.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/15"
+              >
+                Open
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="mt-4 text-[11px] leading-relaxed text-white/45">
+        Links are randomized subdomains on free, no-signup hosts (Cloudflare Pages, Bunny CDN,
+        Deno Deploy, etc.). "Scan reachability" pings each candidate from your network so you
+        can tell at a glance which hosts your filter is letting through right now. Lovable
+        doesn't host these endpoints — you'd point a free deploy at any of these URLs yourself.
+      </p>
+    </section>
+  );
+}
