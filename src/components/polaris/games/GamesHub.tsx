@@ -77,6 +77,7 @@ function HomeFeed({
 
   return (
     <div className="space-y-10">
+      <DiscordCallout />
       {/* Rotating hero — cycles through Hydra featured titles */}
       <div className="relative overflow-hidden rounded-2xl border border-white/10 min-h-[280px] sm:min-h-[340px]">
         {featured?.map((f, i) => (
@@ -401,6 +402,7 @@ export function GamesHub() {
           {tab === "hydra" && <HydraCatalog />}
           {tab === "gnmath" && <GnMathCollection />}
           {tab === "cine" && <CineLauncher />}
+          {tab === "gfn" && <GeForceNowLauncher />}
         </main>
       </div>
 
