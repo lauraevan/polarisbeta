@@ -114,13 +114,13 @@ export const recordVisitAndCheckBan = createServerFn({ method: "POST" })
     };
 
     // Look for existing row to detect "new device"
-    const { data: existing } = await supabaseAdmin
+    const existingQuery = supabaseAdmin
       .from("device_sessions")
-      .select("id, visit_count, user_id")
-      .eq("device_fingerprint", data.deviceFingerprint)
-      .eq(data.userId ? "user_id" : "device_fingerprint", data.userId ?? data.deviceFingerprint)
-      .is(data.userId ? "user_id" : "user_id", data.userId ? undefined : null)
-      .maybeSingle();
+      .select("id, visit_count")
+      .eq("device_fingerprint", data.deviceFingerprint);
+    const { data: existing } = data.userId
+      ? await existingQuery.eq("user_id", data.userId).maybeSingle()
+      : await existingQuery.is("user_id", null).maybeSingle();
 
     let isNewDevice = false;
     if (existing) {
@@ -223,7 +223,9 @@ export const recordVisitAndCheckBan = createServerFn({ method: "POST" })
         detail: {
           type: top.type,
           allMatches: matches.length,
-          note: geo.is_vpn || geo.is_proxy || geo.is_tor ? "Possible VPN/proxy evasion" : undefined,
+          ...(geo.is_vpn || geo.is_proxy || geo.is_tor
+            ? { note: "Possible VPN/proxy evasion" }
+            : {}),
         },
       });
     }
