@@ -269,7 +269,9 @@ export function Soundboard() {
         </div>
       )}
 
-      <audio ref={audioRef} crossOrigin="anonymous" />
+      {/* No crossOrigin — soundbuttonsworld's CDN doesn't return CORS headers,
+          and setting it would cause every pad to fail silently. */}
+      <audio ref={audioRef} />
     </div>
   );
 }

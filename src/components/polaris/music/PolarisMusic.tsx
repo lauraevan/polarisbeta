@@ -137,9 +137,17 @@ export function PolarisMusic() {
     return () => window.clearInterval(i);
   }, [sleepMin]);
 
-  // Apply Web Audio EQ for Pro users
+  // Apply Web Audio EQ for Pro users.
+  //
+  // IMPORTANT: createMediaElementSource() permanently re-routes the <audio>
+  // element through the Web Audio graph, and if the source is cross-origin
+  // without CORS headers (which is the case for Vapor/Audiomack streams) the
+  // graph output becomes silent. So we only build the graph when the user
+  // actively selects a non-flat EQ preset — keeping default playback on the
+  // native, un-tainted audio path.
   useEffect(() => {
     if (!pro) return;
+    if (eq === "flat") return; // never touch the audio path unless asked
     const a = audioRef.current;
     if (!a) return;
     type PolarisAudio = HTMLAudioElement & {
