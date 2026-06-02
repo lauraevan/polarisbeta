@@ -484,11 +484,40 @@ export function ChatRoom() {
   );
 
   const createChannel = useCallback(
-    async (name: string) => {
+    async (name: string, opts?: { visibility?: "public" | "private"; inviteUsernames?: string[] }) => {
       if (!user) return;
       const slug = name.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, "");
       if (!slug) return;
-      await supabase.from("chat_channels").insert({ slug, name: slug, created_by: user.id, emoji: "✨" });
+      const visibility = opts?.visibility ?? "public";
+      const { data: created, error } = await supabase
+        .from("chat_channels")
+        .insert({ slug, name: slug, created_by: user.id, emoji: visibility === "private" ? "🔒" : "✨", visibility } as never)
+        .select("id")
+        .maybeSingle();
+      if (error || !created) {
+        setNewChannelOpen(false);
+        return;
+      }
+      // creator is implicit owner-member
+      await supabase.from("chat_channel_members").insert({
+        channel_id: (created as { id: string }).id,
+        user_id: user.id,
+        role: "owner",
+      } as never);
+      const usernames = (opts?.inviteUsernames ?? []).map((u) => u.trim()).filter(Boolean);
+      if (visibility === "private" && usernames.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, username")
+          .in("username", usernames);
+        const rows = (profs ?? []).map((p: { id: string }) => ({
+          channel_id: (created as { id: string }).id,
+          user_id: p.id,
+          role: "member",
+          invited_by: user.id,
+        }));
+        if (rows.length) await supabase.from("chat_channel_members").insert(rows as never);
+      }
       setNewChannelOpen(false);
     },
     [user],
