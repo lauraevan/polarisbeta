@@ -417,17 +417,7 @@ function LivePlayer({ channel, all, onPick, onClose }: { channel: Channel; all: 
       <div className="relative flex flex-1 overflow-hidden">
         {/* Player surface */}
         <div className="relative flex-1 overflow-hidden bg-black">
-          <iframe
-            // Force a fresh iframe instance per channel so the upstream tuner
-            // re-bootstraps for the new slug.
-            key={channel.id}
-            src={channelSrc(channel)}
-            title={`${channel.name} — Live`}
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-            allowFullScreen
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 h-full w-full"
-          />
+          <ChannelPlayerFrame channel={channel} />
           {/* Bottom action chrome — purely cosmetic but makes the surface feel like a real player */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-3 bg-gradient-to-t from-black/85 via-black/30 to-transparent px-4 py-3 text-xs text-white/80">
             <Radio className="h-3.5 w-3.5 text-rose-400" />
@@ -467,10 +457,378 @@ function LivePlayer({ channel, all, onPick, onClose }: { channel: Channel; all: 
               )}
             </div>
             <div className="border-t border-white/5 px-4 py-2 text-[10px] text-white/35">
-              Polaris Live · source: toustream.xyz
+              Polaris Live · pure-player iframes
             </div>
           </aside>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Player frame for 24/7 channels — rotates through DaddyLive mirrors so a
+// single host outage doesn't kill playback. The iframe is the upstream's
+// bare HTML5 player (no website chrome).
+// ----------------------------------------------------------------------------
+function ChannelPlayerFrame({ channel }: { channel: Channel }) {
+  const [hostIdx, setHostIdx] = useState(0);
+  const [nonce, setNonce] = useState(0);
+  if (channel.dlhd == null) {
+    return (
+      <div className="absolute inset-0 grid place-items-center text-sm text-white/60">
+        This channel doesn't have a direct player yet.
+      </div>
+    );
+  }
+  const src = dlhdEmbed(channel.dlhd, hostIdx);
+  return (
+    <>
+      <iframe
+        key={`${channel.id}-${hostIdx}-${nonce}`}
+        src={src}
+        title={`${channel.name} — Live`}
+        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+        allowFullScreen
+        referrerPolicy="no-referrer"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+        className="absolute inset-0 h-full w-full"
+      />
+      <div className="absolute right-3 top-3 flex items-center gap-1.5">
+        <button
+          onClick={() => { setHostIdx((i) => (i + 1) % DLHD_HOSTS.length); setNonce((n) => n + 1); }}
+          className="liquid-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-white"
+          title="Try another stream server"
+        >
+          <RefreshCw className="h-3 w-3" /> Server {hostIdx + 1}/{DLHD_HOSTS.length}
+        </button>
+      </div>
+    </>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Live & upcoming sports — auto-discovered from streamed.pk public API.
+// Each match exposes one or more "sources" (servers); we pick the first
+// available stream and embed its pure player iframe.
+// ----------------------------------------------------------------------------
+type SportMatch = {
+  id: string;
+  title: string;
+  category: string;
+  date: number;
+  poster?: string;
+  popular?: boolean;
+  teams?: { home?: { name: string; badge?: string }; away?: { name: string; badge?: string } };
+  sources: { source: string; id: string }[];
+};
+type SportStream = {
+  id: string;
+  streamNo: number;
+  language: string;
+  hd: boolean;
+  embedUrl: string;
+  source: string;
+};
+
+const STREAMED_API = "https://streamed.pk";
+const SPORTS_ICONS: Record<string, string> = {
+  football: "⚽", soccer: "⚽", basketball: "🏀", baseball: "⚾",
+  "american-football": "🏈", hockey: "🏒", "ice-hockey": "🏒",
+  fight: "🥊", boxing: "🥊", mma: "🥋", ufc: "🥋",
+  tennis: "🎾", golf: "⛳", cricket: "🏏", rugby: "🏉",
+  motor: "🏎️", "motor-sports": "🏎️", f1: "🏎️", racing: "🏁",
+  cycling: "🚴", darts: "🎯", snooker: "🎱", esports: "🎮",
+  wrestling: "🤼", other: "🏟️",
+};
+const CAT_ACCENT: Record<string, string> = {
+  football: "40 160 90", basketball: "230 110 30", baseball: "30 80 180",
+  "american-football": "30 30 30", hockey: "180 200 230", fight: "200 30 30",
+  tennis: "200 220 60", golf: "60 160 80", cricket: "30 130 60",
+  rugby: "180 100 40", motor: "200 60 60", other: "120 60 200",
+};
+
+function badgeUrl(b?: string) {
+  if (!b) return "";
+  return `${STREAMED_API}/api/images/badge/${b}.webp`;
+}
+function posterUrl(p?: string) {
+  if (!p) return "";
+  return p.startsWith("http") ? p : `${STREAMED_API}${p}`;
+}
+
+function LiveSportsSection({
+  onPlay,
+}: {
+  onPlay: (m: SportMatch, s: SportStream) => void;
+}) {
+  const [live, setLive] = useState<SportMatch[]>([]);
+  const [upcoming, setUpcoming] = useState<SportMatch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [loadingMatchId, setLoadingMatchId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let dead = false;
+    const load = async () => {
+      setErr(null);
+      try {
+        const [liveRes, todayRes] = await Promise.all([
+          fetch(`${STREAMED_API}/api/matches/live`).then((r) => r.json() as Promise<SportMatch[]>),
+          fetch(`${STREAMED_API}/api/matches/all-today`).then((r) => r.json() as Promise<SportMatch[]>),
+        ]);
+        if (dead) return;
+        const now = Date.now();
+        setLive(liveRes.filter((m) => m.sources?.length).slice(0, 18));
+        setUpcoming(
+          todayRes
+            .filter((m) => m.sources?.length && m.date > now)
+            .sort((a, b) => a.date - b.date)
+            .slice(0, 18),
+        );
+      } catch (e) {
+        if (!dead) setErr(e instanceof Error ? e.message : "Couldn't reach the sports feed");
+      } finally {
+        if (!dead) setLoading(false);
+      }
+    };
+    void load();
+    const t = setInterval(load, 90_000);
+    return () => { dead = true; clearInterval(t); };
+  }, []);
+
+  const handlePlay = async (m: SportMatch) => {
+    setLoadingMatchId(m.id);
+    try {
+      for (const src of m.sources) {
+        try {
+          const streams = (await fetch(
+            `${STREAMED_API}/api/stream/${src.source}/${src.id}`,
+          ).then((r) => r.json())) as SportStream[];
+          const hd = streams.find((s) => s.hd) ?? streams[0];
+          if (hd?.embedUrl) {
+            onPlay(m, hd);
+            return;
+          }
+        } catch { /* try next source */ }
+      }
+      setErr("No working stream right now — try again in a minute.");
+    } finally {
+      setLoadingMatchId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Section title="Live & Upcoming Sports" icon={<Trophy className="h-4 w-4 text-amber-300" />}>
+        <div className="flex items-center gap-2 px-4 py-6 text-sm text-white/55 sm:px-6">
+          <Loader2 className="h-4 w-4 animate-spin" /> Finding live games…
+        </div>
+      </Section>
+    );
+  }
+  if (err && !live.length && !upcoming.length) {
+    return (
+      <Section title="Live & Upcoming Sports" icon={<Trophy className="h-4 w-4 text-amber-300" />}>
+        <div className="px-4 py-6 text-sm text-white/55 sm:px-6">{err}</div>
+      </Section>
+    );
+  }
+
+  return (
+    <>
+      {live.length > 0 && (
+        <Section
+          title="Live Games Right Now"
+          icon={<Trophy className="h-4 w-4 text-rose-300" />}
+        >
+          <div className="flex gap-3 overflow-x-auto px-4 pb-2 sm:px-6">
+            {live.map((m) => (
+              <MatchCard
+                key={m.id}
+                match={m}
+                live
+                loading={loadingMatchId === m.id}
+                onPlay={() => handlePlay(m)}
+              />
+            ))}
+          </div>
+        </Section>
+      )}
+      {upcoming.length > 0 && (
+        <Section
+          title="Coming Up Today"
+          icon={<Calendar className="h-4 w-4 text-amber-300" />}
+        >
+          <div className="flex gap-3 overflow-x-auto px-4 pb-2 sm:px-6">
+            {upcoming.map((m) => (
+              <MatchCard
+                key={m.id}
+                match={m}
+                loading={loadingMatchId === m.id}
+                onPlay={() => handlePlay(m)}
+              />
+            ))}
+          </div>
+        </Section>
+      )}
+    </>
+  );
+}
+
+function MatchCard({
+  match, live, loading, onPlay,
+}: {
+  match: SportMatch; live?: boolean; loading?: boolean; onPlay: () => void;
+}) {
+  const icon = SPORTS_ICONS[match.category] ?? SPORTS_ICONS.other;
+  const accent = CAT_ACCENT[match.category] ?? CAT_ACCENT.other;
+  const when = new Date(match.date);
+  const timeLabel = when.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const home = match.teams?.home; const away = match.teams?.away;
+  return (
+    <button
+      onClick={onPlay}
+      disabled={loading}
+      className="group relative flex w-64 shrink-0 flex-col gap-2 overflow-hidden rounded-xl border border-white/5 bg-stone-950/80 p-3 text-left transition hover:-translate-y-0.5 hover:border-amber-200/40 hover:bg-stone-900/90 disabled:opacity-60"
+      style={{ boxShadow: `inset 0 0 0 1px rgb(${accent}/0.22)` }}
+    >
+      <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">
+        <span className="flex items-center gap-1.5">
+          <span className="text-base leading-none">{icon}</span>
+          <span>{match.category.replace(/-/g, " ")}</span>
+        </span>
+        {live ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/90 px-1.5 py-0.5 text-[9px] font-black text-white">
+            <span className="h-1 w-1 rounded-full bg-white" /> LIVE
+          </span>
+        ) : (
+          <span className="text-amber-200/80">{timeLabel}</span>
+        )}
+      </div>
+      {home && away ? (
+        <div className="flex items-center justify-between gap-2 py-1">
+          <TeamBlock name={home.name} badge={home.badge} />
+          <span className="text-[10px] font-black text-white/40">VS</span>
+          <TeamBlock name={away.name} badge={away.badge} />
+        </div>
+      ) : (
+        <div className="line-clamp-2 py-1 text-sm font-bold text-amber-50">{match.title}</div>
+      )}
+      <div className="line-clamp-1 text-[11px] font-semibold text-amber-50/90">{match.title}</div>
+      <div className="flex items-center justify-between text-[10px] text-white/45">
+        <span>{match.sources.length} server{match.sources.length === 1 ? "" : "s"}</span>
+        <span className="inline-flex items-center gap-1 font-semibold text-amber-200/80">
+          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Radio className="h-3 w-3" />}
+          {loading ? "Connecting" : live ? "Watch" : "Set reminder"}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+function TeamBlock({ name, badge }: { name: string; badge?: string }) {
+  const [broken, setBroken] = useState(false);
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      {badge && !broken ? (
+        <img
+          src={badgeUrl(badge)}
+          alt=""
+          className="h-7 w-7 shrink-0 rounded bg-white/5 object-contain p-0.5"
+          onError={() => setBroken(true)}
+        />
+      ) : (
+        <div className="grid h-7 w-7 shrink-0 place-items-center rounded bg-white/10 text-[10px] font-black text-white/70">
+          {name.slice(0, 2).toUpperCase()}
+        </div>
+      )}
+      <div className="min-w-0 truncate text-xs font-semibold text-amber-50">{name}</div>
+    </div>
+  );
+}
+
+function SportsPlayer({
+  match, stream, onClose,
+}: {
+  match: SportMatch; stream: SportStream; onClose: () => void;
+}) {
+  const [src, setSrc] = useState(stream.embedUrl);
+  const [alts, setAlts] = useState<SportStream[]>([stream]);
+  const [altIdx, setAltIdx] = useState(0);
+  const icon = SPORTS_ICONS[match.category] ?? SPORTS_ICONS.other;
+
+  useEffect(() => {
+    let dead = false;
+    (async () => {
+      const collected: SportStream[] = [];
+      for (const s of match.sources) {
+        try {
+          const streams = (await fetch(
+            `${STREAMED_API}/api/stream/${s.source}/${s.id}`,
+          ).then((r) => r.json())) as SportStream[];
+          collected.push(...streams.filter((x) => x.embedUrl));
+        } catch { /* skip */ }
+      }
+      if (dead || collected.length === 0) return;
+      // De-dup
+      const seen = new Set<string>();
+      const dedup = collected.filter((s) => !seen.has(s.embedUrl) && seen.add(s.embedUrl));
+      const startIdx = Math.max(0, dedup.findIndex((s) => s.embedUrl === stream.embedUrl));
+      setAlts(dedup);
+      setAltIdx(startIdx);
+    })();
+    return () => { dead = true; };
+  }, [match.id, stream.embedUrl, match.sources]);
+
+  const switchTo = (i: number) => {
+    const next = alts[i];
+    if (!next) return;
+    setAltIdx(i);
+    setSrc(next.embedUrl);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex flex-col bg-black animate-[fadeIn_180ms_ease]">
+      <div
+        className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6"
+        style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.95) 100%)" }}
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="text-2xl leading-none">{icon}</span>
+          <div className="min-w-0">
+            <div className="truncate text-sm font-black text-amber-50">{match.title}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">
+              {match.category.replace(/-/g, " ")} · Stream {altIdx + 1}/{alts.length}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {alts.length > 1 && (
+            <button
+              onClick={() => switchTo((altIdx + 1) % alts.length)}
+              className="liquid-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white"
+              title="Try another server"
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Server
+            </button>
+          )}
+          <button onClick={onClose} className="liquid-glass rounded-full p-2 text-white" aria-label="Close player">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+      <div className="relative flex-1 overflow-hidden bg-black">
+        <iframe
+          key={src}
+          src={src}
+          title={match.title}
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          allowFullScreen
+          referrerPolicy="no-referrer"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+          className="absolute inset-0 h-full w-full"
+        />
       </div>
     </div>
   );
