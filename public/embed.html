@@ -53,33 +53,10 @@
       background: #000;
       font-size: 16px;
     }
-    #fsbtn {
-      position: fixed;
-      z-index: 2;
-      border: 1px solid rgba(255,255,255,.9);
-      border-radius: 6px;
-      background: rgba(0,0,0,.68);
-      color: #fff;
-      cursor: pointer;
-      line-height: 1;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #fsbtn:hover { background: rgba(255,255,255,.16); }
-    #fsbtn.hidden { display: none; }
-    @media (max-width: 767px) {
-      #fsbtn { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); font-size: 12px; padding: 7px 10px; }
-    }
-    @media (min-width: 768px) and (max-width: 1366px) {
-      #fsbtn { top: 12px; right: 12px; font-size: 14px; padding: 9px 14px; }
-    }
-    @media (min-width: 1367px) {
-      #fsbtn { top: 16px; right: 16px; font-size: 15px; padding: 10px 16px; }
-    }
   </style>
 </head>
 <body>
   <div id="loading">Loading…</div>
-  <button id="fsbtn" type="button" aria-label="Open fullscreen">⛶ Fullscreen</button>
   <iframe
     id="appFrame"
     src="https://educationcatlearningandtutoring.com"
@@ -90,7 +67,6 @@
   <script>
     const frame = document.getElementById('appFrame');
     const loading = document.getElementById('loading');
-    const btn = document.getElementById('fsbtn');
 
     function sizeToViewport() {
       const width = `${window.innerWidth}px`;
@@ -103,23 +79,10 @@
       frame.style.height = height;
     }
 
-    async function goFullscreen() {
-      const target = document.documentElement;
-      const request = target.requestFullscreen || target.webkitRequestFullscreen || target.msRequestFullscreen;
-      if (request) {
-        try { await request.call(target); } catch (error) {}
-      }
-      sizeToViewport();
-      if (document.fullscreenElement || document.webkitFullscreenElement) btn.classList.add('hidden');
-    }
-
     sizeToViewport();
     window.addEventListener('resize', sizeToViewport, { passive: true });
     window.addEventListener('orientationchange', () => setTimeout(sizeToViewport, 250), { passive: true });
     frame.addEventListener('load', () => { loading.style.display = 'none'; sizeToViewport(); });
-    btn.addEventListener('click', goFullscreen);
-    document.addEventListener('fullscreenchange', () => btn.classList.toggle('hidden', Boolean(document.fullscreenElement)));
-    document.addEventListener('webkitfullscreenchange', () => btn.classList.toggle('hidden', Boolean(document.webkitFullscreenElement)));
   </script>
 </body>
 </html>
