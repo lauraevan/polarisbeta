@@ -354,6 +354,13 @@ function SecurityPage() {
       {panel === "me" && (
         <FloatingPanel title="Your connection" onClose={() => setPanel(null)}>
           <div className="font-mono text-lg font-bold tabular-nums">{me?.ip || "—"}</div>
+          {me?.candidates && me.candidates.length > 1 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {me.candidates.map((c) => (
+                <span key={c} className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${c === me.ip ? "bg-cyan-500/20 text-cyan-100" : "bg-white/5 text-white/60"}`}>{c}</span>
+              ))}
+            </div>
+          )}
           {me?.geo ? (
             <div className="mt-2 space-y-1 text-[11px] text-white/70">
               <Row k="Location" v={`${me.geo.city ?? "?"}, ${me.geo.region ?? ""} ${me.geo.country ?? ""}`} />
