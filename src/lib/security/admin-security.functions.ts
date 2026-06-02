@@ -1,3 +1,5 @@
+type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
+type ProfileLite = { id: string; username: string | null; display_name: string | null; is_owner: boolean; is_banned: boolean } & { [k: string]: Json };
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader, getRequestIP } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -99,19 +101,19 @@ export const adminLookupTarget = createServerFn({ method: "POST" })
     const looksLikeIp = /^[0-9a-f.:]+$/i.test(q) && (q.includes(".") || q.includes(":"));
 
     // Resolve to a profile when possible
-    let profile: Record<string, string | number | boolean | null> | null = null;
+    let profile: ProfileLite | null = null;
     if (isUuid) {
       const r = await supabaseAdmin.from("profiles").select("*").eq("id", q).maybeSingle();
-      profile = (r.data as typeof profile) ?? null;
+      profile = (r.data as unknown as ProfileLite) ?? null;
     }
     if (!profile) {
       const r = await supabaseAdmin.from("profiles").select("*").ilike("username", q).maybeSingle();
-      profile = (r.data as typeof profile) ?? null;
+      profile = (r.data as unknown as ProfileLite) ?? null;
     }
 
     // Sessions: by user_id, username, ip, or fingerprint
     let sessQ = supabaseAdmin.from("device_sessions").select("*").order("last_seen_at", { ascending: false }).limit(500);
-    if (profile?.id) sessQ = sessQ.eq("user_id", profile.id as string);
+    if (profile?.id) sessQ = sessQ.eq("user_id", profile.id);
     else if (looksLikeIp) sessQ = sessQ.eq("ip", q);
     else sessQ = sessQ.or(`username.ilike.${q},device_fingerprint.eq.${q}`);
     if (data.filters?.country) sessQ = sessQ.eq("country", data.filters.country);
@@ -121,7 +123,7 @@ export const adminLookupTarget = createServerFn({ method: "POST" })
 
     // Events
     let evQ = supabaseAdmin.from("security_events").select("*").order("created_at", { ascending: false }).limit(500);
-    if (profile?.id) evQ = evQ.eq("user_id", profile.id as string);
+    if (profile?.id) evQ = evQ.eq("user_id", profile.id);
     else if (looksLikeIp) evQ = evQ.eq("ip", q);
     else evQ = evQ.or(`username.ilike.${q},device_fingerprint.eq.${q}`);
     if (data.filters?.since) evQ = evQ.gte("created_at", data.filters.since);
@@ -138,13 +140,13 @@ export const adminLookupTarget = createServerFn({ method: "POST" })
     if (profile?.id) orParts.push(`and(scope.eq.user,value.eq.${profile.id})`);
     for (const ip of ips) orParts.push(`and(scope.eq.ip,value.eq.${ip})`);
     for (const fp of fps) orParts.push(`and(scope.eq.device,value.eq.${fp})`);
-    let bans: Array<Record<string, unknown>> = [];
+    let bans: Json[] = [];
     if (orParts.length) {
       const { data: targets } = await supabaseAdmin
         .from("ban_targets")
         .select("*, bans(*)")
         .or(orParts.join(","));
-      bans = (targets ?? []) as Array<Record<string, unknown>>;
+      bans = (targets ?? []) as unknown as Json[];
     }
 
     return {
