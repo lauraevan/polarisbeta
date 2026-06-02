@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   Bookmark,
   Handshake,
+  Layers,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const nav = [
   { to: "/", label: "Home", icon: Home },
   { to: "/games", label: "Games", icon: Gamepad2 },
   { to: "/media", label: "Cinema", icon: Tv },
+  { to: "/deck", label: "Movie Deck", icon: Layers },
   { to: "/browser", label: "Browser", icon: Globe2 },
   { to: "/apps", label: "Apps", icon: LayoutGrid },
   { to: "/ai", label: "AI Tools", icon: Sparkles },
