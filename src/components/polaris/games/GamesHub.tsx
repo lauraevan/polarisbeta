@@ -251,7 +251,28 @@ export function GamesHub() {
         }}
       />
       <SteamSplash />
-      <div className="mx-auto flex max-w-[1600px] gap-6 px-4 py-6 pb-32 sm:px-6">
+      {/* Mobile horizontal tab bar — lives OUTSIDE the flex row so it doesn't squeeze beside main */}
+      <div className="liquid-glass-themed sticky top-0 z-10 mb-2 px-3 py-2 md:hidden">
+        <div className="flex items-center gap-1 overflow-x-auto">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                  active ? "bg-white text-black" : "text-white/65 hover:text-white"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="mx-auto flex max-w-[1600px] gap-6 px-3 py-4 pb-32 sm:px-6 sm:py-6">
         {/* Icon rail — wallpaper bleeds behind */}
         <aside className="liquid-glass-themed sticky top-6 hidden h-fit w-16 shrink-0 self-start rounded-2xl p-2 md:block">
           {TABS.map((t) => {
@@ -282,28 +303,6 @@ export function GamesHub() {
             );
           })}
         </aside>
-
-        {/* Mobile top tabs */}
-        <div className="liquid-glass-themed sticky top-0 z-10 -mx-4 mb-4 px-4 py-2 md:hidden">
-          <div className="flex items-center gap-1 overflow-x-auto">
-            {TABS.map((t) => {
-              const Icon = t.icon;
-              const active = tab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    active ? "bg-white text-black" : "text-white/65 hover:text-white"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
         <main className="min-w-0 flex-1">
           {tab === "home" && <HomeFeed onJump={setTab} onPlay={setPlaying} />}
