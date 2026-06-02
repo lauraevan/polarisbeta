@@ -15,6 +15,10 @@ import {
   Mic2,
   Disc3,
   Crown,
+  Clock,
+  Share2,
+  Sliders,
+  ListOrdered,
 } from "lucide-react";
 import {
   vaporSearch,
@@ -81,12 +85,118 @@ export function PolarisMusic() {
   const [repeat, setRepeat] = useState<"off" | "all" | "one">("off");
   const [loadingStream, setLoadingStream] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
+  const [showQueue, setShowQueue] = useState(false);
+  // Sleep timer (minutes). 0 = off. When time elapses, fade out and pause.
+  const [sleepMin, setSleepMin] = useState(0);
+  const [sleepRemaining, setSleepRemaining] = useState(0);
+  // Crossfade (Pro only — seconds, 0-12)
+  const [crossfade, setCrossfade] = useState(0);
+  // EQ preset (Pro only)
+  const [eq, setEq] = useState<"flat" | "bass" | "vocal" | "treble">("flat");
   const [lyrics, setLyrics] = useState<{ synced: Lyric[]; plain: string }>({
     synced: [],
     plain: "",
   });
 
   const current = queue[qIdx] ?? null;
+
+  // Sleep timer countdown
+  useEffect(() => {
+    if (!sleepMin) {
+      setSleepRemaining(0);
+      return;
+    }
+    setSleepRemaining(sleepMin * 60);
+    const i = window.setInterval(() => {
+      setSleepRemaining((s) => {
+        if (s <= 1) {
+          const a = audioRef.current;
+          if (a) {
+            // quick fade then pause
+            const start = a.volume;
+            const steps = 20;
+            let k = 0;
+            const fade = window.setInterval(() => {
+              k++;
+              if (a) a.volume = Math.max(0, start * (1 - k / steps));
+              if (k >= steps) {
+                window.clearInterval(fade);
+                a.pause();
+                a.volume = start;
+                setPlaying(false);
+              }
+            }, 80);
+          }
+          setSleepMin(0);
+          window.clearInterval(i);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(i);
+  }, [sleepMin]);
+
+  // Apply Web Audio EQ for Pro users
+  useEffect(() => {
+    if (!pro) return;
+    const a = audioRef.current;
+    if (!a) return;
+    type PolarisAudio = HTMLAudioElement & {
+      __polarisCtx?: AudioContext;
+      __polarisBass?: BiquadFilterNode;
+      __polarisMid?: BiquadFilterNode;
+      __polarisTreble?: BiquadFilterNode;
+    };
+    const pa = a as PolarisAudio;
+    try {
+      if (!pa.__polarisCtx) {
+        const Ctor = (window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext) as
+          typeof AudioContext;
+        const ctx = new Ctor();
+        const src = ctx.createMediaElementSource(a);
+        const bass = ctx.createBiquadFilter();
+        bass.type = "lowshelf";
+        bass.frequency.value = 200;
+        const mid = ctx.createBiquadFilter();
+        mid.type = "peaking";
+        mid.frequency.value = 1500;
+        mid.Q.value = 1;
+        const treble = ctx.createBiquadFilter();
+        treble.type = "highshelf";
+        treble.frequency.value = 3500;
+        src.connect(bass).connect(mid).connect(treble).connect(ctx.destination);
+        pa.__polarisCtx = ctx;
+        pa.__polarisBass = bass;
+        pa.__polarisMid = mid;
+        pa.__polarisTreble = treble;
+      }
+      const presets: Record<string, [number, number, number]> = {
+        flat: [0, 0, 0],
+        bass: [8, -2, -1],
+        vocal: [-2, 5, 2],
+        treble: [-2, 1, 6],
+      };
+      const [b, m, t] = presets[eq];
+      if (pa.__polarisBass) pa.__polarisBass.gain.value = b;
+      if (pa.__polarisMid) pa.__polarisMid.gain.value = m;
+      if (pa.__polarisTreble) pa.__polarisTreble.gain.value = t;
+    } catch {
+      /* AudioContext may fail on first call before a user gesture */
+    }
+  }, [eq, pro, current?.id]);
+
+  function shareCurrent() {
+    if (!current) return;
+    const text = `${current.title} — ${current.artist}`;
+    const url = window.location.origin + "/music";
+    if (navigator.share) {
+      void navigator.share({ title: text, text, url }).catch(() => {});
+    } else {
+      void navigator.clipboard?.writeText(`${text} · ${url}`);
+    }
+  }
 
   // Search debounce
   useEffect(() => {
@@ -372,25 +482,117 @@ export function PolarisMusic() {
         </main>
 
         {/* Lyrics / queue right pane */}
-        {showLyrics && current && (
+        {(showLyrics || showQueue) && (
           <aside className="hidden w-80 shrink-0 flex-col rounded-2xl bg-zinc-950/80 p-4 lg:flex">
             <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wider text-white/60">
-              <Mic2 className="h-4 w-4" /> Lyrics
+              {showQueue ? <><ListOrdered className="h-4 w-4" /> Up next</> : <><Mic2 className="h-4 w-4" /> Lyrics</>}
+              <div className="ml-auto flex gap-1">
+                <button
+                  onClick={() => setShowLyrics(true)}
+                  className={`rounded px-1.5 py-0.5 text-[10px] ${showLyrics ? "bg-white/15" : "hover:bg-white/10"}`}
+                >
+                  Lyrics
+                </button>
+                <button
+                  onClick={() => { setShowQueue(true); setShowLyrics(false); }}
+                  className={`rounded px-1.5 py-0.5 text-[10px] ${showQueue && !showLyrics ? "bg-white/15" : "hover:bg-white/10"}`}
+                >
+                  Queue
+                </button>
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto pr-2 text-sm leading-7">
-              {lyrics.synced.length ? (
-                lyrics.synced.map((l, i) => (
-                  <div
-                    key={i}
-                    className={`transition ${i === activeLyricIdx ? "text-white" : "text-white/35"}`}
+            {showQueue && !showLyrics ? (
+              <div className="flex-1 space-y-1 overflow-y-auto pr-1">
+                {queue.length === 0 && <div className="text-xs text-white/40">Queue is empty.</div>}
+                {queue.map((t, i) => (
+                  <button
+                    key={`${t.id}-${i}`}
+                    onClick={() => setQIdx(i)}
+                    className={`flex w-full items-center gap-2 rounded-lg p-1.5 text-left ${i === qIdx ? "bg-white/10" : "hover:bg-white/5"}`}
                   >
-                    {l.line || "♪"}
+                    <img src={t.image} className="h-8 w-8 rounded object-cover" alt="" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-medium">{t.title}</div>
+                      <div className="truncate text-[10px] text-white/50">{t.artist}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto pr-2 text-sm leading-7">
+                {lyrics.synced.length ? (
+                  lyrics.synced.map((l, i) => (
+                    <div
+                      key={i}
+                      className={`transition ${i === activeLyricIdx ? "text-white" : "text-white/35"}`}
+                    >
+                      {l.line || "♪"}
+                    </div>
+                  ))
+                ) : lyrics.plain ? (
+                  <pre className="whitespace-pre-wrap text-white/70">{lyrics.plain}</pre>
+                ) : (
+                  <div className="text-white/40">No lyrics found.</div>
+                )}
+              </div>
+            )}
+
+            {/* Pro extras */}
+            <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-white/55">
+                <Clock className="h-3 w-3" /> Sleep timer
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {[0, 5, 15, 30, 60].map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setSleepMin(m)}
+                    className={`rounded-full px-2 py-0.5 text-[10px] ${sleepMin === m ? "bg-white text-black" : "bg-white/5 hover:bg-white/10"}`}
+                  >
+                    {m === 0 ? "Off" : `${m}m`}
+                  </button>
+                ))}
+                {sleepRemaining > 0 && (
+                  <span className="ml-auto text-[10px] tabular-nums text-white/55">
+                    {Math.floor(sleepRemaining / 60)}:{String(sleepRemaining % 60).padStart(2, "0")}
+                  </span>
+                )}
+              </div>
+              {pro ? (
+                <>
+                  <div className="flex items-center gap-2 pt-1 text-[10px] uppercase tracking-wider text-amber-300">
+                    <Sliders className="h-3 w-3" /> EQ · VIP
                   </div>
-                ))
-              ) : lyrics.plain ? (
-                <pre className="whitespace-pre-wrap text-white/70">{lyrics.plain}</pre>
+                  <div className="flex flex-wrap gap-1">
+                    {(["flat", "bass", "vocal", "treble"] as const).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setEq(p)}
+                        className={`rounded-full px-2 py-0.5 text-[10px] capitalize ${eq === p ? "bg-amber-400 text-black" : "bg-white/5 hover:bg-white/10"}`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 pt-1 text-[10px] uppercase tracking-wider text-amber-300">
+                    Crossfade · {crossfade}s
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={12}
+                    value={crossfade}
+                    onChange={(e) => setCrossfade(Number(e.target.value))}
+                    className="w-full accent-amber-400"
+                  />
+                </>
               ) : (
-                <div className="text-white/40">No lyrics found.</div>
+                <Link
+                  to="/premium"
+                  className="mt-1 flex items-center justify-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-pink-500 px-2 py-1 text-[10px] font-bold text-black"
+                >
+                  <Crown className="h-3 w-3" /> Unlock EQ + Crossfade
+                </Link>
               )}
             </div>
           </aside>
@@ -400,6 +602,7 @@ export function PolarisMusic() {
       {/* Player bar */}
       <NowPlaying
         current={current}
+        pro={pro}
         playing={playing}
         loadingStream={loadingStream}
         progress={progress}
@@ -409,6 +612,8 @@ export function PolarisMusic() {
         repeat={repeat}
         liked={current ? isLiked(current.id) : false}
         showLyrics={showLyrics}
+        showQueue={showQueue}
+        sleepActive={sleepRemaining > 0}
         onTogglePlay={togglePlay}
         onNext={next}
         onPrev={prev}
@@ -425,7 +630,9 @@ export function PolarisMusic() {
           setRepeat((r) => (r === "off" ? "all" : r === "all" ? "one" : "off"))
         }
         onLike={() => current && onToggleLike(current)}
-        onToggleLyrics={() => setShowLyrics((s) => !s)}
+        onToggleLyrics={() => { setShowLyrics((s) => !s); setShowQueue(false); }}
+        onToggleQueue={() => { setShowQueue((s) => !s); setShowLyrics(false); }}
+        onShare={shareCurrent}
       />
 
       <audio ref={audioRef} preload="auto" />
