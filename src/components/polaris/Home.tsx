@@ -206,17 +206,22 @@ function HomeWeb() {
 }
 
 function DateStamp() {
-  const [now, setNow] = useState(() => new Date());
+  // Render nothing on the server to avoid SSR/CSR weekday mismatch when
+  // the user's local timezone differs from the server's (e.g. Monday local
+  // vs. Tuesday UTC). We mount on the client and then show the weekday.
+  const [label, setLabel] = useState<string | null>(null);
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 60_000);
+    const update = () => setLabel(new Date().toLocaleDateString(undefined, { weekday: "long" }));
+    update();
+    const t = setInterval(update, 60_000);
     return () => clearInterval(t);
   }, []);
-  const label = now.toLocaleDateString(undefined, {
-    weekday: "long",
-  });
   return (
-    <div className="mb-3 lg:mb-4 text-2xl lg:text-4xl font-light tracking-wide text-white/80">
-      {label}
+    <div
+      suppressHydrationWarning
+      className="mb-3 lg:mb-4 text-2xl lg:text-4xl font-light tracking-wide text-white/80"
+    >
+      {label ?? "\u00A0"}
     </div>
   );
 }

@@ -1,5 +1,9 @@
-import { useMemo, useState } from "react";
-import { Radio, Search, X, Tv2, Trophy, Newspaper, Film, Music2, Baby, FlaskConical, Globe2, Flame, Star, Volume2, Maximize2, ListVideo, ChevronRight } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Radio, Search, X, Tv2, Trophy, Newspaper, Film, Music2, Baby, FlaskConical,
+  Globe2, Flame, Star, Volume2, Maximize2, ListVideo, ChevronRight,
+  Loader2, RefreshCw, Calendar,
+} from "lucide-react";
 
 type Channel = {
   id: string;
@@ -13,60 +17,69 @@ type Channel = {
   highlight?: boolean;
   now?: string;            // what's airing now (display-only)
   next?: string;           // up next
+  /** DaddyLive numeric stream id — pure player iframe, no website chrome. */
+  dlhd?: number;
 };
 
 type Category = "All" | "Sports" | "News" | "Entertainment" | "Movies" | "Kids" | "Music" | "Documentary";
 
-// toustream.xyz exposes per-channel pages; we point each tile at its slug
-// instead of dumping users on the homepage. The custom Polaris chrome
-// (top bar, guide, controls) wraps the stream so it never feels like a
-// raw embed.
-const SRC_BASE = "https://toustream.xyz";
-function channelSrc(c: Channel) {
-  return `${SRC_BASE}/watch/${c.id}`;
+// Pure-player iframes only — no third-party website chrome. DaddyLive
+// (dlhd.pk) serves a bare HTML5 player at /embed/stream-{id}.php, which is
+// exactly what we want: the user sees the video, not a wrapper site. We
+// keep a rotating mirror list so a single DNS hiccup doesn't kill playback.
+const DLHD_HOSTS = ["dlhd.pk", "thedaddy.top", "dlhd.click", "thedaddy.click"];
+function dlhdEmbed(id: number, hostIndex = 0) {
+  const host = DLHD_HOSTS[hostIndex % DLHD_HOSTS.length];
+  return `https://${host}/embed/stream-${id}.php`;
 }
 
+// Only channels with known DaddyLive IDs are kept — every tile maps to a
+// pure HTML5 player iframe (no third-party website wrapper).
 const CHANNELS: Channel[] = [
   // Sports
-  { id: "sky-sports",      name: "Sky Sports",            category: "Sports",        domain: "skysports.com",        emoji: "⚽", accent: "5 95 200",   tagline: "Premier League · F1 · Boxing", popular: true, highlight: true, now: "Premier League Live",        next: "Saturday Football Highlights" },
-  { id: "espn",            name: "ESPN",                  category: "Sports",        domain: "espn.com",             emoji: "🏈", accent: "200 30 30",  tagline: "NFL · NBA · UFC",              popular: true, highlight: true, now: "NBA Tonight",                next: "SportsCenter" },
-  { id: "bt-sport",        name: "TNT Sports",            category: "Sports",        domain: "tntsports.co.uk",      emoji: "🥊", accent: "230 60 30",  tagline: "UCL · Premiership Rugby",                                  now: "Champions League Magazine",   next: "Boxing Tonight" },
-  { id: "fox-sports",      name: "FOX Sports",            category: "Sports",        domain: "foxsports.com",        emoji: "⚾", accent: "30 50 160",  tagline: "MLB · College Football",                                    now: "MLB Game of the Week",        next: "College Gameday" },
-  { id: "nba-tv",          name: "NBA TV",                category: "Sports",        domain: "nba.com",              emoji: "🏀", accent: "200 80 30",  tagline: "League Pass · Live Games",      popular: true,                  now: "NBA League Pass",             next: "GameTime" },
-  { id: "dazn",            name: "DAZN",                  category: "Sports",        domain: "dazn.com",             emoji: "🥋", accent: "240 220 40", tagline: "Boxing · MMA",                                                now: "Fight Night",                 next: "DAZN Boxing Show" },
+  { id: "sky-sports-main",   name: "Sky Sports Main Event", category: "Sports",        domain: "skysports.com",        emoji: "⚽", accent: "5 95 200",   tagline: "Premier League · F1 · Boxing", popular: true, highlight: true, dlhd: 130 },
+  { id: "sky-sports-pl",     name: "Sky Sports Premier League", category: "Sports",    domain: "skysports.com",        emoji: "🏟️", accent: "5 95 200",   tagline: "Live Premier League",          popular: true,                  dlhd: 131 },
+  { id: "sky-sports-football", name: "Sky Sports Football", category: "Sports",        domain: "skysports.com",        emoji: "⚽", accent: "5 95 200",   tagline: "EFL · International",                                          dlhd: 134 },
+  { id: "sky-sports-f1",     name: "Sky Sports F1",         category: "Sports",        domain: "skysports.com",        emoji: "🏎️", accent: "200 30 30",  tagline: "Formula 1 · MotoGP",                                          dlhd: 137 },
+  { id: "tnt-sports-1",      name: "TNT Sports 1",          category: "Sports",        domain: "tntsports.co.uk",      emoji: "🥊", accent: "230 60 30",  tagline: "UCL · Premiership Rugby",      highlight: true,                dlhd: 132 },
+  { id: "tnt-sports-2",      name: "TNT Sports 2",          category: "Sports",        domain: "tntsports.co.uk",      emoji: "🏉", accent: "230 60 30",  tagline: "Champions League nights",                                     dlhd: 133 },
+  { id: "espn",              name: "ESPN",                  category: "Sports",        domain: "espn.com",             emoji: "🏈", accent: "200 30 30",  tagline: "NFL · NBA · UFC",              popular: true, highlight: true, dlhd: 44 },
+  { id: "espn2",             name: "ESPN2",                 category: "Sports",        domain: "espn.com",             emoji: "🥎", accent: "200 30 30",  tagline: "College · Tennis",                                            dlhd: 45 },
+  { id: "fs1",               name: "FOX Sports 1",          category: "Sports",        domain: "foxsports.com",        emoji: "⚾", accent: "30 50 160",  tagline: "MLB · College Football",                                      dlhd: 51 },
+  { id: "nba-tv",            name: "NBA TV",                category: "Sports",        domain: "nba.com",              emoji: "🏀", accent: "200 80 30",  tagline: "League Pass · Live Games",     popular: true,                  dlhd: 75 },
+  { id: "nfl-network",       name: "NFL Network",           category: "Sports",        domain: "nfl.com",              emoji: "🏈", accent: "30 30 30",   tagline: "24/7 NFL",                                                    dlhd: 100 },
+  { id: "mlb-network",       name: "MLB Network",           category: "Sports",        domain: "mlb.com",              emoji: "⚾", accent: "30 60 160",  tagline: "Baseball nightly",                                            dlhd: 76 },
 
-  { id: "bbc-news",        name: "BBC News",              category: "News",          domain: "bbc.co.uk",            emoji: "🌍", accent: "190 20 20",  tagline: "Global news · 24/7",            popular: true, highlight: true, now: "BBC Newsroom Live",           next: "World News Today" },
-  { id: "cnn",             name: "CNN",                   category: "News",          domain: "cnn.com",              emoji: "📰", accent: "200 30 30",  tagline: "Breaking news",                 popular: true,                  now: "CNN Newsroom",                next: "Anderson Cooper 360" },
-  { id: "sky-news",        name: "Sky News",              category: "News",          domain: "sky.com",              emoji: "📡", accent: "10 90 200",  tagline: "UK & World",                                                  now: "Sky News Tonight",            next: "The World" },
-  { id: "al-jazeera",      name: "Al Jazeera",            category: "News",          domain: "aljazeera.com",        emoji: "🕌", accent: "210 150 40", tagline: "International perspectives",                                  now: "Newshour",                    next: "Inside Story" },
-  { id: "fox-news",        name: "FOX News",              category: "News",          domain: "foxnews.com",          emoji: "🦅", accent: "30 60 160",  tagline: "US politics",                                                 now: "America Reports",             next: "Special Report" },
-  { id: "msnbc",           name: "MSNBC",                 category: "News",          domain: "msnbc.com",            emoji: "🎙️", accent: "20 130 220", tagline: "Analysis & commentary",                                       now: "Morning Joe",                 next: "Deadline: White House" },
+  // News
+  { id: "bbc-news",          name: "BBC News",              category: "News",          domain: "bbc.co.uk",            emoji: "🌍", accent: "190 20 20",  tagline: "Global news · 24/7",           popular: true, highlight: true, dlhd: 80 },
+  { id: "sky-news",          name: "Sky News",              category: "News",          domain: "sky.com",              emoji: "📡", accent: "10 90 200",  tagline: "UK & World",                                                  dlhd: 514 },
+  { id: "cnn",               name: "CNN",                   category: "News",          domain: "cnn.com",              emoji: "📰", accent: "200 30 30",  tagline: "Breaking news",                popular: true,                  dlhd: 13 },
+  { id: "fox-news",          name: "FOX News",              category: "News",          domain: "foxnews.com",          emoji: "🦅", accent: "30 60 160",  tagline: "US politics",                                                 dlhd: 27 },
+  { id: "msnbc",             name: "MSNBC",                 category: "News",          domain: "msnbc.com",            emoji: "🎙️", accent: "20 130 220", tagline: "Analysis & commentary",                                       dlhd: 121 },
+  { id: "al-jazeera",        name: "Al Jazeera English",    category: "News",          domain: "aljazeera.com",        emoji: "🕌", accent: "210 150 40", tagline: "International perspectives",                                  dlhd: 36 },
 
-  { id: "bbc-one",         name: "BBC One",               category: "Entertainment", domain: "bbc.co.uk",            emoji: "🎭", accent: "180 30 90",  tagline: "Flagship UK channel",           popular: true, highlight: true, now: "EastEnders",                  next: "Strictly Come Dancing" },
-  { id: "itv",             name: "ITV",                   category: "Entertainment", domain: "itv.com",              emoji: "📺", accent: "230 60 130", tagline: "Drama · Reality",                                             now: "Coronation Street",           next: "Britain's Got Talent" },
-  { id: "channel4",        name: "Channel 4",             category: "Entertainment", domain: "channel4.com",         emoji: "🎬", accent: "240 80 130", tagline: "Bold storytelling",                                           now: "Channel 4 News",              next: "Gogglebox" },
-  { id: "abc",             name: "ABC",                   category: "Entertainment", domain: "abc.com",              emoji: "🎤", accent: "30 30 30",   tagline: "US prime time",                                               now: "Jeopardy!",                   next: "ABC World News Tonight" },
-  { id: "nbc",             name: "NBC",                   category: "Entertainment", domain: "nbc.com",              emoji: "🦚", accent: "120 60 200", tagline: "SNL · Late Night",                                            now: "The Tonight Show",            next: "Saturday Night Live" },
-  { id: "cbs",             name: "CBS",                   category: "Entertainment", domain: "cbs.com",              emoji: "👁️", accent: "30 80 180",  tagline: "Drama · Comedy",                                              now: "60 Minutes",                  next: "The Late Show" },
+  // Entertainment
+  { id: "bbc-one",           name: "BBC One",               category: "Entertainment", domain: "bbc.co.uk",            emoji: "🎭", accent: "180 30 90",  tagline: "Flagship UK channel",          popular: true,                  dlhd: 81 },
+  { id: "itv1",              name: "ITV1",                  category: "Entertainment", domain: "itv.com",              emoji: "📺", accent: "230 60 130", tagline: "Drama · Reality",                                             dlhd: 12 },
+  { id: "channel4",          name: "Channel 4",             category: "Entertainment", domain: "channel4.com",         emoji: "🎬", accent: "240 80 130", tagline: "Bold storytelling",                                           dlhd: 14 },
 
-  { id: "hbo",             name: "HBO",                   category: "Movies",        domain: "hbo.com",              emoji: "🎞️", accent: "120 60 200", tagline: "Premium cinema",                popular: true, highlight: true, now: "Succession Marathon",         next: "House of the Dragon" },
-  { id: "amc",             name: "AMC",                   category: "Movies",        domain: "amc.com",              emoji: "🍿", accent: "200 30 30",  tagline: "Cinematic series",                                            now: "Breaking Bad Marathon",       next: "The Walking Dead" },
-  { id: "tcm",             name: "Turner Classics",       category: "Movies",        domain: "tcm.com",              emoji: "🎟️", accent: "180 120 30", tagline: "Classic cinema",                                              now: "Casablanca",                  next: "Citizen Kane" },
-  { id: "fxm",             name: "FX Movies",             category: "Movies",        domain: "fxnetworks.com",       emoji: "🎥", accent: "20 20 20",   tagline: "Blockbusters & cult",                                         now: "Logan",                       next: "The Revenant" },
+  // Movies
+  { id: "hbo",               name: "HBO",                   category: "Movies",        domain: "hbo.com",              emoji: "🎞️", accent: "120 60 200", tagline: "Premium cinema",               popular: true, highlight: true, dlhd: 169 },
+  { id: "amc",               name: "AMC",                   category: "Movies",        domain: "amc.com",              emoji: "🍿", accent: "200 30 30",  tagline: "Cinematic series",                                            dlhd: 174 },
 
-  { id: "cartoon-network", name: "Cartoon Network",       category: "Kids",          domain: "cartoonnetwork.com",   emoji: "🐰", accent: "30 30 30",   tagline: "Animation hub",                 popular: true,                  now: "Adventure Time",              next: "Regular Show" },
-  { id: "disney-channel",  name: "Disney Channel",        category: "Kids",          domain: "disney.com",           emoji: "🏰", accent: "40 60 200",  tagline: "Family favorites",              popular: true,                  now: "Bluey",                       next: "Mickey Mouse Funhouse" },
-  { id: "nick",            name: "Nickelodeon",           category: "Kids",          domain: "nick.com",             emoji: "🟧", accent: "230 110 30", tagline: "SpongeBob & more",                                            now: "SpongeBob SquarePants",       next: "PAW Patrol" },
-  { id: "boomerang",       name: "Boomerang",             category: "Kids",          domain: "boomerang.com",        emoji: "🪃", accent: "240 180 40", tagline: "Retro toons",                                                 now: "Looney Tunes",                next: "Tom and Jerry" },
+  // Kids
+  { id: "cartoon-network",   name: "Cartoon Network",       category: "Kids",          domain: "cartoonnetwork.com",   emoji: "🐰", accent: "30 30 30",   tagline: "Animation hub",                popular: true,                  dlhd: 11 },
+  { id: "disney-channel",    name: "Disney Channel",        category: "Kids",          domain: "disney.com",           emoji: "🏰", accent: "40 60 200",  tagline: "Family favorites",             popular: true,                  dlhd: 19 },
+  { id: "nick",              name: "Nickelodeon",           category: "Kids",          domain: "nick.com",             emoji: "🟧", accent: "230 110 30", tagline: "SpongeBob & more",                                            dlhd: 88 },
 
-  { id: "mtv",             name: "MTV",                   category: "Music",         domain: "mtv.com",              emoji: "🎵", accent: "230 60 30",  tagline: "Pop & culture",                 popular: true,                  now: "MTV Hits Hour",               next: "Ridiculousness" },
-  { id: "vh1",             name: "VH1",                   category: "Music",         domain: "vh1.com",              emoji: "🎼", accent: "240 50 130", tagline: "Hits & throwbacks",                                           now: "2000s Hip-Hop Hour",          next: "Behind the Music" },
-  { id: "mtv-live",        name: "MTV Live",              category: "Music",         domain: "mtv.com",              emoji: "🎤", accent: "230 60 30",  tagline: "Concert specials",                                            now: "Coachella Replay",            next: "Unplugged" },
+  // Music
+  { id: "mtv",               name: "MTV",                   category: "Music",         domain: "mtv.com",              emoji: "🎵", accent: "230 60 30",  tagline: "Pop & culture",                                                dlhd: 26 },
 
-  { id: "natgeo",          name: "National Geographic",   category: "Documentary",   domain: "nationalgeographic.com", emoji: "🌋", accent: "230 200 30", tagline: "Earth · Science",             popular: true, highlight: true, now: "Wild Yellowstone",            next: "Cosmos" },
-  { id: "discovery",       name: "Discovery",             category: "Documentary",   domain: "discovery.com",        emoji: "🔭", accent: "30 80 180",  tagline: "Real-world adventures",                                       now: "Deadliest Catch",             next: "Gold Rush" },
-  { id: "history",         name: "History",               category: "Documentary",   domain: "history.com",          emoji: "📜", accent: "180 100 40", tagline: "Stories that shaped us",                                      now: "Forged in Fire",              next: "Ancient Aliens" },
-  { id: "animal-planet",   name: "Animal Planet",         category: "Documentary",   domain: "animalplanet.com",     emoji: "🦁", accent: "120 180 40", tagline: "Wildlife stories",                                            now: "The Zoo",                     next: "North Woods Law" },
+  // Documentary
+  { id: "natgeo",            name: "National Geographic",   category: "Documentary",   domain: "nationalgeographic.com", emoji: "🌋", accent: "230 200 30", tagline: "Earth · Science",            popular: true, highlight: true, dlhd: 79 },
+  { id: "discovery",         name: "Discovery",             category: "Documentary",   domain: "discovery.com",        emoji: "🔭", accent: "30 80 180",  tagline: "Real-world adventures",                                       dlhd: 18 },
+  { id: "history",           name: "History",               category: "Documentary",   domain: "history.com",          emoji: "📜", accent: "180 100 40", tagline: "Stories that shaped us",                                      dlhd: 23 },
+  { id: "animal-planet",     name: "Animal Planet",         category: "Documentary",   domain: "animalplanet.com",     emoji: "🦁", accent: "120 180 40", tagline: "Wildlife stories",                                            dlhd: 21 },
 ];
 
 const CATEGORIES: { id: Category; label: string; icon: typeof Tv2 }[] = [
@@ -126,6 +139,7 @@ export function LiveTV() {
   const [cat, setCat] = useState<Category>("All");
   const [q, setQ] = useState("");
   const [playing, setPlaying] = useState<Channel | null>(null);
+  const [playingMatch, setPlayingMatch] = useState<{ match: SportMatch; stream: SportStream } | null>(null);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -259,6 +273,11 @@ export function LiveTV() {
         </Section>
       )}
 
+      {/* Live & upcoming sports (auto-discovered) */}
+      {(cat === "All" || cat === "Sports") && !q && (
+        <LiveSportsSection onPlay={(match, stream) => setPlayingMatch({ match, stream })} />
+      )}
+
       {/* Filtered grid */}
       <Section title={cat === "All" && !q ? "All Channels" : `${cat}${q ? ` · "${q}"` : ""}`}>
         <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:px-6 md:grid-cols-4 lg:grid-cols-6">
@@ -278,7 +297,16 @@ export function LiveTV() {
         </p>
       </div>
 
-      {playing && <LivePlayer channel={playing} all={CHANNELS} onPick={setPlaying} onClose={() => setPlaying(null)} />}
+      {playing && (
+        <LivePlayer channel={playing} all={CHANNELS} onPick={setPlaying} onClose={() => setPlaying(null)} />
+      )}
+      {playingMatch && (
+        <SportsPlayer
+          match={playingMatch.match}
+          stream={playingMatch.stream}
+          onClose={() => setPlayingMatch(null)}
+        />
+      )}
     </div>
   );
 }
@@ -389,17 +417,7 @@ function LivePlayer({ channel, all, onPick, onClose }: { channel: Channel; all: 
       <div className="relative flex flex-1 overflow-hidden">
         {/* Player surface */}
         <div className="relative flex-1 overflow-hidden bg-black">
-          <iframe
-            // Force a fresh iframe instance per channel so the upstream tuner
-            // re-bootstraps for the new slug.
-            key={channel.id}
-            src={channelSrc(channel)}
-            title={`${channel.name} — Live`}
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-            allowFullScreen
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 h-full w-full"
-          />
+          <ChannelPlayerFrame channel={channel} />
           {/* Bottom action chrome — purely cosmetic but makes the surface feel like a real player */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-3 bg-gradient-to-t from-black/85 via-black/30 to-transparent px-4 py-3 text-xs text-white/80">
             <Radio className="h-3.5 w-3.5 text-rose-400" />
@@ -439,10 +457,378 @@ function LivePlayer({ channel, all, onPick, onClose }: { channel: Channel; all: 
               )}
             </div>
             <div className="border-t border-white/5 px-4 py-2 text-[10px] text-white/35">
-              Polaris Live · source: toustream.xyz
+              Polaris Live · pure-player iframes
             </div>
           </aside>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Player frame for 24/7 channels — rotates through DaddyLive mirrors so a
+// single host outage doesn't kill playback. The iframe is the upstream's
+// bare HTML5 player (no website chrome).
+// ----------------------------------------------------------------------------
+function ChannelPlayerFrame({ channel }: { channel: Channel }) {
+  const [hostIdx, setHostIdx] = useState(0);
+  const [nonce, setNonce] = useState(0);
+  if (channel.dlhd == null) {
+    return (
+      <div className="absolute inset-0 grid place-items-center text-sm text-white/60">
+        This channel doesn't have a direct player yet.
+      </div>
+    );
+  }
+  const src = dlhdEmbed(channel.dlhd, hostIdx);
+  return (
+    <>
+      <iframe
+        key={`${channel.id}-${hostIdx}-${nonce}`}
+        src={src}
+        title={`${channel.name} — Live`}
+        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+        allowFullScreen
+        referrerPolicy="no-referrer"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+        className="absolute inset-0 h-full w-full"
+      />
+      <div className="absolute right-3 top-3 flex items-center gap-1.5">
+        <button
+          onClick={() => { setHostIdx((i) => (i + 1) % DLHD_HOSTS.length); setNonce((n) => n + 1); }}
+          className="liquid-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-white"
+          title="Try another stream server"
+        >
+          <RefreshCw className="h-3 w-3" /> Server {hostIdx + 1}/{DLHD_HOSTS.length}
+        </button>
+      </div>
+    </>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Live & upcoming sports — auto-discovered from streamed.pk public API.
+// Each match exposes one or more "sources" (servers); we pick the first
+// available stream and embed its pure player iframe.
+// ----------------------------------------------------------------------------
+type SportMatch = {
+  id: string;
+  title: string;
+  category: string;
+  date: number;
+  poster?: string;
+  popular?: boolean;
+  teams?: { home?: { name: string; badge?: string }; away?: { name: string; badge?: string } };
+  sources: { source: string; id: string }[];
+};
+type SportStream = {
+  id: string;
+  streamNo: number;
+  language: string;
+  hd: boolean;
+  embedUrl: string;
+  source: string;
+};
+
+const STREAMED_API = "https://streamed.pk";
+const SPORTS_ICONS: Record<string, string> = {
+  football: "⚽", soccer: "⚽", basketball: "🏀", baseball: "⚾",
+  "american-football": "🏈", hockey: "🏒", "ice-hockey": "🏒",
+  fight: "🥊", boxing: "🥊", mma: "🥋", ufc: "🥋",
+  tennis: "🎾", golf: "⛳", cricket: "🏏", rugby: "🏉",
+  motor: "🏎️", "motor-sports": "🏎️", f1: "🏎️", racing: "🏁",
+  cycling: "🚴", darts: "🎯", snooker: "🎱", esports: "🎮",
+  wrestling: "🤼", other: "🏟️",
+};
+const CAT_ACCENT: Record<string, string> = {
+  football: "40 160 90", basketball: "230 110 30", baseball: "30 80 180",
+  "american-football": "30 30 30", hockey: "180 200 230", fight: "200 30 30",
+  tennis: "200 220 60", golf: "60 160 80", cricket: "30 130 60",
+  rugby: "180 100 40", motor: "200 60 60", other: "120 60 200",
+};
+
+function badgeUrl(b?: string) {
+  if (!b) return "";
+  return `${STREAMED_API}/api/images/badge/${b}.webp`;
+}
+function posterUrl(p?: string) {
+  if (!p) return "";
+  return p.startsWith("http") ? p : `${STREAMED_API}${p}`;
+}
+
+function LiveSportsSection({
+  onPlay,
+}: {
+  onPlay: (m: SportMatch, s: SportStream) => void;
+}) {
+  const [live, setLive] = useState<SportMatch[]>([]);
+  const [upcoming, setUpcoming] = useState<SportMatch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [loadingMatchId, setLoadingMatchId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let dead = false;
+    const load = async () => {
+      setErr(null);
+      try {
+        const [liveRes, todayRes] = await Promise.all([
+          fetch(`${STREAMED_API}/api/matches/live`).then((r) => r.json() as Promise<SportMatch[]>),
+          fetch(`${STREAMED_API}/api/matches/all-today`).then((r) => r.json() as Promise<SportMatch[]>),
+        ]);
+        if (dead) return;
+        const now = Date.now();
+        setLive(liveRes.filter((m) => m.sources?.length).slice(0, 18));
+        setUpcoming(
+          todayRes
+            .filter((m) => m.sources?.length && m.date > now)
+            .sort((a, b) => a.date - b.date)
+            .slice(0, 18),
+        );
+      } catch (e) {
+        if (!dead) setErr(e instanceof Error ? e.message : "Couldn't reach the sports feed");
+      } finally {
+        if (!dead) setLoading(false);
+      }
+    };
+    void load();
+    const t = setInterval(load, 90_000);
+    return () => { dead = true; clearInterval(t); };
+  }, []);
+
+  const handlePlay = async (m: SportMatch) => {
+    setLoadingMatchId(m.id);
+    try {
+      for (const src of m.sources) {
+        try {
+          const streams = (await fetch(
+            `${STREAMED_API}/api/stream/${src.source}/${src.id}`,
+          ).then((r) => r.json())) as SportStream[];
+          const hd = streams.find((s) => s.hd) ?? streams[0];
+          if (hd?.embedUrl) {
+            onPlay(m, hd);
+            return;
+          }
+        } catch { /* try next source */ }
+      }
+      setErr("No working stream right now — try again in a minute.");
+    } finally {
+      setLoadingMatchId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Section title="Live & Upcoming Sports" icon={<Trophy className="h-4 w-4 text-amber-300" />}>
+        <div className="flex items-center gap-2 px-4 py-6 text-sm text-white/55 sm:px-6">
+          <Loader2 className="h-4 w-4 animate-spin" /> Finding live games…
+        </div>
+      </Section>
+    );
+  }
+  if (err && !live.length && !upcoming.length) {
+    return (
+      <Section title="Live & Upcoming Sports" icon={<Trophy className="h-4 w-4 text-amber-300" />}>
+        <div className="px-4 py-6 text-sm text-white/55 sm:px-6">{err}</div>
+      </Section>
+    );
+  }
+
+  return (
+    <>
+      {live.length > 0 && (
+        <Section
+          title="Live Games Right Now"
+          icon={<Trophy className="h-4 w-4 text-rose-300" />}
+        >
+          <div className="flex gap-3 overflow-x-auto px-4 pb-2 sm:px-6">
+            {live.map((m) => (
+              <MatchCard
+                key={m.id}
+                match={m}
+                live
+                loading={loadingMatchId === m.id}
+                onPlay={() => handlePlay(m)}
+              />
+            ))}
+          </div>
+        </Section>
+      )}
+      {upcoming.length > 0 && (
+        <Section
+          title="Coming Up Today"
+          icon={<Calendar className="h-4 w-4 text-amber-300" />}
+        >
+          <div className="flex gap-3 overflow-x-auto px-4 pb-2 sm:px-6">
+            {upcoming.map((m) => (
+              <MatchCard
+                key={m.id}
+                match={m}
+                loading={loadingMatchId === m.id}
+                onPlay={() => handlePlay(m)}
+              />
+            ))}
+          </div>
+        </Section>
+      )}
+    </>
+  );
+}
+
+function MatchCard({
+  match, live, loading, onPlay,
+}: {
+  match: SportMatch; live?: boolean; loading?: boolean; onPlay: () => void;
+}) {
+  const icon = SPORTS_ICONS[match.category] ?? SPORTS_ICONS.other;
+  const accent = CAT_ACCENT[match.category] ?? CAT_ACCENT.other;
+  const when = new Date(match.date);
+  const timeLabel = when.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const home = match.teams?.home; const away = match.teams?.away;
+  return (
+    <button
+      onClick={onPlay}
+      disabled={loading}
+      className="group relative flex w-64 shrink-0 flex-col gap-2 overflow-hidden rounded-xl border border-white/5 bg-stone-950/80 p-3 text-left transition hover:-translate-y-0.5 hover:border-amber-200/40 hover:bg-stone-900/90 disabled:opacity-60"
+      style={{ boxShadow: `inset 0 0 0 1px rgb(${accent}/0.22)` }}
+    >
+      <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">
+        <span className="flex items-center gap-1.5">
+          <span className="text-base leading-none">{icon}</span>
+          <span>{match.category.replace(/-/g, " ")}</span>
+        </span>
+        {live ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/90 px-1.5 py-0.5 text-[9px] font-black text-white">
+            <span className="h-1 w-1 rounded-full bg-white" /> LIVE
+          </span>
+        ) : (
+          <span className="text-amber-200/80">{timeLabel}</span>
+        )}
+      </div>
+      {home && away ? (
+        <div className="flex items-center justify-between gap-2 py-1">
+          <TeamBlock name={home.name} badge={home.badge} />
+          <span className="text-[10px] font-black text-white/40">VS</span>
+          <TeamBlock name={away.name} badge={away.badge} />
+        </div>
+      ) : (
+        <div className="line-clamp-2 py-1 text-sm font-bold text-amber-50">{match.title}</div>
+      )}
+      <div className="line-clamp-1 text-[11px] font-semibold text-amber-50/90">{match.title}</div>
+      <div className="flex items-center justify-between text-[10px] text-white/45">
+        <span>{match.sources.length} server{match.sources.length === 1 ? "" : "s"}</span>
+        <span className="inline-flex items-center gap-1 font-semibold text-amber-200/80">
+          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Radio className="h-3 w-3" />}
+          {loading ? "Connecting" : live ? "Watch" : "Set reminder"}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+function TeamBlock({ name, badge }: { name: string; badge?: string }) {
+  const [broken, setBroken] = useState(false);
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      {badge && !broken ? (
+        <img
+          src={badgeUrl(badge)}
+          alt=""
+          className="h-7 w-7 shrink-0 rounded bg-white/5 object-contain p-0.5"
+          onError={() => setBroken(true)}
+        />
+      ) : (
+        <div className="grid h-7 w-7 shrink-0 place-items-center rounded bg-white/10 text-[10px] font-black text-white/70">
+          {name.slice(0, 2).toUpperCase()}
+        </div>
+      )}
+      <div className="min-w-0 truncate text-xs font-semibold text-amber-50">{name}</div>
+    </div>
+  );
+}
+
+function SportsPlayer({
+  match, stream, onClose,
+}: {
+  match: SportMatch; stream: SportStream; onClose: () => void;
+}) {
+  const [src, setSrc] = useState(stream.embedUrl);
+  const [alts, setAlts] = useState<SportStream[]>([stream]);
+  const [altIdx, setAltIdx] = useState(0);
+  const icon = SPORTS_ICONS[match.category] ?? SPORTS_ICONS.other;
+
+  useEffect(() => {
+    let dead = false;
+    (async () => {
+      const collected: SportStream[] = [];
+      for (const s of match.sources) {
+        try {
+          const streams = (await fetch(
+            `${STREAMED_API}/api/stream/${s.source}/${s.id}`,
+          ).then((r) => r.json())) as SportStream[];
+          collected.push(...streams.filter((x) => x.embedUrl));
+        } catch { /* skip */ }
+      }
+      if (dead || collected.length === 0) return;
+      // De-dup
+      const seen = new Set<string>();
+      const dedup = collected.filter((s) => !seen.has(s.embedUrl) && seen.add(s.embedUrl));
+      const startIdx = Math.max(0, dedup.findIndex((s) => s.embedUrl === stream.embedUrl));
+      setAlts(dedup);
+      setAltIdx(startIdx);
+    })();
+    return () => { dead = true; };
+  }, [match.id, stream.embedUrl, match.sources]);
+
+  const switchTo = (i: number) => {
+    const next = alts[i];
+    if (!next) return;
+    setAltIdx(i);
+    setSrc(next.embedUrl);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex flex-col bg-black animate-[fadeIn_180ms_ease]">
+      <div
+        className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6"
+        style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.95) 100%)" }}
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="text-2xl leading-none">{icon}</span>
+          <div className="min-w-0">
+            <div className="truncate text-sm font-black text-amber-50">{match.title}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">
+              {match.category.replace(/-/g, " ")} · Stream {altIdx + 1}/{alts.length}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {alts.length > 1 && (
+            <button
+              onClick={() => switchTo((altIdx + 1) % alts.length)}
+              className="liquid-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white"
+              title="Try another server"
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Server
+            </button>
+          )}
+          <button onClick={onClose} className="liquid-glass rounded-full p-2 text-white" aria-label="Close player">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+      <div className="relative flex-1 overflow-hidden bg-black">
+        <iframe
+          key={src}
+          src={src}
+          title={match.title}
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          allowFullScreen
+          referrerPolicy="no-referrer"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+          className="absolute inset-0 h-full w-full"
+        />
       </div>
     </div>
   );
