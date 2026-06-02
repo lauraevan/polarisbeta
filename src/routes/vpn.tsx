@@ -20,8 +20,8 @@ import { registerStaticProxies, getPolarisBrowserUrl } from "@/lib/proxy-utils";
 export const Route = createFileRoute("/vpn")({
   head: () => ({
     meta: [
-      { title: "Polaris VPN" },
-      { name: "description", content: "Polaris VPN — private, encrypted browsing on any network." },
+      { title: "Polaris Tunnel" },
+      { name: "description", content: "Polaris Tunnel — route sites you open inside Polaris through an encrypted Wisp tunnel." },
     ],
   }),
   component: VpnPage,
@@ -156,7 +156,8 @@ function VpnPage() {
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-[0.32em] text-white/55">Polaris</div>
-            <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">Polaris VPN</h1>
+            <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">Polaris Tunnel</h1>
+            <div className="text-xs text-white/55">Encrypted in-app browsing — not a system VPN.</div>
           </div>
         </div>
 
@@ -202,8 +203,8 @@ function VpnPage() {
                 </div>
                 <p className="mt-1 max-w-md text-sm text-white/60">
                   {on
-                    ? `Your browsing through Polaris is encrypted and routed through ${server.city}, ${server.country}.`
-                    : "Turn on to encrypt your browsing and hide your activity from the network you're on."}
+                    ? `Sites opened inside the Polaris Browser are routed through an encrypted Wisp tunnel. Apparent exit: ${server.city}, ${server.country}.`
+                    : "Turn on the tunnel to route sites you open in Polaris Browser through an encrypted Wisp relay. Your device's other apps are unaffected."}
                 </p>
               </div>
 
@@ -329,8 +330,10 @@ function VpnPage() {
         </div>
 
         <p className="mt-8 text-center text-[11px] text-white/40">
-          Polaris VPN routes traffic opened through Polaris over an encrypted tunnel. It does not change your
-          device's system network settings.
+          Honest mode: Polaris Tunnel is not a system-wide VPN. It only covers sites you open inside the Polaris
+          Browser (or via the launcher above), tunneling them over WebSocket/Wisp + Epoxy. Server pins are best-effort
+          hints — actual exit depends on relay availability. Your real IP is hidden from the destination site, but
+          your school/work network still sees that you're connected to Polaris.
         </p>
       </div>
     </AppShell>
