@@ -1030,22 +1030,73 @@ function GifPicker({ onPick, onClose }: { onPick: (g: TenorGif) => void; onClose
   );
 }
 
-function NewChannelDialog({ onCreate, onClose }: { onCreate: (name: string) => void; onClose: () => void }) {
+function NewChannelDialog({
+  onCreate,
+  onClose,
+}: {
+  onCreate: (name: string, opts?: { visibility?: "public" | "private"; inviteUsernames?: string[] }) => void;
+  onClose: () => void;
+}) {
   const [name, setName] = useState("");
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [invites, setInvites] = useState("");
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-6 backdrop-blur-md" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-950 p-5">
-        <h3 className="text-sm font-bold text-white">New channel</h3>
+        <h3 className="text-sm font-bold text-white">New {visibility === "private" ? "private room" : "channel"}</h3>
+        <div className="mt-3 grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => setVisibility("public")}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold ${visibility === "public" ? "bg-white text-black" : "bg-white/5 text-white/70 hover:bg-white/10"}`}
+          >
+            🌐 Public
+          </button>
+          <button
+            onClick={() => setVisibility("private")}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold ${visibility === "private" ? "bg-white text-black" : "bg-white/5 text-white/70 hover:bg-white/10"}`}
+          >
+            🔒 Private
+          </button>
+        </div>
         <input
           autoFocus
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="channel-name"
+          placeholder={visibility === "private" ? "room-name" : "channel-name"}
           className="mt-3 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none"
         />
+        {visibility === "private" && (
+          <div className="mt-3">
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-white/45">
+              Invite usernames (comma-separated)
+            </label>
+            <input
+              value={invites}
+              onChange={(e) => setInvites(e.target.value)}
+              placeholder="alice, bob, charlie"
+              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none"
+            />
+            <p className="mt-1 text-[10px] text-white/40">
+              Only you and invited members can see or post here.
+            </p>
+          </div>
+        )}
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="rounded-md px-3 py-1.5 text-xs text-white/65 hover:bg-white/5">Cancel</button>
-          <button onClick={() => onCreate(name)} className="rounded-md bg-[rgb(var(--polaris-accent))] px-4 py-1.5 text-xs font-bold text-black">Create</button>
+          <button
+            onClick={() =>
+              onCreate(name, {
+                visibility,
+                inviteUsernames:
+                  visibility === "private"
+                    ? invites.split(/[,\s]+/).filter(Boolean)
+                    : [],
+              })
+            }
+            className="rounded-md bg-[rgb(var(--polaris-accent))] px-4 py-1.5 text-xs font-bold text-black"
+          >
+            Create
+          </button>
         </div>
       </div>
     </div>
