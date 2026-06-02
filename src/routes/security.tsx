@@ -5,11 +5,11 @@ import { useAuth } from "@/lib/auth-context";
 import { useAdmin } from "@/lib/admin-context";
 import {
   adminListSessions, adminListEvents, adminListBans, adminSecurityStats,
-  adminQuickBan, adminLiftBan, whoAmI, adminLookupTarget,
+  adminQuickBan, adminLiftBan, whoAmI, adminLookupTarget, adminCreateBan,
 } from "@/lib/security/admin-security.functions";
 import {
   Shield, Search, Ban, RefreshCw, AlertTriangle, Fingerprint, Activity,
-  Eye, ChevronLeft, X,
+  Eye, ChevronLeft, X, MonitorSmartphone,
 } from "lucide-react";
 
 export const Route = createFileRoute("/security")({
@@ -41,7 +41,7 @@ type Stats = {
   activeBans: number; totalBans: number; events24h: number; blocked24h: number;
   newDevices24h: number; vpnAttempts24h: number; totalSessions: number; pendingAppeals: number;
 };
-type Panel = "feed" | "lookup" | "me" | "bans" | null;
+type Panel = "feed" | "lookup" | "me" | "bans" | "devices" | null;
 
 function SecurityPage() {
   const { user, loading } = useAuth();
@@ -56,6 +56,7 @@ function SecurityPage() {
   const fnLift = useServerFn(adminLiftBan);
   const fnWhoAmI = useServerFn(whoAmI);
   const fnLookup = useServerFn(adminLookupTarget);
+  const fnCreateBan = useServerFn(adminCreateBan);
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [events, setEvents] = useState<SecEvent[]>([]);
