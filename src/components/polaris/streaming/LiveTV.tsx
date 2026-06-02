@@ -81,16 +81,7 @@ const CHANNELS: Channel[] = (() => {
 })();
 
 // Keep the original const for backwards-compat references below.
-const _LEGACY_CATEGORIES_GUARD: { id: Category; label: string; icon: typeof Tv2 }[] = [
-  { id: "All", label: "All", icon: Globe2 },
-  { id: "Sports", label: "Sports", icon: Trophy },
-  { id: "News", label: "News", icon: Newspaper },
-  { id: "Entertainment", label: "Entertainment", icon: Tv2 },
-  { id: "Movies", label: "Movies", icon: Film },
-  { id: "Kids", label: "Kids", icon: Baby },
-  { id: "Music", label: "Music", icon: Music2 },
-  { id: "Documentary", label: "Docs", icon: FlaskConical },
-];
+// (no legacy guard needed)
 
 /**
  * Channel logo with a multi-source fallback chain. Clearbit returns 404 for
