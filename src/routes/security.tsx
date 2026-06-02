@@ -204,6 +204,7 @@ function SecurityPage() {
       {/* Bottom dock */}
       <nav className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/60 p-1 backdrop-blur-xl">
         <DockBtn icon={<Activity className="h-4 w-4" />} label="Feed" active={panel === "feed"} onClick={() => setPanel(panel === "feed" ? null : "feed")} />
+        <DockBtn icon={<MonitorSmartphone className="h-4 w-4" />} label={`Devices · ${sessions.length}`} active={panel === "devices"} onClick={() => setPanel(panel === "devices" ? null : "devices")} />
         <DockBtn icon={<Ban className="h-4 w-4" />} label={`Bans · ${activeBans}`} active={panel === "bans"} onClick={() => setPanel(panel === "bans" ? null : "bans")} />
         <DockBtn icon={<Fingerprint className="h-4 w-4" />} label="Me" active={panel === "me"} onClick={() => setPanel(panel === "me" ? null : "me")} />
       </nav>
