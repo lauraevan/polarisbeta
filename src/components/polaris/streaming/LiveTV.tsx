@@ -54,7 +54,7 @@ const CHANNELS: Channel[] = [
   { id: "maverick", name: "Maverick Black Cinema", category: "Movies", domain: "maverickentertainment.cc", emoji: "🍿", accent: "210 150 40", tagline: "Independent cinema", streams: [{ label: "Maverick", url: "https://maverick-maverick-black-cinema-3-us.roku.wurl.tv/playlist.m3u8" }] },
 
   // Kids
-  { id: "cartoon-network", name: "Cartoon Network", category: "Kids", domain: "cartoonnetwork.com", emoji: "⬛", accent: "245 245 245", tagline: "Cartoons live", popular: true, highlight: true, streams: [{ label: "CN live", url: "https://rpn.bozztv.com/gusa/gusa-TVSCartoonNetwork/index.m3u8" }] },
+  { id: "cartoon-network", name: "Cartoon Network", category: "Kids", domain: "cartoonnetwork.com", emoji: "⬛", accent: "245 245 245", tagline: "Cartoons live", popular: true, highlight: true, streams: [{ label: "CN FreeLive", url: "https://playout.cdn.cartoonnetwork.com.br/playout_01/playlist.m3u8" }, { label: "CN FreeLive alt", url: "https://playout.cdn.cartoonnetwork.com.br/playout_02/playlist.m3u8" }, { label: "CN India", url: "https://amg01448-samsungin-cartoonnw-samsungin-1y8kz.amagi.tv/playlist/amg01448-samsungin-cartoonnw-samsungin/playlist.m3u8" }, { label: "CN backup", url: "https://rpn.bozztv.com/gusa/gusa-TVSCartoonNetwork/index.m3u8" }] },
   { id: "pbs-kids", name: "PBS Kids", category: "Kids", domain: "pbskids.org", emoji: "🐰", accent: "40 160 90", tagline: "Family favorites", popular: true, highlight: true, streams: [{ label: "PBS Kids", url: "https://livestream.pbskids.org/out/v1/14507d931bbe48a69287e4850e53443c/est.m3u8" }] },
   { id: "kartoon", name: "Kartoon Channel!", category: "Kids", domain: "kartoonchannel.com", emoji: "🦸", accent: "230 110 30", tagline: "Animated shows", popular: true, streams: [{ label: "Kartoon", url: "https://lightning-fnf-samsungaus.amagi.tv/playlist.m3u8" }] },
   { id: "filmrise-anime", name: "FilmRise Anime", category: "Kids", domain: "filmrise.com", emoji: "🌸", accent: "230 60 130", tagline: "Anime channel", streams: [{ label: "FilmRise Anime", url: "https://dvu7aia8rjlfm.cloudfront.net/master.m3u8" }] },
@@ -483,9 +483,16 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
     video.pause();
     video.removeAttribute("src");
     video.load();
-    video.onerror = () => {
-      if (!cancelled) setStatus("Stream failed — try another source.");
+    const fail = () => {
+      if (cancelled) return;
+      if (channel.streams.length > 1 && streamIdx < channel.streams.length - 1) {
+        setStatus("Trying another source…");
+        setStreamIdx((i) => i + 1);
+        return;
+      }
+      setStatus("Stream failed — try another source.");
     };
+    video.onerror = fail;
 
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = stream.url;
@@ -503,7 +510,7 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
         player.attachMedia(video);
         player.on(Hls.Events.MANIFEST_PARSED, tryPlay);
         player.on(Hls.Events.ERROR, (_event, data) => {
-          if (data.fatal && !cancelled) setStatus("Stream failed — try another source.");
+          if (data.fatal) fail();
         });
       }).catch(() => {
         if (!cancelled) setStatus("Player failed to load.");
@@ -560,9 +567,8 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
 }
 
 // ----------------------------------------------------------------------------
-// Live & upcoming sports — auto-discovered from streamed.pk public API.
-// Each match exposes one or more "sources" (servers); we pick the first
-// available stream and embed its pure player iframe.
+// Live & upcoming sports — auto-discovered from SportSRC, matching the
+// player/source pattern used by Tyflix for game-specific streams.
 // ----------------------------------------------------------------------------
 type SportMatch = {
   id: string;
@@ -572,7 +578,7 @@ type SportMatch = {
   poster?: string;
   popular?: boolean;
   teams?: { home?: { name: string; badge?: string }; away?: { name: string; badge?: string } };
-  sources: { source: string; id: string }[];
+  sources?: SportStream[];
 };
 type SportStream = {
   id: string;
@@ -584,8 +590,12 @@ type SportStream = {
   viewers?: number;
 };
 
-const STREAMED_API = "https://streamed.pk";
-const SPORTS_SOURCE_PRIORITY: Record<string, number> = { echo: 0, delta: 1, bravo: 2, charlie: 3, alpha: 4, admin: 9 };
+const SPORTSRC_API = "https://api.sportsrc.org";
+const SPORTS_SOURCE_PRIORITY: Record<string, number> = { admin: 0, delta: 1, echo: 2, bravo: 3, charlie: 4, alpha: 5 };
+const SPORTSRC_FALLBACK_CATEGORIES = [
+  "basketball", "football", "american-football", "hockey", "baseball", "motor-sports",
+  "fight", "tennis", "rugby", "golf", "billiards", "afl", "darts", "cricket", "other",
+];
 const SPORTS_ICONS: Record<string, string> = {
   football: "⚽", soccer: "⚽", basketball: "🏀", baseball: "⚾",
   "american-football": "🏈", hockey: "🏒", "ice-hockey": "🏒",
@@ -604,23 +614,37 @@ const CAT_ACCENT: Record<string, string> = {
 
 function badgeUrl(b?: string) {
   if (!b) return "";
-  return `${STREAMED_API}/api/images/badge/${b}.webp`;
+  return b.startsWith("http") ? b : `https://sportsrc.org/img/sport/badge/${b}.webp`;
 }
 function posterUrl(p?: string) {
   if (!p) return "";
-  return p.startsWith("http") ? p : `${STREAMED_API}${p}`;
+  return p.startsWith("http") ? p : `https://sportsrc.org${p}`;
 }
 function orderedSources(sources: SportMatch["sources"] = []) {
   return [...sources].sort((a, b) =>
-    (SPORTS_SOURCE_PRIORITY[a.source] ?? 5) - (SPORTS_SOURCE_PRIORITY[b.source] ?? 5)
+    (SPORTS_SOURCE_PRIORITY[a.source] ?? 6) - (SPORTS_SOURCE_PRIORITY[b.source] ?? 6)
   );
 }
 function orderedStreams(streams: SportStream[]) {
   return [...streams].sort((a, b) =>
-    (SPORTS_SOURCE_PRIORITY[a.source] ?? 5) - (SPORTS_SOURCE_PRIORITY[b.source] ?? 5) ||
+    (SPORTS_SOURCE_PRIORITY[a.source] ?? 6) - (SPORTS_SOURCE_PRIORITY[b.source] ?? 6) ||
+    (a.streamNo ?? 99) - (b.streamNo ?? 99) ||
     Number(b.hd) - Number(a.hd) ||
     (b.viewers ?? 0) - (a.viewers ?? 0)
   );
+}
+async function fetchSportSrc<T>(query: string, signal?: AbortSignal): Promise<T | null> {
+  try {
+    const r = await fetch(`${SPORTSRC_API}/?${query}`, { headers: { Accept: "application/json" }, signal });
+    if (!r.ok) return null;
+    const json = await r.json();
+    return json?.success ? (json.data as T) : null;
+  } catch {
+    return null;
+  }
+}
+async function fetchSportDetail(match: SportMatch, signal?: AbortSignal) {
+  return fetchSportSrc<SportMatch>(`data=detail&category=${encodeURIComponent(match.category || "other")}&id=${encodeURIComponent(match.id)}`, signal);
 }
 
 function LiveSportsSection({
@@ -640,28 +664,27 @@ function LiveSportsSection({
     const load = async () => {
       setErr(null);
       try {
-        const safeFetch = async (url: string): Promise<SportMatch[]> => {
-          try {
-            const r = await fetch(url, { signal: ctrl.signal });
-            if (!r.ok) return [];
-            const json = await r.json();
-            return Array.isArray(json) ? (json as SportMatch[]) : [];
-          } catch { return []; }
-        };
-        const [liveRes, todayRes] = await Promise.all([
-          safeFetch(`${STREAMED_API}/api/matches/live`),
-          safeFetch(`${STREAMED_API}/api/matches/all-today`),
-        ]);
+        const sports = await fetchSportSrc<{ id: string; name: string }[]>("data=sports", ctrl.signal);
+        const categories = sports?.map((sport) => sport.id).filter(Boolean) ?? SPORTSRC_FALLBACK_CATEGORIES;
+        const results = await Promise.all(categories.map((category) =>
+          fetchSportSrc<SportMatch[]>(`data=matches&category=${encodeURIComponent(category)}`, ctrl.signal)
+        ));
         if (dead) return;
         const now = Date.now();
         const valid = (m: SportMatch) =>
-          m && typeof m.id === "string" && Array.isArray(m.sources) && m.sources.length > 0;
-        setLive(liveRes.filter(valid).slice(0, 18));
+          m && typeof m.id === "string" && typeof m.category === "string" && typeof m.date === "number";
+        const allMatches = results.flatMap((items) => items ?? []).filter(valid);
+        setLive(
+          allMatches
+            .filter((m) => m.date <= now + 5 * 60_000 && m.date >= now - 4 * 60 * 60_000)
+            .sort((a, b) => Number(b.popular) - Number(a.popular) || a.date - b.date)
+            .slice(0, 24),
+        );
         setUpcoming(
-          todayRes
-            .filter((m) => valid(m) && typeof m.date === "number" && m.date > now)
+          allMatches
+            .filter((m) => m.date > now + 5 * 60_000)
             .sort((a, b) => a.date - b.date)
-            .slice(0, 18),
+            .slice(0, 24),
         );
       } catch (e) {
         if (!dead) setErr(e instanceof Error ? e.message : "Couldn't reach the sports feed");
@@ -677,18 +700,12 @@ function LiveSportsSection({
   const handlePlay = async (m: SportMatch) => {
     setLoadingMatchId(m.id);
     try {
-      for (const src of orderedSources(m.sources)) {
-        try {
-          const r = await fetch(`${STREAMED_API}/api/stream/${src.source}/${src.id}`);
-          if (!r.ok) continue;
-          const json = await r.json();
-          const streams = orderedStreams(((Array.isArray(json) ? json : []) as SportStream[]).filter((s) => s?.embedUrl));
-          const hd = streams[0];
-          if (hd?.embedUrl) {
-            onPlay(m, hd);
-            return;
-          }
-        } catch { /* try next source */ }
+      const detail = await fetchSportDetail(m);
+      const streams = orderedStreams((detail?.sources ?? m.sources ?? []).filter((s): s is SportStream => Boolean(s?.embedUrl)));
+      const first = streams[0];
+      if (first?.embedUrl) {
+        onPlay(detail ?? m, first);
+        return;
       }
       setErr("No working stream right now — try again in a minute.");
     } finally {
@@ -797,7 +814,7 @@ function MatchCard({
       )}
       <div className="line-clamp-1 text-[11px] font-semibold text-amber-50/90">{title}</div>
       <div className="flex items-center justify-between text-[10px] text-white/45">
-        <span>{match.sources.length} server{match.sources.length === 1 ? "" : "s"}</span>
+        <span>{match.sources?.length ? `${match.sources.length} server${match.sources.length === 1 ? "" : "s"}` : "Streams ready"}</span>
         <span className="inline-flex items-center gap-1 font-semibold text-amber-200/80">
           {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Radio className="h-3 w-3" />}
           {loading ? "Connecting" : live ? "Watch" : "Set reminder"}
@@ -843,15 +860,8 @@ function SportsPlayer({
     let dead = false;
     (async () => {
       const collected: SportStream[] = [];
-      for (const s of orderedSources(match.sources)) {
-        try {
-          const r = await fetch(`${STREAMED_API}/api/stream/${s.source}/${s.id}`);
-          if (!r.ok) continue;
-          const json = await r.json();
-          const streams = (Array.isArray(json) ? json : []) as SportStream[];
-          collected.push(...streams.filter((x) => x?.embedUrl));
-        } catch { /* skip */ }
-      }
+      const detail = await fetchSportDetail(match);
+      collected.push(...((detail?.sources ?? match.sources ?? []).filter((x): x is SportStream => Boolean(x?.embedUrl))));
       if (dead || collected.length === 0) return;
       // De-dup
       const seen = new Set<string>();
@@ -881,7 +891,7 @@ function SportsPlayer({
           <div className="min-w-0">
             <div className="truncate text-sm font-black text-amber-50">{match.title || "Live match"}</div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">
-              {category.replace(/-/g, " ")} · Stream {altIdx + 1}/{alts.length}
+              {category.replace(/-/g, " ")} · {alts[altIdx]?.language || `Stream ${altIdx + 1}`} · {alts[altIdx]?.source || "source"}
             </div>
           </div>
         </div>
@@ -892,7 +902,7 @@ function SportsPlayer({
               className="liquid-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white"
               title="Try another server"
             >
-              <RefreshCw className="h-3.5 w-3.5" /> Server
+              <RefreshCw className="h-3.5 w-3.5" /> Stream {altIdx + 1}/{alts.length}
             </button>
           )}
           <button onClick={onClose} className="liquid-glass rounded-full p-2 text-white" aria-label="Close player">
@@ -908,7 +918,6 @@ function SportsPlayer({
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
           allowFullScreen
           referrerPolicy="no-referrer"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
           className="absolute inset-0 h-full w-full"
         />
       </div>
