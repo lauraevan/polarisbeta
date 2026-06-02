@@ -7,6 +7,7 @@ import {
   Code2,
   Coins,
   GraduationCap,
+  Image as ImageIcon,
   Lightbulb,
   PencilLine,
   MessageSquare,
@@ -142,6 +143,7 @@ export function PolarisAI() {
   const [modelOpen, setModelOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
+  const [imageMode, setImageMode] = useState(false);
   const [wallet, setWallet] = useState<{ coins: number; basic_credits: number; premium_credits: number } | null>(null);
   const [exchanging, setExchanging] = useState<"basic" | "premium" | null>(null);
   const [search, setSearch] = useState("");
@@ -227,6 +229,72 @@ export function PolarisAI() {
   async function send(text: string) {
     if (!text.trim() || streaming) return;
     setError(null);
+    // Image generation path
+    if (imageMode) {
+      let chat = active;
+      if (!chat) {
+        chat = { id: uid(), title: text.slice(0, 40), messages: [], updatedAt: Date.now() };
+        setChats((p) => [chat!, ...p]);
+        setActiveId(chat.id);
+      }
+      const userMsg: ChatMessage = { id: uid(), role: "user", content: text };
+      const assistantMsg: ChatMessage = { id: uid(), role: "assistant", content: "Generating image…" };
+      const chatId = chat.id;
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === chatId
+            ? {
+                ...c,
+                title: c.messages.length ? c.title : text.slice(0, 40),
+                messages: [...c.messages, userMsg, assistantMsg],
+                updatedAt: Date.now(),
+              }
+            : c,
+        ),
+      );
+      setInput("");
+      setStreaming(true);
+      try {
+        const res = await fetch("/api/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: text }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
+        const dataUrl: string = j.dataUrl;
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === chatId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id === assistantMsg.id ? { ...m, content: `![image](${dataUrl})` } : m,
+                  ),
+                }
+              : c,
+          ),
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Image generation failed";
+        setError(msg);
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === chatId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id === assistantMsg.id ? { ...m, content: `⚠️ ${msg}` } : m,
+                  ),
+                }
+              : c,
+          ),
+        );
+      } finally {
+        setStreaming(false);
+      }
+      return;
+    }
     // Rate limit guard — protect credits
     const limits = loadLimits();
     const now = Date.now();
@@ -715,7 +783,7 @@ export function PolarisAI() {
                 }
               }}
               rows={1}
-              placeholder={`Message ${model.label}…`}
+              placeholder={imageMode ? "Describe the image you want…" : `Message ${model.label}…`}
               className="min-h-[28px] max-h-[140px] w-full resize-none bg-transparent px-2.5 py-1 text-[13px] text-white placeholder:text-white/40 focus:outline-none"
             />
             <div className="flex items-center justify-between gap-2 px-1">
@@ -736,6 +804,23 @@ export function PolarisAI() {
                   className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-white/70 hover:bg-white/[0.08]"
                 >
                   <Settings2 className="h-2.5 w-2.5" /> {mode.label}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageMode((v) => !v)}
+                  className="flex items-center gap-1 rounded-full border px-2 py-0.5 transition"
+                  style={
+                    imageMode
+                      ? {
+                          borderColor: "rgba(var(--polaris-accent)/0.6)",
+                          background: "rgba(var(--polaris-accent)/0.2)",
+                          color: "#fff",
+                        }
+                      : { borderColor: "rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.7)" }
+                  }
+                  title={imageMode ? "Image mode on" : "Generate an image instead"}
+                >
+                  <ImageIcon className="h-2.5 w-2.5" /> Image
                 </button>
                 <span className="hidden sm:inline text-white/30">·  Enter ↵ to send</span>
               </div>
@@ -831,6 +916,23 @@ function MessageBubble({ role, content, modelLabel }: { role: Role; content: str
             {modelLabel}
           </div>
         )}
+        {(() => {
+          const imgMatch = !isUser && content.match(/^!\[[^\]]*\]\((data:image\/[a-zA-Z+.-]+;base64,[^)]+)\)$/);
+          if (imgMatch) {
+            return (
+              <div
+                className="relative overflow-hidden rounded-2xl p-1.5 backdrop-blur-xl"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(var(--polaris-accent)/0.22)",
+                  boxShadow: "0 1px 0 rgba(255,255,255,0.05) inset, 0 12px 30px -16px rgba(var(--polaris-accent)/0.3)",
+                }}
+              >
+                <img src={imgMatch[1]} alt="Generated" className="block max-h-[420px] w-full rounded-xl object-contain" />
+              </div>
+            );
+          }
+          return (
         <div
           className="relative whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed text-white/95 backdrop-blur-xl"
           style={{
@@ -843,6 +945,8 @@ function MessageBubble({ role, content, modelLabel }: { role: Role; content: str
         >
           {content || <span className="text-white/40">…</span>}
         </div>
+          );
+        })()}
         {!!content && (
           <button
             onClick={copy}

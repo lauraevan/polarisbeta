@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, X, Info, RotateCcw, Star, Play, Flame, Sparkles, Film, Tv2 } from "lucide-react";
+import { Heart, X, Info, RotateCcw, Star, Play, Flame, Sparkles, Film, Tv2, Shuffle } from "lucide-react";
 import { tmdbApi, IMG, type TmdbItem, type MediaKind } from "@/lib/tmdb";
 import { useMyList } from "@/lib/mylist-context";
 import { Link } from "@tanstack/react-router";
@@ -42,7 +42,7 @@ function useDeckCards(mode: Mode) {
   });
 }
 
-export function MovieDeck() {
+export function Roulette({ embedded = false }: { embedded?: boolean } = {}) {
   const [mode, setMode] = useState<Mode>("all");
   const { data: cards = [], isLoading, refetch } = useDeckCards(mode);
   const [index, setIndex] = useState(0);
@@ -80,17 +80,17 @@ export function MovieDeck() {
   const done = !isLoading && index >= cards.length && cards.length > 0;
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-8">
+    <div className={`mx-auto flex max-w-6xl flex-col gap-6 ${embedded ? "px-4 pt-2 pb-10 sm:px-6" : "px-5 py-8"}`}>
       {/* Header */}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-white/40">
-            <Sparkles className="h-3 w-3" /> Polaris Cinema
+            <Shuffle className="h-3 w-3" /> Polaris Cinema
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Movie Deck</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Roulette</h1>
           <p className="mt-1 max-w-lg text-xs text-white/55">
-            A curated stack of what's hot. Swipe right to save, left to pass. Built to help you decide
-            what to watch in under sixty seconds.
+            A curated stack of movies and shows. Swipe right to save, left to pass. Decide what to watch
+            in under sixty seconds.
           </p>
         </div>
         <div className="flex items-center gap-2">

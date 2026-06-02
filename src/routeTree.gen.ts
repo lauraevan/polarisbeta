@@ -18,13 +18,13 @@ import { Route as MylistRouteImport } from './routes/mylist'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as EmulatorRouteImport } from './routes/emulator'
-import { Route as DeckRouteImport } from './routes/deck'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BrowserRouteImport } from './routes/browser'
 import { Route as AppsRouteImport } from './routes/apps'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
 
 const ShopRoute = ShopRouteImport.update({
@@ -72,11 +72,6 @@ const EmulatorRoute = EmulatorRouteImport.update({
   path: '/emulator',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DeckRoute = DeckRouteImport.update({
-  id: '/deck',
-  path: '/deck',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -107,6 +102,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGenerateImageRoute = ApiGenerateImageRouteImport.update({
+  id: '/api/generate-image',
+  path: '/api/generate-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAiChatRoute = ApiAiChatRouteImport.update({
   id: '/api/ai-chat',
   path: '/api/ai-chat',
@@ -120,7 +120,6 @@ export interface FileRoutesByFullPath {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
-  '/deck': typeof DeckRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
@@ -131,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
+  '/api/generate-image': typeof ApiGenerateImageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -139,7 +139,6 @@ export interface FileRoutesByTo {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
-  '/deck': typeof DeckRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
@@ -150,6 +149,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
+  '/api/generate-image': typeof ApiGenerateImageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -159,7 +159,6 @@ export interface FileRoutesById {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
-  '/deck': typeof DeckRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
@@ -170,6 +169,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/api/ai-chat': typeof ApiAiChatRoute
+  '/api/generate-image': typeof ApiGenerateImageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -180,7 +180,6 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
-    | '/deck'
     | '/emulator'
     | '/games'
     | '/media'
@@ -191,6 +190,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
+    | '/api/generate-image'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -199,7 +199,6 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
-    | '/deck'
     | '/emulator'
     | '/games'
     | '/media'
@@ -210,6 +209,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
+    | '/api/generate-image'
   id:
     | '__root__'
     | '/'
@@ -218,7 +218,6 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
-    | '/deck'
     | '/emulator'
     | '/games'
     | '/media'
@@ -229,6 +228,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop'
     | '/api/ai-chat'
+    | '/api/generate-image'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -238,7 +238,6 @@ export interface RootRouteChildren {
   AppsRoute: typeof AppsRoute
   BrowserRoute: typeof BrowserRoute
   ChatRoute: typeof ChatRoute
-  DeckRoute: typeof DeckRoute
   EmulatorRoute: typeof EmulatorRoute
   GamesRoute: typeof GamesRoute
   MediaRoute: typeof MediaRoute
@@ -249,6 +248,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   ShopRoute: typeof ShopRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
+  ApiGenerateImageRoute: typeof ApiGenerateImageRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -316,13 +316,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmulatorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/deck': {
-      id: '/deck'
-      path: '/deck'
-      fullPath: '/deck'
-      preLoaderRoute: typeof DeckRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/chat': {
       id: '/chat'
       path: '/chat'
@@ -365,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/generate-image': {
+      id: '/api/generate-image'
+      path: '/api/generate-image'
+      fullPath: '/api/generate-image'
+      preLoaderRoute: typeof ApiGenerateImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ai-chat': {
       id: '/api/ai-chat'
       path: '/api/ai-chat'
@@ -382,7 +382,6 @@ const rootRouteChildren: RootRouteChildren = {
   AppsRoute: AppsRoute,
   BrowserRoute: BrowserRoute,
   ChatRoute: ChatRoute,
-  DeckRoute: DeckRoute,
   EmulatorRoute: EmulatorRoute,
   GamesRoute: GamesRoute,
   MediaRoute: MediaRoute,
@@ -393,6 +392,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   ShopRoute: ShopRoute,
   ApiAiChatRoute: ApiAiChatRoute,
+  ApiGenerateImageRoute: ApiGenerateImageRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
