@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
-import { getPolarisBrowserUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
+import { getPolarisBrowserUrl, getProxyUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
