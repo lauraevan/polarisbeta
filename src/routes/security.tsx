@@ -62,6 +62,7 @@ function SecurityPage() {
   const fnWhoAmI = useServerFn(whoAmI);
   const fnLookup = useServerFn(adminLookupTarget);
   const fnCreateBan = useServerFn(adminCreateBan);
+  const fnSuggest = useServerFn(adminSuggestTargets);
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [events, setEvents] = useState<SecEvent[]>([]);
