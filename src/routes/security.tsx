@@ -101,6 +101,37 @@ function SecurityPage() {
   };
   useEffect(() => { if (isOwner) refresh(); /* eslint-disable-next-line */ }, [isOwner]);
 
+  // Search autocomplete (debounced)
+  useEffect(() => {
+    const q = lookupQ.trim();
+    if (!isOwner || q.length < 1) { setSuggestions([]); return; }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const r = await fnSuggest({ data: { q } });
+        if (cancelled) return;
+        const out: Suggestion[] = [
+          ...r.users.map((u) => ({
+            kind: "user" as const,
+            label: u.display_name || u.username || "—",
+            sub: u.username ? `@${u.username}` : u.id.slice(0, 8),
+            query: u.username ?? u.id,
+            emoji: u.avatar_emoji,
+            banned: u.is_banned,
+          })),
+          ...r.guests.map((g) => ({
+            kind: "guest" as const,
+            label: g.ip ?? g.fingerprint.slice(0, 12),
+            sub: [g.city, g.country].filter(Boolean).join(", ") || `${g.visit_count} visits`,
+            query: g.ip ?? g.fingerprint,
+          })),
+        ];
+        setSuggestions(out);
+      } catch { /* ignore */ }
+    }, 180);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [lookupQ, isOwner, fnSuggest]);
+
   const points = useMemo(() => sessions
     .filter((s) => typeof s.latitude === "number" && typeof s.longitude === "number")
     .map((s) => ({
