@@ -344,6 +344,31 @@ function SettingsPage() {
               </button>
             </div>
           </div>
+          <div className="mt-4">
+            <SectionTitle icon={PanelTop} title="Top bar layout" subtitle="Desktop only — replaces the side rail with a top bar" />
+            <div className="mt-3 flex items-start justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-white">Use top bar navigation</div>
+                <p className="mt-0.5 text-[11px] text-white/55">
+                  When on, the navigation sits as a horizontal bar across the top.
+                  When off, it stays on the left as a sidebar. Phones always use the top bar.
+                </p>
+              </div>
+              <button
+                onClick={() => setOrientation(orientation === "top" ? "side" : "top")}
+                aria-pressed={orientation === "top"}
+                className={`relative h-7 w-12 shrink-0 rounded-full border transition ${
+                  orientation === "top" ? "border-white/20 bg-white" : "border-white/15 bg-white/10"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-6 w-6 rounded-full transition-all ${
+                    orientation === "top" ? "left-5 bg-black" : "left-0.5 bg-white"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
           <SectionTitle icon={ImageIcon} title="Background mode" subtitle="Wallpaper or clean outline" />
           <div className="mt-3 grid grid-cols-2 gap-3">
             <ModeCard
