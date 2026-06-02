@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { TmdbItem, MediaKind } from "./tmdb";
+import { safeGetItem, safeSetItem } from "./safe-storage";
 
 export type ListEntry = TmdbItem & { kind: MediaKind };
 
@@ -33,23 +34,23 @@ export function MyListProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const raw = window.localStorage.getItem(KEY);
+      const raw = safeGetItem("localStorage", KEY);
       if (raw) setList(JSON.parse(raw));
     } catch {}
     try {
-      const raw = window.localStorage.getItem(GKEY);
+      const raw = safeGetItem("localStorage", GKEY);
       if (raw) setGames(JSON.parse(raw));
     } catch {}
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(KEY, JSON.stringify(list));
+    safeSetItem("localStorage", KEY, JSON.stringify(list));
   }, [list]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(GKEY, JSON.stringify(games));
+    safeSetItem("localStorage", GKEY, JSON.stringify(games));
   }, [games]);
 
   return (
