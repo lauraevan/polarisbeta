@@ -473,7 +473,7 @@ export const adminSuggestTargets = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ q: z.string().min(1).max(64) }).parse(input))
   .handler(async ({ context, data }) => {
     await assertOwner(context.userId);
-    const q = data.query ? data.query : data.q;
+    const q = data.q.trim();
     const term = `%${q.replace(/[%_]/g, "")}%`;
     const [profilesRes, guestsRes] = await Promise.all([
       supabaseAdmin
