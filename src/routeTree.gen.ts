@@ -16,6 +16,7 @@ import { Route as SecurityRouteImport } from './routes/security'
 import { Route as RecsRouteImport } from './routes/recs'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as MylistRouteImport } from './routes/mylist'
+import { Route as MusicRouteImport } from './routes/music'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as EmulatorRouteImport } from './routes/emulator'
@@ -61,6 +62,11 @@ const PartnersRoute = PartnersRouteImport.update({
 const MylistRoute = MylistRouteImport.update({
   id: '/mylist',
   path: '/mylist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MusicRoute = MusicRouteImport.update({
+  id: '/music',
+  path: '/music',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MediaRoute = MediaRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
+  '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
   '/recs': typeof RecsRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
+  '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
   '/recs': typeof RecsRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
+  '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/partners': typeof PartnersRoute
   '/recs': typeof RecsRoute
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/emulator'
     | '/games'
     | '/media'
+    | '/music'
     | '/mylist'
     | '/partners'
     | '/recs'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/emulator'
     | '/games'
     | '/media'
+    | '/music'
     | '/mylist'
     | '/partners'
     | '/recs'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/emulator'
     | '/games'
     | '/media'
+    | '/music'
     | '/mylist'
     | '/partners'
     | '/recs'
@@ -253,6 +265,7 @@ export interface RootRouteChildren {
   EmulatorRoute: typeof EmulatorRoute
   GamesRoute: typeof GamesRoute
   MediaRoute: typeof MediaRoute
+  MusicRoute: typeof MusicRoute
   MylistRoute: typeof MylistRoute
   PartnersRoute: typeof PartnersRoute
   RecsRoute: typeof RecsRoute
@@ -313,6 +326,13 @@ declare module '@tanstack/react-router' {
       path: '/mylist'
       fullPath: '/mylist'
       preLoaderRoute: typeof MylistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/music': {
+      id: '/music'
+      path: '/music'
+      fullPath: '/music'
+      preLoaderRoute: typeof MusicRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/media': {
@@ -405,6 +425,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmulatorRoute: EmulatorRoute,
   GamesRoute: GamesRoute,
   MediaRoute: MediaRoute,
+  MusicRoute: MusicRoute,
   MylistRoute: MylistRoute,
   PartnersRoute: PartnersRoute,
   RecsRoute: RecsRoute,
@@ -418,3 +439,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
