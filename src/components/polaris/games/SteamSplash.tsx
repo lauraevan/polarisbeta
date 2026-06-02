@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import logo from "@/assets/polaris-logo.png";
+import { safeGetItem, safeSetItem } from "@/lib/safe-storage";
 
 const KEY = "polaris-steam-booted";
 
@@ -11,12 +12,12 @@ export function SteamSplash({ onDone }: { onDone?: () => void }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.sessionStorage.getItem(KEY) === "1") return;
+    if (safeGetItem("sessionStorage", KEY) === "1") return;
     setShow(true);
     const a = setTimeout(() => setOut(true), 1800);
     const b = setTimeout(() => {
       setShow(false);
-      window.sessionStorage.setItem(KEY, "1");
+      safeSetItem("sessionStorage", KEY, "1");
       onDone?.();
     }, 2400);
     return () => { clearTimeout(a); clearTimeout(b); };

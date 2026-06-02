@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Send, Image as ImageIcon, Film as FilmIcon, Smile, X, MonitorUp } from "lucide-react";
+import { safeGetItem, safeSetItem } from "@/lib/safe-storage";
 
 type Attachment = {
   kind: "image" | "video" | "gif";
@@ -15,11 +16,18 @@ type Msg = {
   at: number;
 };
 
+type TenorResult = {
+  media?: Array<{
+    tinygif?: { url?: string };
+    gif?: { url?: string };
+  }>;
+};
+
 const STORAGE_KEY = (room: string) => `polarisflix-chat-${room}`;
 
 function loadName() {
   if (typeof window === "undefined") return "You";
-  return window.localStorage.getItem("polarisflix-chat-name") || "You";
+  return safeGetItem("localStorage", "polarisflix-chat-name") || "You";
 }
 
 export function MovieChat({ room, title, onClose }: { room: string; title: string; onClose?: () => void }) {
@@ -41,20 +49,20 @@ export function MovieChat({ room, title, onClose }: { room: string; title: strin
   // Load persisted messages
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY(room));
+      const raw = safeGetItem("localStorage", STORAGE_KEY(room));
       if (raw) setMessages(JSON.parse(raw));
-    } catch {}
+    } catch {
+      // Ignore malformed saved chat history.
+    }
   }, [room]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY(room), JSON.stringify(messages.slice(-100)));
-    } catch {}
+    safeSetItem("localStorage", STORAGE_KEY(room), JSON.stringify(messages.slice(-100)));
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
   }, [messages, room]);
 
   useEffect(() => {
-    window.localStorage.setItem("polarisflix-chat-name", name);
+    safeSetItem("localStorage", "polarisflix-chat-name", name);
   }, [name]);
 
   const handleFiles = (e: ChangeEvent<HTMLInputElement>, kind: "image" | "video") => {
@@ -80,7 +88,7 @@ export function MovieChat({ room, title, onClose }: { room: string; title: strin
       );
       const data = await res.json();
       const urls: string[] = (data?.results ?? [])
-        .map((r: any) => r?.media?.[0]?.tinygif?.url || r?.media?.[0]?.gif?.url)
+        .map((r: TenorResult) => r?.media?.[0]?.tinygif?.url || r?.media?.[0]?.gif?.url)
         .filter(Boolean);
       setGifResults(urls);
     } catch {
@@ -115,7 +123,13 @@ export function MovieChat({ room, title, onClose }: { room: string; title: strin
       const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2_500_000 });
       screenRecRef.current = rec;
       rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
-      stream.getVideoTracks()[0]?.addEventListener("ended", () => { try { rec.stop(); } catch {} });
+      stream.getVideoTracks()[0]?.addEventListener("ended", () => {
+        try {
+          rec.stop();
+        } catch {
+          // Recorder may already be stopped.
+        }
+      });
       rec.onstop = () => {
         setScreenSharing(false);
         stream.getTracks().forEach((t) => t.stop());

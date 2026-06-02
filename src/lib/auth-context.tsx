@@ -63,11 +63,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async (uid: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", uid)
-      .maybeSingle();
+    let data: unknown = null;
+    try {
+      const result = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", uid)
+        .maybeSingle();
+      data = result.data;
+    } catch {
+      return;
+    }
     if (data) {
       const p = data as unknown as Profile;
       setProfile(p);
@@ -79,26 +85,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // 1. Subscribe FIRST so we never miss an event.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        // defer profile fetch to avoid recursive auth-callback warning
-        setTimeout(() => loadProfile(s.user.id), 0);
-      } else {
-        setProfile(null);
-      }
-    });
-    // 2. Then check existing session.
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) loadProfile(s.user.id);
+    try {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, s) => {
+        setSession(s);
+        setUser(s?.user ?? null);
+        if (s?.user) {
+          // defer profile fetch to avoid recursive auth-callback warning
+          setTimeout(() => loadProfile(s.user.id), 0);
+        } else {
+          setProfile(null);
+        }
+      });
+      // 2. Then check existing session.
+      supabase.auth.getSession().then(({ data: { session: s } }) => {
+        setSession(s);
+        setUser(s?.user ?? null);
+        if (s?.user) loadProfile(s.user.id);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+      return () => subscription.unsubscribe();
+    } catch {
       setLoading(false);
-    });
-    return () => subscription.unsubscribe();
+    }
   }, [loadProfile]);
 
   const signUp = useCallback(async (username: string, password: string) => {

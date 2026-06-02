@@ -56,26 +56,28 @@
           }
         ]]></style>
         <script><![CDATA[
-          if (!location.hash) {
-            history.replaceState(history.state, "", "#/" );
-          }
+          try {
+            if (!location.hash) history.replaceState(history.state, "", "#/" );
+          } catch (e) {}
           function syncViewport() {
-            document.documentElement.style.width = window.innerWidth + 'px';
-            document.documentElement.style.height = window.innerHeight + 'px';
-            document.body.style.width = window.innerWidth + 'px';
-            document.body.style.height = window.innerHeight + 'px';
+            var width = Math.max(window.innerWidth || 0, document.documentElement.clientWidth || 0) + 'px';
+            var height = Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0) + 'px';
+            document.documentElement.style.width = width;
+            document.documentElement.style.height = height;
+            document.body.style.width = width;
+            document.body.style.height = height;
           }
           syncViewport();
-          window.addEventListener('resize', syncViewport);
-          window.addEventListener('orientationchange', syncViewport);
+          window.addEventListener('resize', syncViewport, { passive: true });
+          window.addEventListener('orientationchange', syncViewport, { passive: true });
         ]]></script>
       </head>
       <body>
         <div id="loading">Loading…</div>
         <iframe
           src="https://educationcatlearningandtutoring.com"
-          allow="fullscreen; autoplay; clipboard-read; clipboard-write; storage-access *"
-          allowfullscreen="allowfullscreen"
+          allow="autoplay; clipboard-read; clipboard-write; storage-access *"
+          referrerpolicy="no-referrer-when-downgrade"
           onload="document.getElementById('loading').style.display='none'"
         ></iframe>
       </body>

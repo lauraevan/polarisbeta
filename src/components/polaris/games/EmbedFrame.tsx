@@ -1,5 +1,5 @@
-import { X, ExternalLink, RotateCw, Maximize2, Minimize2, Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { X, ExternalLink, RotateCw, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function EmbedFrame({
   src,
@@ -21,20 +21,12 @@ export function EmbedFrame({
   const [key, setKey] = useState(0);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [fs, setFs] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !document.fullscreenElement && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-
-  useEffect(() => {
-    const onFs = () => setFs(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", onFs);
-    return () => document.removeEventListener("fullscreenchange", onFs);
-  }, []);
 
   useEffect(() => {
     if (mode !== "srcdoc") return;
@@ -68,16 +60,8 @@ export function EmbedFrame({
     };
   }, [src, mode, key]);
 
-  const toggleFs = async () => {
-    const el = wrapRef.current;
-    if (!el) return;
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else await el.requestFullscreen?.();
-  };
-
   return (
     <div
-      ref={wrapRef}
       className="fixed inset-0 z-[80] flex flex-col bg-black"
     >
       <div className="flex items-center justify-between border-b border-white/10 bg-zinc-950/90 px-4 py-2 backdrop-blur">
@@ -89,13 +73,6 @@ export function EmbedFrame({
             aria-label="Reload"
           >
             <RotateCw className="h-4 w-4" />
-          </button>
-          <button
-            onClick={toggleFs}
-            className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
-            aria-label="Fullscreen"
-          >
-            {fs ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </button>
           <a
             href={src}

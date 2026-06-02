@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { safeGetItem, safeSetItem } from "./safe-storage";
 
 type Orientation = "side" | "top";
 
@@ -21,20 +22,20 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const v = window.localStorage.getItem(KEY);
+    const v = safeGetItem("localStorage", KEY);
     if (v === "1") setCollapsed(true);
-    const o = window.localStorage.getItem(ORI_KEY);
+    const o = safeGetItem("localStorage", ORI_KEY);
     if (o === "top" || o === "side") setOrientation(o);
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(KEY, collapsed ? "1" : "0");
+    safeSetItem("localStorage", KEY, collapsed ? "1" : "0");
   }, [collapsed]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(ORI_KEY, orientation);
+    safeSetItem("localStorage", ORI_KEY, orientation);
   }, [orientation]);
 
   const toggle = useCallback(() => setCollapsed((c) => !c), []);

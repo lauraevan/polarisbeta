@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { safeGetItem, safeSetItem } from "@/lib/safe-storage";
 
 /**
  * One-time "Logging into profile…" splash shown when entering Games / Media
@@ -15,8 +16,8 @@ export function ProfileSplash({ tag }: { tag: string }) {
     if (loading) return;
     if (!profile) return;
     if (typeof window === "undefined") return;
-    if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, "1");
+    if (safeGetItem("sessionStorage", key)) return;
+    safeSetItem("sessionStorage", key, "1");
     setShow(true);
     const t = setTimeout(() => setShow(false), 1400);
     return () => clearTimeout(t);

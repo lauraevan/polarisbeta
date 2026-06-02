@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { WALLPAPERS, DEFAULT_WALLPAPER_ID, type Wallpaper, type Resolution } from "./wallpapers";
+import { safeGetItem, safeSetItem } from "./safe-storage";
 
 type Ctx = {
   wallpaper: Wallpaper;
@@ -27,9 +28,9 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const saved = window.localStorage.getItem(STORAGE_KEY);
+    const saved = safeGetItem("localStorage", STORAGE_KEY);
     if (saved && WALLPAPERS.some((w) => w.id === saved)) setId(saved);
-    const savedRes = window.localStorage.getItem(RES_KEY) as Resolution | null;
+    const savedRes = safeGetItem("localStorage", RES_KEY) as Resolution | null;
     if (savedRes && ["540p", "1080p", "4k"].includes(savedRes)) setRes(savedRes);
   }, []);
 
@@ -44,13 +45,13 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
       "--polaris-accent",
       wallpaper.accent
     );
-    window.localStorage.setItem(STORAGE_KEY, wallpaper.id);
+    safeSetItem("localStorage", STORAGE_KEY, wallpaper.id);
   }, [wallpaper]);
 
   const setWallpaperId = useCallback((next: string) => setId(next), []);
   const setResolution = useCallback((r: Resolution) => {
     setRes(r);
-    if (typeof window !== "undefined") window.localStorage.setItem(RES_KEY, r);
+    if (typeof window !== "undefined") safeSetItem("localStorage", RES_KEY, r);
   }, []);
 
   return (

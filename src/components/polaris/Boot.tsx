@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import logo from "@/assets/polaris-logo.png";
+import { safeGetItem, safeSetItem } from "@/lib/safe-storage";
 
 const KEY = "polaris-booted";
 
@@ -10,7 +11,7 @@ export function PolarisBoot() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.sessionStorage.getItem(KEY) === "1") return;
+    if (safeGetItem("sessionStorage", KEY) === "1") return;
     setShow(true);
     const start = Date.now();
     const dur = 5200;
@@ -22,7 +23,7 @@ export function PolarisBoot() {
     const a = setTimeout(() => setOut(true), dur);
     const b = setTimeout(() => {
       setShow(false);
-      window.sessionStorage.setItem(KEY, "1");
+      safeSetItem("sessionStorage", KEY, "1");
     }, dur + 700);
     return () => {
       clearInterval(tick);

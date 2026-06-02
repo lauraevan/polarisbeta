@@ -4,6 +4,8 @@
  * Results cached in-memory + sessionStorage so the same tile only hits the
  * network once per session.
  */
+import { safeGetItem, safeSetItem } from "./safe-storage";
+
 const MEM = new Map<string, Promise<string | null>>();
 const SKEY = (k: string) => `pgcov:${k}`;
 
@@ -17,7 +19,7 @@ export function lookupCover(title: string): Promise<string | null> {
   if (MEM.has(key)) return MEM.get(key)!;
 
   try {
-    const cached = sessionStorage.getItem(SKEY(key));
+    const cached = safeGetItem("sessionStorage", SKEY(key));
     if (cached !== null) {
       const p = Promise.resolve(cached || null);
       MEM.set(key, p);
@@ -44,10 +46,10 @@ export function lookupCover(title: string): Promise<string | null> {
         items[0];
       if (fuzzy?.id) {
         const cover = `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${fuzzy.id}/header.jpg`;
-        try { sessionStorage.setItem(SKEY(key), cover); } catch {}
+        safeSetItem("sessionStorage", SKEY(key), cover);
         return cover;
       }
-      try { sessionStorage.setItem(SKEY(key), ""); } catch {}
+      safeSetItem("sessionStorage", SKEY(key), "");
       return null;
     } catch {
       return null;

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Radio, Search, X, Tv2, Trophy, Newspaper, Film, Music2, Baby, FlaskConical,
-  Globe2, Flame, Star, Volume2, Maximize2, ListVideo, ChevronRight,
+  Globe2, Flame, Star, Volume2, ListVideo, ChevronRight,
   Loader2, RefreshCw, Calendar,
 } from "lucide-react";
 import type { Channel, ChannelCategory } from "./channelTypes";
@@ -416,7 +416,6 @@ function LivePlayer({ channel, all, onPick, onClose }: { channel: Channel; all: 
             {channel.tagline && <span className="hidden text-white/55 sm:inline">· {channel.tagline}</span>}
             <div className="ml-auto flex items-center gap-2 opacity-70">
               <Volume2 className="h-3.5 w-3.5" />
-              <Maximize2 className="h-3.5 w-3.5" />
             </div>
           </div>
         </div>

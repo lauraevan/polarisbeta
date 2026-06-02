@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
+import { safeGetItem, safeSetItem } from "./safe-storage";
 
 const EVT = "polaris:ui-pref";
 
 function read(key: string, fallback: boolean) {
   if (typeof window === "undefined") return fallback;
-  const v = window.localStorage.getItem(key);
+  const v = safeGetItem("localStorage", key);
   if (v === "1") return true;
   if (v === "0") return false;
   return fallback;
@@ -29,7 +30,7 @@ export function useLocalToggle(key: string, fallback = true) {
 
   const set = useCallback(
     (next: boolean) => {
-      window.localStorage.setItem(key, next ? "1" : "0");
+      safeSetItem("localStorage", key, next ? "1" : "0");
       setV(next);
       window.dispatchEvent(new CustomEvent(EVT, { detail: { key } }));
     },
