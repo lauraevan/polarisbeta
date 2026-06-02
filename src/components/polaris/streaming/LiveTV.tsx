@@ -24,8 +24,8 @@ type Category = "All" | "Sports" | "News" | "Entertainment" | "Movies" | "Kids" 
 
 // Direct public HLS feeds. No DaddyLive mirrors, no blocked iframe domains.
 const CHANNELS: Channel[] = [
-  { id: "nfl-channel", name: "NFL Channel", category: "Sports", domain: "nfl.com", emoji: "🏈", accent: "30 30 30", tagline: "NFL originals · highlights", popular: true, highlight: true, streams: [{ label: "NFL FAST", url: "https://pb-we3ltka9xobj6.akamaized.net/master.m3u8" }] },
-  { id: "nba-tv", name: "NBA TV", category: "Sports", domain: "nba.com", emoji: "🏀", accent: "200 80 30", tagline: "Hoops coverage", popular: true, highlight: true, streams: [{ label: "NBA FAST", url: "https://amg00556-amg00556c3-firetv-us-6060.playouts.now.amagi.tv/playlist.m3u8" }, { label: "NBA alt", url: "https://pb-5pdyic0cu7tri.akamaized.net/NBA.m3u8" }] },
+  { id: "fox-sports", name: "FOX Sports", category: "Sports", domain: "foxsports.com", emoji: "🏟️", accent: "30 80 180", tagline: "Sports coverage", popular: true, highlight: true, streams: [{ label: "FOX Sports", url: "https://d1jzu95oc8fgt3.cloudfront.net/FOX_Sports.m3u8" }, { label: "FOX Sports alt", url: "https://live-manifest.production-public.tubi.io/live/6035c7fd-efff-4ec7-93dc-aa0c7a58ba47/playlist.m3u8" }] },
+  { id: "roku-sports", name: "Roku Sports Channel", category: "Sports", domain: "therokuchannel.roku.com", emoji: "🏆", accent: "100 60 200", tagline: "Sports shows · live events", popular: true, highlight: true, streams: [{ label: "Roku Sports", url: "https://d3ialx0k0mla2a.cloudfront.net/Roku_Sports_Channel.m3u8" }, { label: "Yahoo Sports", url: "https://d7vulbd7rxo7j.cloudfront.net/Yahoo_Sports_Network.m3u8" }] },
   { id: "pga-tour", name: "PGA Tour", category: "Sports", domain: "pgatour.com", emoji: "⛳", accent: "40 130 70", tagline: "Golf highlights · live windows", popular: true, streams: [{ label: "PGA Tour", url: "https://d11k1mnrgfposz.cloudfront.net/playlist.m3u8" }] },
   { id: "swerve-sports", name: "Swerve Sports", category: "Sports", domain: "swervesports.com", emoji: "🏟️", accent: "230 80 30", tagline: "Action sports · competitions", streams: [{ label: "Swerve", url: "https://linear-253.frequency.stream/mt/roku/253/hls/master/playlist.m3u8" }] },
   { id: "red-bull-tv", name: "Red Bull TV", category: "Sports", domain: "redbull.com", emoji: "🏁", accent: "200 30 30", tagline: "Racing · outdoor · culture", highlight: true, streams: [{ label: "Red Bull", url: "https://db34cc6127ac459db55cab5f97cd66b9.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-680-WORBAUENFAST-WHALETVPLUS/680/whaletvplus/hls/master/playlist.m3u8" }] },
@@ -54,6 +54,7 @@ const CHANNELS: Channel[] = [
   { id: "maverick", name: "Maverick Black Cinema", category: "Movies", domain: "maverickentertainment.cc", emoji: "🍿", accent: "210 150 40", tagline: "Independent cinema", streams: [{ label: "Maverick", url: "https://maverick-maverick-black-cinema-3-us.roku.wurl.tv/playlist.m3u8" }] },
 
   // Kids
+  { id: "cartoon-network", name: "Cartoon Network", category: "Kids", domain: "cartoonnetwork.com", emoji: "⬛", accent: "245 245 245", tagline: "Cartoons live", popular: true, highlight: true, streams: [{ label: "CN live", url: "https://rpn.bozztv.com/gusa/gusa-TVSCartoonNetwork/index.m3u8" }] },
   { id: "pbs-kids", name: "PBS Kids", category: "Kids", domain: "pbskids.org", emoji: "🐰", accent: "40 160 90", tagline: "Family favorites", popular: true, highlight: true, streams: [{ label: "PBS Kids", url: "https://livestream.pbskids.org/out/v1/14507d931bbe48a69287e4850e53443c/est.m3u8" }] },
   { id: "kartoon", name: "Kartoon Channel!", category: "Kids", domain: "kartoonchannel.com", emoji: "🦸", accent: "230 110 30", tagline: "Animated shows", popular: true, streams: [{ label: "Kartoon", url: "https://lightning-fnf-samsungaus.amagi.tv/playlist.m3u8" }] },
   { id: "filmrise-anime", name: "FilmRise Anime", category: "Kids", domain: "filmrise.com", emoji: "🌸", accent: "230 60 130", tagline: "Anime channel", streams: [{ label: "FilmRise Anime", url: "https://dvu7aia8rjlfm.cloudfront.net/master.m3u8" }] },
@@ -580,9 +581,11 @@ type SportStream = {
   hd: boolean;
   embedUrl: string;
   source: string;
+  viewers?: number;
 };
 
 const STREAMED_API = "https://streamed.pk";
+const SPORTS_SOURCE_PRIORITY: Record<string, number> = { echo: 0, delta: 1, bravo: 2, charlie: 3, alpha: 4, admin: 9 };
 const SPORTS_ICONS: Record<string, string> = {
   football: "⚽", soccer: "⚽", basketball: "🏀", baseball: "⚾",
   "american-football": "🏈", hockey: "🏒", "ice-hockey": "🏒",
@@ -606,6 +609,18 @@ function badgeUrl(b?: string) {
 function posterUrl(p?: string) {
   if (!p) return "";
   return p.startsWith("http") ? p : `${STREAMED_API}${p}`;
+}
+function orderedSources(sources: SportMatch["sources"] = []) {
+  return [...sources].sort((a, b) =>
+    (SPORTS_SOURCE_PRIORITY[a.source] ?? 5) - (SPORTS_SOURCE_PRIORITY[b.source] ?? 5)
+  );
+}
+function orderedStreams(streams: SportStream[]) {
+  return [...streams].sort((a, b) =>
+    (SPORTS_SOURCE_PRIORITY[a.source] ?? 5) - (SPORTS_SOURCE_PRIORITY[b.source] ?? 5) ||
+    Number(b.hd) - Number(a.hd) ||
+    (b.viewers ?? 0) - (a.viewers ?? 0)
+  );
 }
 
 function LiveSportsSection({
@@ -662,13 +677,13 @@ function LiveSportsSection({
   const handlePlay = async (m: SportMatch) => {
     setLoadingMatchId(m.id);
     try {
-      for (const src of m.sources) {
+      for (const src of orderedSources(m.sources)) {
         try {
           const r = await fetch(`${STREAMED_API}/api/stream/${src.source}/${src.id}`);
           if (!r.ok) continue;
           const json = await r.json();
-          const streams = (Array.isArray(json) ? json : []) as SportStream[];
-          const hd = streams.find((s) => s?.hd && s.embedUrl) ?? streams.find((s) => s?.embedUrl);
+          const streams = orderedStreams(((Array.isArray(json) ? json : []) as SportStream[]).filter((s) => s?.embedUrl));
+          const hd = streams[0];
           if (hd?.embedUrl) {
             onPlay(m, hd);
             return;
@@ -828,7 +843,7 @@ function SportsPlayer({
     let dead = false;
     (async () => {
       const collected: SportStream[] = [];
-      for (const s of match.sources) {
+      for (const s of orderedSources(match.sources)) {
         try {
           const r = await fetch(`${STREAMED_API}/api/stream/${s.source}/${s.id}`);
           if (!r.ok) continue;
@@ -840,7 +855,7 @@ function SportsPlayer({
       if (dead || collected.length === 0) return;
       // De-dup
       const seen = new Set<string>();
-      const dedup = collected.filter((s) => !seen.has(s.embedUrl) && seen.add(s.embedUrl));
+      const dedup = orderedStreams(collected).filter((s) => !seen.has(s.embedUrl) && seen.add(s.embedUrl));
       const startIdx = Math.max(0, dedup.findIndex((s) => s.embedUrl === stream.embedUrl));
       setAlts(dedup);
       setAltIdx(startIdx);
