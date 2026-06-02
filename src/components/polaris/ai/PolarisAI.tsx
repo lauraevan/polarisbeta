@@ -7,6 +7,7 @@ import {
   Code2,
   Coins,
   GraduationCap,
+  Image as ImageIcon,
   Lightbulb,
   PencilLine,
   MessageSquare,
@@ -142,6 +143,7 @@ export function PolarisAI() {
   const [modelOpen, setModelOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
+  const [imageMode, setImageMode] = useState(false);
   const [wallet, setWallet] = useState<{ coins: number; basic_credits: number; premium_credits: number } | null>(null);
   const [exchanging, setExchanging] = useState<"basic" | "premium" | null>(null);
   const [search, setSearch] = useState("");
@@ -227,6 +229,72 @@ export function PolarisAI() {
   async function send(text: string) {
     if (!text.trim() || streaming) return;
     setError(null);
+    // Image generation path
+    if (imageMode) {
+      let chat = active;
+      if (!chat) {
+        chat = { id: uid(), title: text.slice(0, 40), messages: [], updatedAt: Date.now() };
+        setChats((p) => [chat!, ...p]);
+        setActiveId(chat.id);
+      }
+      const userMsg: ChatMessage = { id: uid(), role: "user", content: text };
+      const assistantMsg: ChatMessage = { id: uid(), role: "assistant", content: "Generating image…" };
+      const chatId = chat.id;
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === chatId
+            ? {
+                ...c,
+                title: c.messages.length ? c.title : text.slice(0, 40),
+                messages: [...c.messages, userMsg, assistantMsg],
+                updatedAt: Date.now(),
+              }
+            : c,
+        ),
+      );
+      setInput("");
+      setStreaming(true);
+      try {
+        const res = await fetch("/api/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: text }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
+        const dataUrl: string = j.dataUrl;
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === chatId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id === assistantMsg.id ? { ...m, content: `![image](${dataUrl})` } : m,
+                  ),
+                }
+              : c,
+          ),
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Image generation failed";
+        setError(msg);
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === chatId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id === assistantMsg.id ? { ...m, content: `⚠️ ${msg}` } : m,
+                  ),
+                }
+              : c,
+          ),
+        );
+      } finally {
+        setStreaming(false);
+      }
+      return;
+    }
     // Rate limit guard — protect credits
     const limits = loadLimits();
     const now = Date.now();
@@ -736,6 +804,23 @@ export function PolarisAI() {
                   className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-white/70 hover:bg-white/[0.08]"
                 >
                   <Settings2 className="h-2.5 w-2.5" /> {mode.label}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageMode((v) => !v)}
+                  className="flex items-center gap-1 rounded-full border px-2 py-0.5 transition"
+                  style={
+                    imageMode
+                      ? {
+                          borderColor: "rgba(var(--polaris-accent)/0.6)",
+                          background: "rgba(var(--polaris-accent)/0.2)",
+                          color: "#fff",
+                        }
+                      : { borderColor: "rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.7)" }
+                  }
+                  title={imageMode ? "Image mode on" : "Generate an image instead"}
+                >
+                  <ImageIcon className="h-2.5 w-2.5" /> Image
                 </button>
                 <span className="hidden sm:inline text-white/30">·  Enter ↵ to send</span>
               </div>
