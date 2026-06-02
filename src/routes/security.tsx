@@ -6,10 +6,11 @@ import { useAdmin } from "@/lib/admin-context";
 import {
   adminListSessions, adminListEvents, adminListBans, adminSecurityStats,
   adminQuickBan, adminLiftBan, whoAmI, adminLookupTarget, adminCreateBan,
+  adminSuggestTargets,
 } from "@/lib/security/admin-security.functions";
 import {
   Shield, Search, Ban, RefreshCw, AlertTriangle, Fingerprint, Activity,
-  Eye, ChevronLeft, X, MonitorSmartphone,
+  Eye, ChevronLeft, X, MonitorSmartphone, UserX,
 } from "lucide-react";
 
 export const Route = createFileRoute("/security")({
@@ -41,7 +42,11 @@ type Stats = {
   activeBans: number; totalBans: number; events24h: number; blocked24h: number;
   newDevices24h: number; vpnAttempts24h: number; totalSessions: number; pendingAppeals: number;
 };
-type Panel = "feed" | "lookup" | "me" | "bans" | "devices" | null;
+type Panel = "feed" | "lookup" | "me" | "bans" | "devices" | "guests" | null;
+
+type Suggestion =
+  | { kind: "user"; label: string; sub: string; query: string; emoji: string | null; banned: boolean }
+  | { kind: "guest"; label: string; sub: string; query: string };
 
 function SecurityPage() {
   const { user, loading } = useAuth();
