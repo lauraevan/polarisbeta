@@ -792,8 +792,8 @@ async function probe(url: string, timeoutMs = 3500): Promise<{ ok: boolean; ms: 
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    await fetch(url, { mode: "no-cors", signal: ctrl.signal, cache: "no-store" });
-    return { ok: true, ms: Math.round(performance.now() - start) };
+    const res = await fetch(url, { mode: "no-cors", signal: ctrl.signal, cache: "no-store" });
+    return { ok: res.type === "opaque" || res.ok, ms: Math.round(performance.now() - start) };
   } catch {
     return { ok: false, ms: Math.round(performance.now() - start) };
   } finally {
@@ -811,9 +811,8 @@ function LinkMakerSection({ defaultEngine }: { defaultEngine: ProxyEngine }) {
     const rankedEngines = FILTER_ENGINE_RANK[filter];
     const targets = WORKING_TARGETS.slice(0, 5);
     const next: Candidate[] = targets.map((target, idx) => {
-      const engine = target.engines.includes(defaultEngine)
-        ? defaultEngine
-        : rankedEngines[idx % rankedEngines.length];
+      const preferred = rankedEngines[idx % rankedEngines.length];
+      const engine = target.engines.includes(preferred) ? preferred : defaultEngine;
       return {
         label: target.label,
         target: normalizeUrl(target.url),
@@ -833,9 +832,8 @@ function LinkMakerSection({ defaultEngine }: { defaultEngine: ProxyEngine }) {
       ? candidates
       : WORKING_TARGETS.slice(0, 5).map((target, idx) => {
           const rankedEngines = FILTER_ENGINE_RANK[filter];
-          const engine = target.engines.includes(defaultEngine)
-            ? defaultEngine
-            : rankedEngines[idx % rankedEngines.length];
+          const preferred = rankedEngines[idx % rankedEngines.length];
+          const engine = target.engines.includes(preferred) ? preferred : defaultEngine;
           return {
             label: target.label,
             target: normalizeUrl(target.url),
