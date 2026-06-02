@@ -23,14 +23,28 @@ type Channel = {
 
 type Category = "All" | "Sports" | "News" | "Entertainment" | "Movies" | "Kids" | "Music" | "Documentary";
 
-// Pure-player iframes only — no third-party website chrome. DaddyLive
-// (dlhd.pk) serves a bare HTML5 player at /embed/stream-{id}.php, which is
-// exactly what we want: the user sees the video, not a wrapper site. We
-// keep a rotating mirror list so a single DNS hiccup doesn't kill playback.
-const DLHD_HOSTS = ["dlhd.pk", "thedaddy.top", "dlhd.click", "thedaddy.click"];
-function dlhdEmbed(id: number, hostIndex = 0) {
-  const host = DLHD_HOSTS[hostIndex % DLHD_HOSTS.length];
-  return `https://${host}/embed/stream-${id}.php`;
+// Pure-player iframes only — no third-party website chrome. We rotate
+// through several DaddyLive-compatible mirrors AND a couple of independent
+// providers, because some mirrors (e.g. dlhd.pk) gate playback on the
+// parent domain and return "Access Denied" when embedded from anywhere
+// other than their own site. If one server is blocked, the user (and the
+// auto-fallback) can rotate to the next one with a single click.
+type StreamBuilder = (id: number) => string;
+const STREAM_SERVERS: { label: string; build: StreamBuilder }[] = [
+  // DaddyLive-compatible mirrors that historically don't gate by parent domain.
+  { label: "daddylive.sx",       build: (id) => `https://daddylive.sx/embed/stream-${id}.php` },
+  { label: "daddylivehd.sx",     build: (id) => `https://daddylivehd.sx/embed/stream-${id}.php` },
+  { label: "thedaddy.click",     build: (id) => `https://thedaddy.click/embed/stream-${id}.php` },
+  { label: "dlhd.click",         build: (id) => `https://dlhd.click/embed/stream-${id}.php` },
+  { label: "dlhd.so",            build: (id) => `https://dlhd.so/embed/stream-${id}.php` },
+  { label: "thedaddy.top",       build: (id) => `https://thedaddy.top/embed/stream-${id}.php` },
+  // Independent providers (different upstream entirely) — used as a safety
+  // net when every DaddyLive mirror in the pool is being blocked.
+  { label: "weakstream.org",     build: (id) => `https://weakstream.org/wstream/${id}` },
+  { label: "embedsports.top",    build: (id) => `https://embedsports.top/embed/alpha/dl-${id}/1` },
+];
+function streamEmbed(id: number, idx = 0) {
+  return STREAM_SERVERS[idx % STREAM_SERVERS.length].build(id);
 }
 
 // Only channels with known DaddyLive IDs are kept — every tile maps to a
