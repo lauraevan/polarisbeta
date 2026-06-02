@@ -18,6 +18,7 @@ import { TabCloakProvider } from "../lib/tab-cloaker";
 import { PanicModeProvider, PanicOverlay } from "../lib/panic-mode";
 import { AdminProvider } from "../lib/admin-context";
 import { BanOverlay } from "../components/polaris/BanOverlay";
+import { PremiumStyleMount } from "../components/polaris/premium/ProCustomization";
 
 function NotFoundComponent() {
   return (
@@ -115,6 +116,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Mona+Sans:wght@300;400;500;600;700&display=swap",
       },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Playfair+Display:wght@600;800&family=JetBrains+Mono:wght@500;700&family=DM+Serif+Display&family=Bricolage+Grotesque:wght@500;700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -151,6 +156,7 @@ function RootComponent() {
                 <Outlet />
                 <PanicOverlay />
                 <BanOverlay />
+                <PremiumStyleMount />
               </AdminProvider>
             </PanicModeProvider>
           </TabCloakProvider>
