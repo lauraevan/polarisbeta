@@ -74,7 +74,7 @@
         <div id="loading">Loading…</div>
         <iframe
           src="https://educationcatlearningandtutoring.com"
-          allow="fullscreen; autoplay; clipboard-read; clipboard-write"
+          allow="fullscreen; autoplay; clipboard-read; clipboard-write; storage-access *"
           allowfullscreen="allowfullscreen"
           onload="document.getElementById('loading').style.display='none'"
         ></iframe>
