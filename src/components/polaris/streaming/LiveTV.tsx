@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Radio, Search, X, Tv2, Trophy, Newspaper, Film, Music2, Baby, FlaskConical,
   Globe2, Flame, Star, Volume2, Maximize2, ListVideo, ChevronRight,
@@ -17,83 +17,56 @@ type Channel = {
   highlight?: boolean;
   now?: string;            // what's airing now (display-only)
   next?: string;           // up next
-  /** DaddyLive numeric stream id — pure player iframe, no website chrome. */
-  dlhd?: number;
+  streams: { label: string; url: string }[];
 };
 
 type Category = "All" | "Sports" | "News" | "Entertainment" | "Movies" | "Kids" | "Music" | "Documentary";
 
-// Pure-player iframes only — no third-party website chrome. We rotate
-// through several DaddyLive-compatible mirrors AND a couple of independent
-// providers, because some mirrors (e.g. dlhd.pk) gate playback on the
-// parent domain and return "Access Denied" when embedded from anywhere
-// other than their own site. If one server is blocked, the user (and the
-// auto-fallback) can rotate to the next one with a single click.
-type StreamBuilder = (id: number) => string;
-const STREAM_SERVERS: { label: string; build: StreamBuilder }[] = [
-  // DaddyLive-compatible mirrors that historically don't gate by parent domain.
-  { label: "daddylive.sx",       build: (id) => `https://daddylive.sx/embed/stream-${id}.php` },
-  { label: "daddylivehd.sx",     build: (id) => `https://daddylivehd.sx/embed/stream-${id}.php` },
-  { label: "thedaddy.click",     build: (id) => `https://thedaddy.click/embed/stream-${id}.php` },
-  { label: "dlhd.click",         build: (id) => `https://dlhd.click/embed/stream-${id}.php` },
-  { label: "dlhd.so",            build: (id) => `https://dlhd.so/embed/stream-${id}.php` },
-  { label: "thedaddy.top",       build: (id) => `https://thedaddy.top/embed/stream-${id}.php` },
-  // Independent providers (different upstream entirely) — used as a safety
-  // net when every DaddyLive mirror in the pool is being blocked.
-  { label: "weakstream.org",     build: (id) => `https://weakstream.org/wstream/${id}` },
-  { label: "embedsports.top",    build: (id) => `https://embedsports.top/embed/alpha/dl-${id}/1` },
-];
-function streamEmbed(id: number, idx = 0) {
-  return STREAM_SERVERS[idx % STREAM_SERVERS.length].build(id);
-}
-
-// Only channels with known DaddyLive IDs are kept — every tile maps to a
-// pure HTML5 player iframe (no third-party website wrapper).
+// Direct public HLS feeds. No DaddyLive mirrors, no blocked iframe domains.
 const CHANNELS: Channel[] = [
-  // Sports
-  { id: "sky-sports-main",   name: "Sky Sports Main Event", category: "Sports",        domain: "skysports.com",        emoji: "⚽", accent: "5 95 200",   tagline: "Premier League · F1 · Boxing", popular: true, highlight: true, dlhd: 130 },
-  { id: "sky-sports-pl",     name: "Sky Sports Premier League", category: "Sports",    domain: "skysports.com",        emoji: "🏟️", accent: "5 95 200",   tagline: "Live Premier League",          popular: true,                  dlhd: 131 },
-  { id: "sky-sports-football", name: "Sky Sports Football", category: "Sports",        domain: "skysports.com",        emoji: "⚽", accent: "5 95 200",   tagline: "EFL · International",                                          dlhd: 134 },
-  { id: "sky-sports-f1",     name: "Sky Sports F1",         category: "Sports",        domain: "skysports.com",        emoji: "🏎️", accent: "200 30 30",  tagline: "Formula 1 · MotoGP",                                          dlhd: 137 },
-  { id: "tnt-sports-1",      name: "TNT Sports 1",          category: "Sports",        domain: "tntsports.co.uk",      emoji: "🥊", accent: "230 60 30",  tagline: "UCL · Premiership Rugby",      highlight: true,                dlhd: 132 },
-  { id: "tnt-sports-2",      name: "TNT Sports 2",          category: "Sports",        domain: "tntsports.co.uk",      emoji: "🏉", accent: "230 60 30",  tagline: "Champions League nights",                                     dlhd: 133 },
-  { id: "espn",              name: "ESPN",                  category: "Sports",        domain: "espn.com",             emoji: "🏈", accent: "200 30 30",  tagline: "NFL · NBA · UFC",              popular: true, highlight: true, dlhd: 44 },
-  { id: "espn2",             name: "ESPN2",                 category: "Sports",        domain: "espn.com",             emoji: "🥎", accent: "200 30 30",  tagline: "College · Tennis",                                            dlhd: 45 },
-  { id: "fs1",               name: "FOX Sports 1",          category: "Sports",        domain: "foxsports.com",        emoji: "⚾", accent: "30 50 160",  tagline: "MLB · College Football",                                      dlhd: 51 },
-  { id: "nba-tv",            name: "NBA TV",                category: "Sports",        domain: "nba.com",              emoji: "🏀", accent: "200 80 30",  tagline: "League Pass · Live Games",     popular: true,                  dlhd: 75 },
-  { id: "nfl-network",       name: "NFL Network",           category: "Sports",        domain: "nfl.com",              emoji: "🏈", accent: "30 30 30",   tagline: "24/7 NFL",                                                    dlhd: 100 },
-  { id: "mlb-network",       name: "MLB Network",           category: "Sports",        domain: "mlb.com",              emoji: "⚾", accent: "30 60 160",  tagline: "Baseball nightly",                                            dlhd: 76 },
+  { id: "nfl-channel", name: "NFL Channel", category: "Sports", domain: "nfl.com", emoji: "🏈", accent: "30 30 30", tagline: "NFL originals · highlights", popular: true, highlight: true, streams: [{ label: "NFL FAST", url: "https://pb-we3ltka9xobj6.akamaized.net/master.m3u8" }] },
+  { id: "nba-tv", name: "NBA TV", category: "Sports", domain: "nba.com", emoji: "🏀", accent: "200 80 30", tagline: "Hoops coverage", popular: true, highlight: true, streams: [{ label: "NBA FAST", url: "https://amg00556-amg00556c3-firetv-us-6060.playouts.now.amagi.tv/playlist.m3u8" }, { label: "NBA alt", url: "https://pb-5pdyic0cu7tri.akamaized.net/NBA.m3u8" }] },
+  { id: "pga-tour", name: "PGA Tour", category: "Sports", domain: "pgatour.com", emoji: "⛳", accent: "40 130 70", tagline: "Golf highlights · live windows", popular: true, streams: [{ label: "PGA Tour", url: "https://d11k1mnrgfposz.cloudfront.net/playlist.m3u8" }] },
+  { id: "swerve-sports", name: "Swerve Sports", category: "Sports", domain: "swervesports.com", emoji: "🏟️", accent: "230 80 30", tagline: "Action sports · competitions", streams: [{ label: "Swerve", url: "https://linear-253.frequency.stream/mt/roku/253/hls/master/playlist.m3u8" }] },
+  { id: "red-bull-tv", name: "Red Bull TV", category: "Sports", domain: "redbull.com", emoji: "🏁", accent: "200 30 30", tagline: "Racing · outdoor · culture", highlight: true, streams: [{ label: "Red Bull", url: "https://db34cc6127ac459db55cab5f97cd66b9.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-680-WORBAUENFAST-WHALETVPLUS/680/whaletvplus/hls/master/playlist.m3u8" }] },
 
   // News
-  { id: "bbc-news",          name: "BBC News",              category: "News",          domain: "bbc.co.uk",            emoji: "🌍", accent: "190 20 20",  tagline: "Global news · 24/7",           popular: true, highlight: true, dlhd: 80 },
-  { id: "sky-news",          name: "Sky News",              category: "News",          domain: "sky.com",              emoji: "📡", accent: "10 90 200",  tagline: "UK & World",                                                  dlhd: 514 },
-  { id: "cnn",               name: "CNN",                   category: "News",          domain: "cnn.com",              emoji: "📰", accent: "200 30 30",  tagline: "Breaking news",                popular: true,                  dlhd: 13 },
-  { id: "fox-news",          name: "FOX News",              category: "News",          domain: "foxnews.com",          emoji: "🦅", accent: "30 60 160",  tagline: "US politics",                                                 dlhd: 27 },
-  { id: "msnbc",             name: "MSNBC",                 category: "News",          domain: "msnbc.com",            emoji: "🎙️", accent: "20 130 220", tagline: "Analysis & commentary",                                       dlhd: 121 },
-  { id: "al-jazeera",        name: "Al Jazeera English",    category: "News",          domain: "aljazeera.com",        emoji: "🕌", accent: "210 150 40", tagline: "International perspectives",                                  dlhd: 36 },
+  { id: "cbs-news", name: "CBS News 24/7", category: "News", domain: "cbsnews.com", emoji: "📰", accent: "30 70 180", tagline: "US news · 24/7", popular: true, highlight: true, streams: [{ label: "CBS primary", url: "https://cbsn-us-vtt.cbsnstream.cbsnews.com/out/v1/ef868690d34144509eda696884bf1619/master.m3u8" }, { label: "CBS alt", url: "https://cbsn-us.cbsnstream.cbsnews.com/out/v1/55a8648e8f134e82a470f83d562deeca/master.m3u8" }] },
+  { id: "nbc-news-now", name: "NBC News NOW", category: "News", domain: "nbcnews.com", emoji: "📡", accent: "20 130 220", tagline: "Breaking news", popular: true, streams: [{ label: "NBC NOW", url: "https://d1si3n1st4nkgb.cloudfront.net/10502/88896001/hls/master.m3u8?ads.xumo_channelId=88896001" }, { label: "NBC alt", url: "https://d1bl6tskrpq9ze.cloudfront.net/hls/master.m3u8?ads.xumo_channelId=99984003" }] },
+  { id: "livenow-fox", name: "LiveNOW from FOX", category: "News", domain: "fox.com", emoji: "🦊", accent: "30 60 160", tagline: "Live events · headlines", highlight: true, streams: [{ label: "LiveNOW", url: "https://cdn-uw2-prod.tsv2.amagi.tv/linear/amg00488-foxdigital-livenowbyfox-lgus/playlist.m3u8" }] },
+  { id: "abc-news-au", name: "ABC News", category: "News", domain: "abc.net.au", emoji: "🌏", accent: "190 20 20", tagline: "World news", streams: [{ label: "ABC News", url: "https://abc-news-dmd-streams-1.akamaized.net/out/v1/701126012d044971b3fa89406a440133/index.m3u8" }, { label: "ABC alt", url: "https://c.mjh.nz/abc-news.m3u8" }] },
+  { id: "bloomberg", name: "Bloomberg TV", category: "News", domain: "bloomberg.com", emoji: "💹", accent: "30 30 30", tagline: "Markets · business", popular: true, streams: [{ label: "Bloomberg US", url: "https://bloomberg.com/media-manifest/streams/us.m3u8" }, { label: "Bloomberg Europe", url: "https://bloomberg.com/media-manifest/streams/eu.m3u8" }, { label: "Bloomberg Asia", url: "https://bloomberg.com/media-manifest/streams/asia.m3u8" }] },
+  { id: "reuters", name: "Reuters TV", category: "News", domain: "reuters.com", emoji: "🌍", accent: "230 110 30", tagline: "Global reporting", streams: [{ label: "Reuters", url: "https://amg00453-reuters-amg00453c1-rakuten-uk-2110.playouts.now.amagi.tv/playlist/amg00453-reuters-reuters-rakutenuk/playlist.m3u8" }] },
+  { id: "euronews", name: "Euronews English", category: "News", domain: "euronews.com", emoji: "🇪🇺", accent: "20 80 180", tagline: "European news", streams: [{ label: "Euronews", url: "https://dash4.antik.sk/live/test_euronews/playlist.m3u8" }, { label: "Euronews alt", url: "https://a-cdn.klowdtv.com/live3/euronews_720p/playlist.m3u8" }] },
+  { id: "accuweather", name: "AccuWeather NOW", category: "News", domain: "accuweather.com", emoji: "⛅", accent: "30 130 210", tagline: "Weather live", streams: [{ label: "AccuWeather", url: "https://cdn-ue1-prod.tsv2.amagi.tv/linear/amg00684-accuweather-accuweather-plex/playlist.m3u8" }] },
 
   // Entertainment
-  { id: "bbc-one",           name: "BBC One",               category: "Entertainment", domain: "bbc.co.uk",            emoji: "🎭", accent: "180 30 90",  tagline: "Flagship UK channel",          popular: true,                  dlhd: 81 },
-  { id: "itv1",              name: "ITV1",                  category: "Entertainment", domain: "itv.com",              emoji: "📺", accent: "230 60 130", tagline: "Drama · Reality",                                             dlhd: 12 },
-  { id: "channel4",          name: "Channel 4",             category: "Entertainment", domain: "channel4.com",         emoji: "🎬", accent: "240 80 130", tagline: "Bold storytelling",                                           dlhd: 14 },
+  { id: "failarmy", name: "FailArmy", category: "Entertainment", domain: "failarmy.com", emoji: "😂", accent: "230 80 30", tagline: "Viral clips", popular: true, streams: [{ label: "FailArmy", url: "https://failarmy-international-gb.samsung.wurl.tv/playlist.m3u8" }, { label: "FailArmy alt", url: "https://bd93cfed.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X0ZhaWxBcm15X0hMUw/playlist.m3u8" }] },
+  { id: "people-awesome", name: "People Are Awesome", category: "Entertainment", domain: "peopleareawesome.com", emoji: "🤯", accent: "120 60 200", tagline: "Stunts · skills", highlight: true, streams: [{ label: "People Are Awesome", url: "https://3ab76e42.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X1Blb3BsZUFyZUF3ZXNvbWVfSExT/playlist.m3u8" }] },
+  { id: "tastemade", name: "Tastemade", category: "Entertainment", domain: "tastemade.com", emoji: "🍜", accent: "230 120 40", tagline: "Food · travel", streams: [{ label: "Tastemade", url: "https://tmint-aus-samsungau.amagi.tv/playlist.m3u8" }, { label: "Tastemade Travel", url: "https://amg00047-tastemade-amg00047c3-cineverse-us-1360.playouts.now.amagi.tv/playlist/amg00047-tastemadefast-tastemadetravel-cineverseus/playlist.m3u8" }] },
+  { id: "bon-appetit", name: "Bon Appétit", category: "Entertainment", domain: "bonappetit.com", emoji: "🍳", accent: "200 120 70", tagline: "Cooking shows", streams: [{ label: "Bon Appétit", url: "https://bonappetit-samsung.amagi.tv/playlist.m3u8" }] },
 
   // Movies
-  { id: "hbo",               name: "HBO",                   category: "Movies",        domain: "hbo.com",              emoji: "🎞️", accent: "120 60 200", tagline: "Premium cinema",               popular: true, highlight: true, dlhd: 169 },
-  { id: "amc",               name: "AMC",                   category: "Movies",        domain: "amc.com",              emoji: "🍿", accent: "200 30 30",  tagline: "Cinematic series",                                            dlhd: 174 },
+  { id: "moviesphere", name: "MovieSphere", category: "Movies", domain: "lionsgate.com", emoji: "🎞️", accent: "120 60 200", tagline: "Movies all day", popular: true, highlight: true, streams: [{ label: "MovieSphere", url: "https://amg00353-lionsgatefilmsi-moviesphereaus-samsungau-7qzhf.amagi.tv/playlist/amg00353-lionsgatefilmsi-moviesphereaus-samsungau/playlist.m3u8" }] },
+  { id: "filmrise-classic", name: "FilmRise Classic TV", category: "Movies", domain: "filmrise.com", emoji: "📼", accent: "200 30 30", tagline: "Classic shows", popular: true, streams: [{ label: "FilmRise Classic", url: "https://d2tv4k5moji5m7.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-lu4pzh9l4b57p/master.m3u8" }] },
+  { id: "filmrise-western", name: "FilmRise Western", category: "Movies", domain: "filmrise.com", emoji: "🤠", accent: "180 100 40", tagline: "Western movies", streams: [{ label: "FilmRise Western", url: "https://dz05z8iljgvbe.cloudfront.net/master.m3u8" }] },
+  { id: "hallmark-movies", name: "Hallmark Movies & More", category: "Movies", domain: "hallmarkchannel.com", emoji: "💌", accent: "230 60 130", tagline: "Feel-good movies", streams: [{ label: "Hallmark", url: "https://pb-clwlfvkqpn19r.akamaized.net/Hallmark_Movies_&_More.m3u8" }] },
+  { id: "maverick", name: "Maverick Black Cinema", category: "Movies", domain: "maverickentertainment.cc", emoji: "🍿", accent: "210 150 40", tagline: "Independent cinema", streams: [{ label: "Maverick", url: "https://maverick-maverick-black-cinema-3-us.roku.wurl.tv/playlist.m3u8" }] },
 
   // Kids
-  { id: "cartoon-network",   name: "Cartoon Network",       category: "Kids",          domain: "cartoonnetwork.com",   emoji: "🐰", accent: "30 30 30",   tagline: "Animation hub",                popular: true,                  dlhd: 11 },
-  { id: "disney-channel",    name: "Disney Channel",        category: "Kids",          domain: "disney.com",           emoji: "🏰", accent: "40 60 200",  tagline: "Family favorites",             popular: true,                  dlhd: 19 },
-  { id: "nick",              name: "Nickelodeon",           category: "Kids",          domain: "nick.com",             emoji: "🟧", accent: "230 110 30", tagline: "SpongeBob & more",                                            dlhd: 88 },
+  { id: "pbs-kids", name: "PBS Kids", category: "Kids", domain: "pbskids.org", emoji: "🐰", accent: "40 160 90", tagline: "Family favorites", popular: true, highlight: true, streams: [{ label: "PBS Kids", url: "https://livestream.pbskids.org/out/v1/14507d931bbe48a69287e4850e53443c/est.m3u8" }] },
+  { id: "kartoon", name: "Kartoon Channel!", category: "Kids", domain: "kartoonchannel.com", emoji: "🦸", accent: "230 110 30", tagline: "Animated shows", popular: true, streams: [{ label: "Kartoon", url: "https://lightning-fnf-samsungaus.amagi.tv/playlist.m3u8" }] },
+  { id: "filmrise-anime", name: "FilmRise Anime", category: "Kids", domain: "filmrise.com", emoji: "🌸", accent: "230 60 130", tagline: "Anime channel", streams: [{ label: "FilmRise Anime", url: "https://dvu7aia8rjlfm.cloudfront.net/master.m3u8" }] },
 
   // Music
-  { id: "mtv",               name: "MTV",                   category: "Music",         domain: "mtv.com",              emoji: "🎵", accent: "230 60 30",  tagline: "Pop & culture",                                                dlhd: 26 },
+  { id: "vevo-pop", name: "Vevo Pop", category: "Music", domain: "vevo.com", emoji: "🎵", accent: "230 60 30", tagline: "Music videos", popular: true, streams: [{ label: "Vevo Pop", url: "https://d128y56w6v2kax.cloudfront.net/playlist/amg00056-vevotv-vevopopau-samsungau/playlist.m3u8" }] },
+  { id: "qello", name: "Qello Concerts", category: "Music", domain: "stingray.com", emoji: "🎸", accent: "120 60 200", tagline: "Concerts live", streams: [{ label: "Qello", url: "https://d39g1vxj2ef6in.cloudfront.net/v1/master/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/master.m3u8?ads.xumo_channelId=88883052" }] },
 
   // Documentary
-  { id: "natgeo",            name: "National Geographic",   category: "Documentary",   domain: "nationalgeographic.com", emoji: "🌋", accent: "230 200 30", tagline: "Earth · Science",            popular: true, highlight: true, dlhd: 79 },
-  { id: "discovery",         name: "Discovery",             category: "Documentary",   domain: "discovery.com",        emoji: "🔭", accent: "30 80 180",  tagline: "Real-world adventures",                                       dlhd: 18 },
-  { id: "history",           name: "History",               category: "Documentary",   domain: "history.com",          emoji: "📜", accent: "180 100 40", tagline: "Stories that shaped us",                                      dlhd: 23 },
-  { id: "animal-planet",     name: "Animal Planet",         category: "Documentary",   domain: "animalplanet.com",     emoji: "🦁", accent: "120 180 40", tagline: "Wildlife stories",                                            dlhd: 21 },
+  { id: "pbs-nature", name: "PBS Nature", category: "Documentary", domain: "pbs.org", emoji: "🌋", accent: "120 180 40", tagline: "Earth · wildlife", popular: true, highlight: true, streams: [{ label: "PBS Nature", url: "https://amg02333-pbs-amg02333c11-firetv-us-4242.playouts.now.amagi.tv/playlist.m3u8" }] },
+  { id: "naturetime", name: "NatureTime", category: "Documentary", domain: "lovenature.com", emoji: "🦁", accent: "90 160 80", tagline: "Wildlife stories", streams: [{ label: "NatureTime", url: "https://amg00090-blueantllc-lovenature-au-samsungau-wggcn.amagi.tv/playlist/amg00090-blueantllc-lovenature-au-samsungau/playlist.m3u8" }] },
+  { id: "court-tv", name: "Court TV", category: "Documentary", domain: "courttv.com", emoji: "⚖️", accent: "30 80 180", tagline: "Trials · true crime", popular: true, streams: [{ label: "Court TV", url: "https://cdn-uw2-prod.tsv2.amagi.tv/linear/amg01438-ewscrippscompan-courttv-tablo/playlist.m3u8" }] },
+  { id: "xplore-tv", name: "Xplore TV", category: "Documentary", domain: "xplore.com", emoji: "🔭", accent: "120 60 200", tagline: "Adventure docs", streams: [{ label: "Xplore", url: "https://cdn-uw2-prod.tsv2.amagi.tv/linear/amg00111-hearstmediaprod-xploreintlnl-samsungnl/playlist.m3u8" }] },
 ];
 
 const CATEGORIES: { id: Category; label: string; icon: typeof Tv2 }[] = [
@@ -481,41 +454,105 @@ function LivePlayer({ channel, all, onPick, onClose }: { channel: Channel; all: 
 }
 
 // ----------------------------------------------------------------------------
-// Player frame for 24/7 channels — rotates through DaddyLive mirrors so a
-// single host outage doesn't kill playback. The iframe is the upstream's
-// bare HTML5 player (no website chrome).
+// Player frame for 24/7 channels — direct HLS video, no DaddyLive iframe hosts.
 // ----------------------------------------------------------------------------
 function ChannelPlayerFrame({ channel }: { channel: Channel }) {
-  const [hostIdx, setHostIdx] = useState(0);
-  const [nonce, setNonce] = useState(0);
-  if (channel.dlhd == null) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [streamIdx, setStreamIdx] = useState(0);
+  const [status, setStatus] = useState("Connecting…");
+  const stream = channel.streams[streamIdx % channel.streams.length];
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !stream) return;
+
+    let cancelled = false;
+    let hls: import("hls.js").default | null = null;
+    setStatus("Connecting…");
+
+    const tryPlay = async () => {
+      try {
+        await video.play();
+        if (!cancelled) setStatus("");
+      } catch {
+        if (!cancelled) setStatus("Press play if autoplay is blocked.");
+      }
+    };
+
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    video.onerror = () => {
+      if (!cancelled) setStatus("Stream failed — try another source.");
+    };
+
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = stream.url;
+      video.onloadedmetadata = tryPlay;
+    } else {
+      void import("hls.js").then(({ default: Hls }) => {
+        if (cancelled || !video) return;
+        if (!Hls.isSupported()) {
+          setStatus("This browser can't play this live stream.");
+          return;
+        }
+        const player = new Hls({ lowLatencyMode: true, maxBufferLength: 24, enableWorker: true });
+        hls = player;
+        player.loadSource(stream.url);
+        player.attachMedia(video);
+        player.on(Hls.Events.MANIFEST_PARSED, tryPlay);
+        player.on(Hls.Events.ERROR, (_event, data) => {
+          if (data.fatal && !cancelled) setStatus("Stream failed — try another source.");
+        });
+      }).catch(() => {
+        if (!cancelled) setStatus("Player failed to load.");
+      });
+    }
+
+    return () => {
+      cancelled = true;
+      video.onerror = null;
+      video.onloadedmetadata = null;
+      hls?.destroy();
+    };
+  }, [channel.id, stream]);
+
+  if (!stream) {
     return (
       <div className="absolute inset-0 grid place-items-center text-sm text-white/60">
-        This channel doesn't have a direct player yet.
+        This channel doesn't have a direct stream yet.
       </div>
     );
   }
-  const src = streamEmbed(channel.dlhd, hostIdx);
+
   return (
     <>
-      <iframe
-        key={`${channel.id}-${hostIdx}-${nonce}`}
-        src={src}
-        title={`${channel.name} — Live`}
-        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-        allowFullScreen
-        referrerPolicy="no-referrer"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        className="absolute inset-0 h-full w-full"
+      <video
+        key={`${channel.id}-${streamIdx}`}
+        ref={videoRef}
+        className="absolute inset-0 h-full w-full bg-black object-contain"
+        controls
+        autoPlay
+        playsInline
       />
+      {status && (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/35 text-sm font-semibold text-white/80">
+          <span className="liquid-glass flex items-center gap-2 rounded-full px-4 py-2">
+            {status === "Connecting…" && <Loader2 className="h-4 w-4 animate-spin" />}
+            {status}
+          </span>
+        </div>
+      )}
       <div className="absolute right-3 top-3 flex items-center gap-1.5">
-        <button
-          onClick={() => { setHostIdx((i) => (i + 1) % STREAM_SERVERS.length); setNonce((n) => n + 1); }}
-          className="liquid-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-white"
-          title="Try another stream server"
-        >
-          <RefreshCw className="h-3 w-3" /> Server {hostIdx + 1}/{STREAM_SERVERS.length} · {STREAM_SERVERS[hostIdx].label}
-        </button>
+        {channel.streams.length > 1 && (
+          <button
+            onClick={() => setStreamIdx((i) => (i + 1) % channel.streams.length)}
+            className="liquid-glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-white"
+            title="Try another stream source"
+          >
+            <RefreshCw className="h-3 w-3" /> Source {streamIdx + 1}/{channel.streams.length} · {stream.label}
+          </button>
+        )}
       </div>
     </>
   );
