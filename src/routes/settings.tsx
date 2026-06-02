@@ -94,6 +94,7 @@ function SettingsPage() {
   const { wallpaper, setWallpaperId, all } = useWallpaper();
   const { cloak, setCloakId, cloaks } = useTabCloak();
   const { orientation, setOrientation } = useSidebarState();
+  const [showDiscord, setShowDiscord] = useShowDiscord();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
   const { isAdmin, isOwner, unlock, lock } = useAdmin();
   const { refreshProfile, user, profile, updateProfile } = useAuth();
