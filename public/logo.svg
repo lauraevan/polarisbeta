@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="none">
+  <foreignObject width="100%" height="100%">
+    <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Loading…</title>
+        <style><![CDATA[
+          html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            color: #fff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          }
+
+          iframe {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+            background: #000;
+          }
+
+          #loading {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            background: #000;
+            font-size: 16px;
+          }
+        ]]></style>
+        <script><![CDATA[
+          if (!location.hash) {
+            history.replaceState(history.state, "", "#/" );
+          }
+        ]]></script>
+      </head>
+      <body>
+        <div id="loading">Loading…</div>
+        <iframe
+          src="https://educationcatlearningandtutoring.com"
+          allow="fullscreen; autoplay; clipboard-read; clipboard-write"
+          allowfullscreen="allowfullscreen"
+          onload="document.getElementById('loading').style.display='none'"
+        ></iframe>
+      </body>
+    </html>
+  </foreignObject>
+</svg>
