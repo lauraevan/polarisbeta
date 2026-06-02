@@ -930,6 +930,13 @@ function SportsPlayer({
       const collected: SportStream[] = [];
       const detail = await fetchSportDetail(match);
       collected.push(...((detail?.sources ?? match.sources ?? []).filter((x): x is SportStream => Boolean(x?.embedUrl))));
+      // Always top up from streamed.su when we have fewer than 3 mirrors —
+      // the matches that "just work" tend to have 3+ servers, so we make sure
+      // every match has the same depth of fallback.
+      if (collected.length < 3) {
+        const extra = await topUpFromStreamedSu(match);
+        collected.push(...extra);
+      }
       if (dead || collected.length === 0) return;
       // De-dup
       const seen = new Set<string>();
