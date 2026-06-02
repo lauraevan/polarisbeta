@@ -1,10 +1,21 @@
 export type ProxyEngine = "uv" | "scramjet";
 
-// Wisp endpoint (public Mercury Workshop relay). All proxy transports tunnel through this.
-export const POLARIS_WISP_URL = "wss://wisp.mercurywork.shop/";
-const BAREMUX_BUNDLE = "https://unpkg.com/@mercuryworkshop/bare-mux@2/dist/index.js";
-const BAREMUX_WORKER = "https://unpkg.com/@mercuryworkshop/bare-mux@2/dist/worker.js";
-const EPOXY_TRANSPORT = "https://unpkg.com/@mercuryworkshop/epoxy-transport/dist/index.mjs";
+// Pool of public wisp relays. We probe them and pick the first one that
+// opens cleanly. Mercury's relay is the canonical one but is intermittently
+// blocked/rate-limited; the others are public mirrors that speak the same
+// protocol. The first reachable URL wins.
+const WISP_POOL = [
+  "wss://wisp.mercurywork.shop/",
+  "wss://anura.pro/wisp/",
+  "wss://nebulaproxy.io/wisp/",
+  "wss://wisp.terbiumon.top/wisp/",
+] as const;
+export let POLARIS_WISP_URL: string = WISP_POOL[0];
+// Serve bare-mux + epoxy from our own origin so the SW and page agree on the
+// same SharedWorker channel and we don't depend on third-party CDN uptime.
+const BAREMUX_BUNDLE = "/baremux/index.js";
+const BAREMUX_WORKER = "/baremux/worker.js";
+const EPOXY_TRANSPORT = "/epoxy/index.mjs";
 
 declare global {
   interface Window {
@@ -55,6 +66,35 @@ function loadScript(src: string) {
   });
 }
 
+function probeWisp(url: string, timeoutMs = 2500) {
+  return new Promise<boolean>((resolve) => {
+    let done = false;
+    const finish = (ok: boolean) => {
+      if (done) return;
+      done = true;
+      try { ws.close(); } catch {}
+      resolve(ok);
+    };
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(url);
+    } catch {
+      return resolve(false);
+    }
+    const t = setTimeout(() => finish(false), timeoutMs);
+    ws.addEventListener("open", () => { clearTimeout(t); finish(true); });
+    ws.addEventListener("error", () => { clearTimeout(t); finish(false); });
+  });
+}
+
+async function pickWisp(): Promise<string> {
+  for (const url of WISP_POOL) {
+    // eslint-disable-next-line no-await-in-loop
+    if (await probeWisp(url)) return url;
+  }
+  return WISP_POOL[0];
+}
+
 // Configure bare-mux to use the Epoxy transport over the Polaris wisp.
 // Without this, Scramjet (and any other bare-mux consumer) has no wisp and every
 // proxied request fails. Idempotent — first call sets it up, later calls await the same promise.
@@ -64,8 +104,10 @@ async function ensureWispTransport() {
   window.__polarisWispReady = (async () => {
     await loadScript(BAREMUX_BUNDLE);
     if (!window.BareMux) throw new Error("bare-mux failed to load");
+    POLARIS_WISP_URL = await pickWisp();
     const connection = new window.BareMux.BareMuxConnection(BAREMUX_WORKER);
     await connection.setTransport(EPOXY_TRANSPORT, [{ wisp: POLARIS_WISP_URL }]);
+    console.info("[polaris] wisp transport ready via", POLARIS_WISP_URL);
   })().catch((err) => {
     console.warn("[polaris] wisp transport setup failed", err);
     // allow retry on next call
