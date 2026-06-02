@@ -44,6 +44,166 @@ export type Database = {
         }
         Relationships: []
       }
+      ban_appeals: {
+        Row: {
+          ban_id: string
+          created_at: string
+          device_fingerprint: string | null
+          id: string
+          ip: string | null
+          message: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          ban_id: string
+          created_at?: string
+          device_fingerprint?: string | null
+          id?: string
+          ip?: string | null
+          message: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          ban_id?: string
+          created_at?: string
+          device_fingerprint?: string | null
+          id?: string
+          ip?: string | null
+          message?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ban_appeals_ban_id_fkey"
+            columns: ["ban_id"]
+            isOneToOne: false
+            referencedRelation: "bans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ban_targets: {
+        Row: {
+          asn: string | null
+          ban_id: string
+          city: string | null
+          country: string | null
+          created_at: string
+          id: string
+          is_proxy: boolean
+          is_tor: boolean
+          is_vpn: boolean
+          latitude: number | null
+          longitude: number | null
+          org: string | null
+          region: string | null
+          scope: Database["public"]["Enums"]["ban_scope"]
+          value: string
+        }
+        Insert: {
+          asn?: string | null
+          ban_id: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          is_proxy?: boolean
+          is_tor?: boolean
+          is_vpn?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          org?: string | null
+          region?: string | null
+          scope: Database["public"]["Enums"]["ban_scope"]
+          value: string
+        }
+        Update: {
+          asn?: string | null
+          ban_id?: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          is_proxy?: boolean
+          is_tor?: boolean
+          is_vpn?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          org?: string | null
+          region?: string | null
+          scope?: Database["public"]["Enums"]["ban_scope"]
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ban_targets_ban_id_fkey"
+            columns: ["ban_id"]
+            isOneToOne: false
+            referencedRelation: "bans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bans: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          issued_by: string | null
+          issued_by_username: string | null
+          lifted_at: string | null
+          lifted_by: string | null
+          lifted_reason: string | null
+          notes: string | null
+          reason: string
+          status: Database["public"]["Enums"]["ban_status"]
+          type: Database["public"]["Enums"]["ban_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          issued_by?: string | null
+          issued_by_username?: string | null
+          lifted_at?: string | null
+          lifted_by?: string | null
+          lifted_reason?: string | null
+          notes?: string | null
+          reason?: string
+          status?: Database["public"]["Enums"]["ban_status"]
+          type?: Database["public"]["Enums"]["ban_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          issued_by?: string | null
+          issued_by_username?: string | null
+          lifted_at?: string | null
+          lifted_by?: string | null
+          lifted_reason?: string | null
+          notes?: string | null
+          reason?: string
+          status?: Database["public"]["Enums"]["ban_status"]
+          type?: Database["public"]["Enums"]["ban_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_channels: {
         Row: {
           allowed_role: string | null
@@ -173,6 +333,84 @@ export type Database = {
           premium_credits_delta?: number
           reference?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      device_sessions: {
+        Row: {
+          asn: string | null
+          browser: string | null
+          city: string | null
+          country: string | null
+          device_fingerprint: string
+          device_type: string | null
+          first_seen_at: string
+          id: string
+          ip: string | null
+          is_proxy: boolean
+          is_tor: boolean
+          is_vpn: boolean
+          last_seen_at: string
+          latitude: number | null
+          longitude: number | null
+          org: string | null
+          os: string | null
+          region: string | null
+          trusted: boolean
+          user_agent: string | null
+          user_id: string | null
+          username: string | null
+          visit_count: number
+        }
+        Insert: {
+          asn?: string | null
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          device_fingerprint: string
+          device_type?: string | null
+          first_seen_at?: string
+          id?: string
+          ip?: string | null
+          is_proxy?: boolean
+          is_tor?: boolean
+          is_vpn?: boolean
+          last_seen_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          org?: string | null
+          os?: string | null
+          region?: string | null
+          trusted?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+          username?: string | null
+          visit_count?: number
+        }
+        Update: {
+          asn?: string | null
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          device_fingerprint?: string
+          device_type?: string | null
+          first_seen_at?: string
+          id?: string
+          ip?: string | null
+          is_proxy?: boolean
+          is_tor?: boolean
+          is_vpn?: boolean
+          last_seen_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          org?: string | null
+          os?: string | null
+          region?: string | null
+          trusted?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+          username?: string | null
+          visit_count?: number
         }
         Relationships: []
       }
@@ -428,6 +666,89 @@ export type Database = {
         }
         Relationships: []
       }
+      security_events: {
+        Row: {
+          asn: string | null
+          ban_id: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          detail: Json
+          device_fingerprint: string | null
+          id: string
+          ip: string | null
+          is_proxy: boolean
+          is_tor: boolean
+          is_vpn: boolean
+          kind: Database["public"]["Enums"]["security_event_kind"]
+          latitude: number | null
+          longitude: number | null
+          org: string | null
+          path: string | null
+          region: string | null
+          severity: string
+          user_agent: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Insert: {
+          asn?: string | null
+          ban_id?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          detail?: Json
+          device_fingerprint?: string | null
+          id?: string
+          ip?: string | null
+          is_proxy?: boolean
+          is_tor?: boolean
+          is_vpn?: boolean
+          kind: Database["public"]["Enums"]["security_event_kind"]
+          latitude?: number | null
+          longitude?: number | null
+          org?: string | null
+          path?: string | null
+          region?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Update: {
+          asn?: string | null
+          ban_id?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          detail?: Json
+          device_fingerprint?: string | null
+          id?: string
+          ip?: string | null
+          is_proxy?: boolean
+          is_tor?: boolean
+          is_vpn?: boolean
+          kind?: Database["public"]["Enums"]["security_event_kind"]
+          latitude?: number | null
+          longitude?: number | null
+          org?: string | null
+          path?: string | null
+          region?: string | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_events_ban_id_fkey"
+            columns: ["ban_id"]
+            isOneToOne: false
+            referencedRelation: "bans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_items: {
         Row: {
           bundle_contents: string[]
@@ -581,9 +902,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_ban_status: {
+        Args: { _device_fingerprint: string; _ip: string; _user_id: string }
+        Returns: {
+          ban_id: string
+          created_at: string
+          expires_at: string
+          reason: string
+          type: Database["public"]["Enums"]["ban_type"]
+        }[]
+      }
+      is_owner: { Args: never; Returns: boolean }
     }
     Enums: {
+      ban_scope: "user" | "ip" | "ip_range" | "device" | "asn" | "country"
+      ban_status: "active" | "expired" | "lifted"
+      ban_type: "full_site" | "chat_only" | "dm_only" | "shadow"
       coin_tx_kind:
         | "quest_reward"
         | "purchase"
@@ -599,6 +933,20 @@ export type Database = {
         | "daily_login"
         | "shop_visit"
         | "shop_purchase"
+      security_event_kind:
+        | "signin"
+        | "signup"
+        | "signout"
+        | "new_device"
+        | "session_resumed"
+        | "ban_issued"
+        | "ban_lifted"
+        | "ban_evasion_attempt"
+        | "blocked_access"
+        | "appeal_submitted"
+        | "appeal_reviewed"
+        | "suspicious_activity"
+        | "admin_action"
       shop_item_kind: "theme" | "accessory" | "badge" | "icon" | "bundle"
     }
     CompositeTypes: {
@@ -727,6 +1075,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ban_scope: ["user", "ip", "ip_range", "device", "asn", "country"],
+      ban_status: ["active", "expired", "lifted"],
+      ban_type: ["full_site", "chat_only", "dm_only", "shadow"],
       coin_tx_kind: [
         "quest_reward",
         "purchase",
@@ -743,6 +1094,21 @@ export const Constants = {
         "daily_login",
         "shop_visit",
         "shop_purchase",
+      ],
+      security_event_kind: [
+        "signin",
+        "signup",
+        "signout",
+        "new_device",
+        "session_resumed",
+        "ban_issued",
+        "ban_lifted",
+        "ban_evasion_attempt",
+        "blocked_access",
+        "appeal_submitted",
+        "appeal_reviewed",
+        "suspicious_activity",
+        "admin_action",
       ],
       shop_item_kind: ["theme", "accessory", "badge", "icon", "bundle"],
     },
