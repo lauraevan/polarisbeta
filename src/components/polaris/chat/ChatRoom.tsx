@@ -590,19 +590,25 @@ export function ChatRoom() {
             <>
               <ChannelSection
                 title="Important"
-                channels={channels.filter((c) => categorize(c.slug) === "important")}
+                channels={channels.filter((c) => c.visibility !== "private" && categorize(c.slug) === "important")}
                 activeId={activeId}
                 onSelect={setActiveId}
               />
               <ChannelSection
                 title="Main"
-                channels={channels.filter((c) => categorize(c.slug) === "main")}
+                channels={channels.filter((c) => c.visibility !== "private" && categorize(c.slug) === "main")}
                 activeId={activeId}
                 onSelect={setActiveId}
               />
               <ChannelSection
                 title="Links"
-                channels={channels.filter((c) => categorize(c.slug) === "links")}
+                channels={channels.filter((c) => c.visibility !== "private" && categorize(c.slug) === "links")}
+                activeId={activeId}
+                onSelect={setActiveId}
+              />
+              <ChannelSection
+                title="Private rooms"
+                channels={channels.filter((c) => c.visibility === "private")}
                 activeId={activeId}
                 onSelect={setActiveId}
               />
@@ -610,7 +616,7 @@ export function ChatRoom() {
                 onClick={() => setNewChannelOpen(true)}
                 className="mx-2 flex w-[calc(100%-1rem)] items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-white/50 hover:bg-white/5 hover:text-white"
               >
-                <Plus className="h-3.5 w-3.5" /> New channel
+                <Plus className="h-3.5 w-3.5" /> New channel or room
               </button>
             </>
           )}
