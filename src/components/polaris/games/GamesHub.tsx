@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Gamepad2, Globe, Calculator, Cloud, Library, Loader2, Play } from "lucide-react";
+import { Gamepad2, Globe, Calculator, Cloud, Library, Loader2, Play, Zap, MessageCircle, ExternalLink } from "lucide-react";
 import { PolarisCollection } from "./PolarisCollection";
 import { EmbedFrame } from "./EmbedFrame";
 import { GnMathCollection } from "./GnMathCollection";
@@ -9,7 +9,7 @@ import { SteamSplash } from "./SteamSplash";
 import { POLARIS_GAMES } from "@/lib/polaris-games";
 import { hydraSearch, hydraFeatured, steamHeader, type HydraEdge, type HydraFeatured } from "@/lib/hydra-api";
 
-type TabId = "home" | "polaris" | "cine" | "hydra" | "gnmath";
+type TabId = "home" | "polaris" | "cine" | "hydra" | "gnmath" | "gfn";
 
 const TABS: { id: TabId; label: string; icon: typeof Gamepad2; desc: string }[] = [
   { id: "home",    label: "Home",              icon: Library,    desc: "Mixed feed" },
@@ -17,6 +17,7 @@ const TABS: { id: TabId; label: string; icon: typeof Gamepad2; desc: string }[] 
   { id: "hydra",   label: "Hydra Network",     icon: Globe,      desc: "180k+ PC titles" },
   { id: "gnmath",  label: "Gn-Math",           icon: Calculator, desc: "Unblocked library" },
   { id: "cine",    label: "Cine Cloud",        icon: Cloud,      desc: "Cloud PC games" },
+  { id: "gfn",     label: "GeForce Now",       icon: Zap,        desc: "NVIDIA cloud gaming" },
 ];
 
 const POLARIS_CDN = "https://cdn.jsdelivr.net/npm/ugs-singlefiles@1.0.6/";
@@ -76,6 +77,7 @@ function HomeFeed({
 
   return (
     <div className="space-y-10">
+      <DiscordCallout />
       {/* Rotating hero — cycles through Hydra featured titles */}
       <div className="relative overflow-hidden rounded-2xl border border-white/10 min-h-[280px] sm:min-h-[340px]">
         {featured?.map((f, i) => (
@@ -235,6 +237,96 @@ function CineLauncher() {
   );
 }
 
+function GeForceNowLauncher() {
+  return (
+    <div className="space-y-4">
+      <div
+        className="relative overflow-hidden rounded-2xl border border-white/10 p-6 sm:p-8"
+        style={{
+          background:
+            "radial-gradient(120% 90% at 0% 0%, rgba(118,185,0,0.35), transparent 60%), radial-gradient(80% 60% at 100% 100%, rgba(0,0,0,0.6), transparent 70%), linear-gradient(135deg, #0b1a00 0%, #0a0a0a 100%)",
+        }}
+      >
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-white/70">
+          <Zap className="h-3.5 w-3.5" /> NVIDIA · Cloud Gaming
+        </div>
+        <h2 className="mt-2 text-2xl font-black tracking-tight text-white sm:text-4xl">
+          GeForce Now
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-white/75">
+          Stream your Steam, Epic, Ubisoft, Xbox & GOG library from NVIDIA's RTX servers.
+          Free tier available — no install required, just sign in and play in your browser.
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <a
+            href="https://play.geforcenow.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-[#76b900] px-5 py-2 text-sm font-bold text-black hover:brightness-110"
+          >
+            <Play className="h-4 w-4 fill-black" /> Launch GeForce Now
+          </a>
+          <a
+            href="https://www.nvidia.com/en-us/geforce-now/games/"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+          >
+            Browse supported games <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        </div>
+        <p className="mt-3 text-[11px] text-white/50">
+          Tip: GeForce Now needs to open in a new tab — it blocks being framed for security.
+        </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          { t: "Free tier", d: "1-hour sessions, basic rigs, no install." },
+          { t: "Priority / Ultimate", d: "RTX 4080-class GPUs, longer sessions, ray tracing." },
+          { t: "Your library", d: "Connect Steam, Epic, Ubisoft, Xbox & GOG accounts." },
+        ].map((c) => (
+          <div key={c.t} className="rounded-xl border border-white/10 bg-white/5 p-4">
+            <div className="text-sm font-semibold text-white">{c.t}</div>
+            <div className="mt-1 text-xs text-white/65">{c.d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DiscordCallout() {
+  return (
+    <a
+      href="https://discord.gg/fUhccQjbT"
+      target="_blank"
+      rel="noreferrer"
+      className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 px-4 py-3 sm:px-5 sm:py-4 transition hover:border-white/20"
+      style={{
+        background:
+          "linear-gradient(135deg, rgba(88,101,242,0.25), rgba(88,101,242,0.05) 60%, transparent), rgba(255,255,255,0.03)",
+      }}
+    >
+      <div
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white"
+        style={{ background: "#5865F2" }}
+      >
+        <MessageCircle className="h-5 w-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-bold text-white">Join the Polaris Discord</div>
+        <div className="truncate text-xs text-white/65">
+          News, game requests, support & community — discord.gg/fUhccQjbT
+        </div>
+      </div>
+      <span className="hidden shrink-0 items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white sm:inline-flex">
+        Join <ExternalLink className="h-3 w-3" />
+      </span>
+    </a>
+  );
+}
+
 export function GamesHub() {
   const [tab, setTab] = useState<TabId>("home");
   const [playing, setPlaying] = useState<Play | null>(null);
@@ -310,6 +402,7 @@ export function GamesHub() {
           {tab === "hydra" && <HydraCatalog />}
           {tab === "gnmath" && <GnMathCollection />}
           {tab === "cine" && <CineLauncher />}
+          {tab === "gfn" && <GeForceNowLauncher />}
         </main>
       </div>
 
