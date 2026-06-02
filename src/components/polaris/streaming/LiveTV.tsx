@@ -69,13 +69,39 @@ const CATEGORIES: { id: Category; label: string; icon: typeof Tv2 }[] = [
   { id: "Documentary", label: "Docs", icon: FlaskConical },
 ];
 
+// Filter out streams that physically cannot play in a browser:
+//  - http:// from an https:// page is blocked as mixed content
+//  - /udp/ paths are multicast — unreachable from the public internet
+//  - rfc1918 private IPs (10/8, 192.168/16, 172.16/12) are LAN-only
+//  - bloomberg's media-manifest URLs require origin/referrer headers we can't set
+function isPlayableStreamUrl(url: string): boolean {
+  if (!url) return false;
+  const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+  if (isHttps && url.startsWith("http://")) return false;
+  if (url.includes("/udp/")) return false;
+  if (/\/\/(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(url)) return false;
+  if (url.includes("bloomberg.com/media-manifest")) return false;
+  return true;
+}
+function withPlayableStreams(c: Channel): Channel | null {
+  const streams = c.streams.filter((s) => isPlayableStreamUrl(s.url));
+  if (streams.length === 0) return null;
+  return { ...c, streams };
+}
+
 // Merge curated + IPTV-org catalog. Curated wins on name collisions.
+// Drop channels whose every stream is unreachable from a browser context.
 const CHANNELS: Channel[] = (() => {
   const byKey = new Map<string, Channel>();
-  for (const c of CURATED_CHANNELS) byKey.set(c.name.toLowerCase(), c);
+  for (const c of CURATED_CHANNELS) {
+    const filtered = withPlayableStreams(c);
+    if (filtered) byKey.set(filtered.name.toLowerCase(), filtered);
+  }
   for (const c of IPTV_CHANNELS) {
     const k = c.name.toLowerCase();
-    if (!byKey.has(k)) byKey.set(k, c);
+    if (byKey.has(k)) continue;
+    const filtered = withPlayableStreams(c);
+    if (filtered) byKey.set(k, filtered);
   }
   return Array.from(byKey.values());
 })();

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
-import { getPolarisBrowserUrl, normalizeUrl } from "@/lib/proxy-utils";
+import { useNavigate } from "@tanstack/react-router";
+import { normalizeUrl } from "@/lib/proxy-utils";
 import { useTheme } from "@/lib/theme-context";
 import { PolarisAI } from "./ai/PolarisAI";
 
@@ -95,6 +96,13 @@ function HomeWeb() {
   const { defaultEngine, shortcutSize } = useTheme();
   const engine = defaultEngine;
   const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+
+  function openInBrowser(url: string) {
+    // Single-tab navigation into /browser. Opening proxy URLs in fresh tabs
+    // breaks because the service worker isn't registered there.
+    navigate({ to: "/browser", search: { engine, url: normalizeUrl(url) } });
+  }
 
   const visible = SHORTCUTS.filter((s) =>
     active === "Popular" ? POPULAR_NAMES.has(s.name) : s.category === active
@@ -113,7 +121,7 @@ function HomeWeb() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          window.open(getPolarisBrowserUrl(engine, normalizeUrl(query)), "_blank", "noopener,noreferrer");
+          openInBrowser(query);
         }}
         className="liquid-glass-ghost flex w-full max-w-xl lg:max-w-3xl items-center gap-3 rounded-2xl px-4 py-3 lg:px-6 lg:py-4 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_rgba(var(--polaris-accent)/0.6),0_20px_50px_-20px_rgba(var(--polaris-accent)/0.45)]"
       >
@@ -163,11 +171,10 @@ function HomeWeb() {
           }}
         >
           {visible.map((s) => (
-            <a
+            <button
               key={s.name}
-              href={getPolarisBrowserUrl(engine, s.url)}
-              target="_blank"
-              rel="noreferrer"
+              type="button"
+              onClick={() => openInBrowser(s.url)}
               className="liquid-glass-ghost shortcut-card group flex aspect-square flex-col items-center justify-center gap-1 lg:gap-1.5 rounded-xl p-1.5 lg:p-3 text-center"
             >
               <img
@@ -176,7 +183,7 @@ function HomeWeb() {
                 className="h-5 w-5 lg:h-8 lg:w-8 rounded"
               />
               <div className="text-[9px] lg:text-xs font-medium leading-tight text-white/85">{s.name}</div>
-            </a>
+            </button>
           ))}
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
-import { ArrowRight, ExternalLink, RotateCcw, Search, Shield, Zap } from "lucide-react";
+import { ArrowRight, RotateCcw, Search, Shield, Zap } from "lucide-react";
 import { getProxyUrl, normalizeUrl, registerStaticProxies, type ProxyEngine } from "@/lib/proxy-utils";
 import logo from "@/assets/polaris-logo.png";
 
@@ -33,12 +33,14 @@ export function PolarisBrowser() {
     const next = normalizeUrl(input);
     setQuery(input);
     setTarget(next);
-    setActiveSrc(null);
+    // Embed the proxied site inline in the same tab. Opening it in a new
+    // tab loses the registered service worker and 404s every request.
+    setActiveSrc(getProxyUrl(engine, next));
   }
 
   function launch() {
     if (!ready) return;
-    window.open(src, "_blank", "noopener,noreferrer");
+    setActiveSrc(src);
   }
 
   return (
@@ -123,9 +125,6 @@ export function PolarisBrowser() {
                 <button onClick={launch} className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-black hover:bg-white/90">
                   Open {new URL(target).hostname.replace("www.", "")} <ArrowRight className="h-4 w-4" />
                 </button>
-                <a href={src} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white/75 hover:bg-white/10 hover:text-white">
-                  New tab <ExternalLink className="h-4 w-4" />
-                </a>
               </div>
             </div>
           </div>

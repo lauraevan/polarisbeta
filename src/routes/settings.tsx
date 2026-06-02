@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package, PanelTop, MessageCircle, Link2, Copy, RefreshCw, Check, ExternalLink } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package, PanelTop, MessageCircle } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
@@ -13,7 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
-import { getPolarisBrowserUrl, type ProxyEngine } from "@/lib/proxy-utils";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
@@ -664,8 +663,6 @@ function SettingsPage() {
           </div>
         </section>
 
-        {/* Link Maker */}
-        <LinkMakerSection defaultEngine={defaultEngine} />
       </div>
     </div>
   );
@@ -736,139 +733,3 @@ export const Route = createFileRoute("/settings")({
   ),
 });
 
-// ───────────────────────── Link Maker ─────────────────────────
-
-const SITE_ORIGIN = "https://educationcatlearningandtutoring.com";
-
-type WebsiteLink = { label: string; path: string; note: string };
-type Candidate = { label: string; url: string; note: string };
-
-const WEBSITE_LINKS: WebsiteLink[] = [
-  { label: "Home", path: "/", note: "Main website" },
-  { label: "Games", path: "/games", note: "Game hub" },
-  { label: "GeForce Now", path: "/games?tab=gfn", note: "GeForce Now iframe" },
-  { label: "Browser", path: "/browser", note: "Polaris Browser" },
-  { label: "Apps", path: "/apps", note: "App launcher" },
-  { label: "Cinema", path: "/media", note: "Media page" },
-];
-
-const QUICK_BROWSER_TARGETS = [
-  { label: "GeForce Now Browser", url: "https://play.geforcenow.com/", note: "Browser launch link" },
-  { label: "Google Browser", url: "https://www.google.com/", note: "Search launch link" },
-  { label: "Wikipedia Browser", url: "https://www.wikipedia.org/", note: "Reference launch link" },
-];
-
-function absoluteSiteUrl(path: string) {
-  return `${SITE_ORIGIN}${path}`;
-}
-
-function LinkMakerSection({ defaultEngine }: { defaultEngine: ProxyEngine }) {
-  const [customUrl, setCustomUrl] = useState("https://play.geforcenow.com/");
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [copied, setCopied] = useState<string | null>(null);
-
-  function generate() {
-    const pageLinks: Candidate[] = WEBSITE_LINKS.map((link) => ({
-      label: link.label,
-      url: absoluteSiteUrl(link.path),
-      note: link.note,
-    }));
-    const browserLinks: Candidate[] = QUICK_BROWSER_TARGETS.map((target) => ({
-      label: target.label,
-      url: absoluteSiteUrl(getPolarisBrowserUrl(defaultEngine, target.url)),
-      note: `${defaultEngine === "uv" ? "Ultraviolet" : "Scramjet"} · ${target.note}`,
-    }));
-    const trimmed = customUrl.trim();
-    const customLink = trimmed
-      ? [{
-          label: "Custom Browser Link",
-          url: absoluteSiteUrl(getPolarisBrowserUrl(defaultEngine, trimmed)),
-          note: `${defaultEngine === "uv" ? "Ultraviolet" : "Scramjet"} · ${trimmed}`,
-        }]
-      : [];
-    setCandidates([...pageLinks, ...browserLinks, ...customLink]);
-  }
-
-  async function copy(url: string) {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(url);
-      setTimeout(() => setCopied(null), 1200);
-    } catch { /* ignore */ }
-  }
-
-  return (
-    <section className="liquid-glass-themed rounded-2xl p-5">
-      <SectionTitle
-        icon={Link2}
-        title="Website Link Maker"
-        subtitle="Create real links on educationcatlearningandtutoring.com"
-      />
-
-      <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
-        <div className="mb-2 text-[11px] uppercase tracking-[0.2em] text-white/55">Custom browser link</div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <input
-            value={customUrl}
-            onChange={(e) => setCustomUrl(e.target.value)}
-            placeholder="https://example.com"
-            className="min-w-0 flex-1 rounded-xl bg-black/25 px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10 placeholder:text-white/35 focus:ring-white/30"
-          />
-          <button
-            onClick={generate}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-black hover:bg-white/90"
-          >
-            <RefreshCw className="h-3.5 w-3.5" /> Make links
-          </button>
-        </div>
-      </div>
-
-      {candidates.length === 0 && (
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {WEBSITE_LINKS.map((link) => (
-            <button
-              key={link.path}
-              onClick={generate}
-              className="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-left transition hover:bg-white/[0.08]"
-            >
-              <div className="text-xs font-bold text-white">{link.label}</div>
-              <div className="mt-1 truncate text-[10px] text-white/45">{absoluteSiteUrl(link.path)}</div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {candidates.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {candidates.map((c) => (
-            <div
-              key={c.url}
-              className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-bold text-white">{c.label}</div>
-                <div className="truncate text-[10px] text-white/45">{c.note}</div>
-                <div className="mt-0.5 truncate text-[10px] text-white/35">{c.url}</div>
-              </div>
-              <button
-                onClick={() => copy(c.url)}
-                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/15"
-              >
-                {copied === c.url ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                {copied === c.url ? "Copied" : "Copy"}
-              </button>
-              <a
-                href={c.url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/15"
-              >
-                Open <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
