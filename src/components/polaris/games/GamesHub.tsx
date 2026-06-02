@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearch } from "@tanstack/react-router";
 import { Gamepad2, Globe, Calculator, Cloud, Library, Loader2, Play, Zap, MessageCircle, ExternalLink } from "lucide-react";
 import { PolarisCollection } from "./PolarisCollection";
 import { EmbedFrame } from "./EmbedFrame";
@@ -303,8 +304,13 @@ function DiscordCallout() {
 }
 
 export function GamesHub() {
-  const [tab, setTab] = useState<TabId>("home");
+  const search = useSearch({ strict: false }) as { tab?: string };
+  const [tab, setTab] = useState<TabId>(search.tab === "gfn" ? "gfn" : "home");
   const [playing, setPlaying] = useState<Play | null>(null);
+
+  useEffect(() => {
+    if (search.tab === "gfn") setTab("gfn");
+  }, [search.tab]);
 
   return (
     <div className="relative min-h-screen">
