@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
+import { ProCustomization } from "@/components/polaris/premium/ProCustomization";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
@@ -662,6 +663,8 @@ function SettingsPage() {
             </button>
           </div>
         </section>
+
+        <ProCustomization />
 
       </div>
     </div>

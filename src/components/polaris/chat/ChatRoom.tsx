@@ -68,6 +68,8 @@ type Channel = {
   description: string | null; emoji: string | null;
   filter_enabled?: boolean | null;
   allowed_role?: string | null;
+  visibility?: "public" | "private" | "role" | null;
+  created_by?: string | null;
 };
 type Attachment = { kind: "image" | "gif" | "drawing" | "link"; url: string };
 type Message = {
@@ -482,11 +484,40 @@ export function ChatRoom() {
   );
 
   const createChannel = useCallback(
-    async (name: string) => {
+    async (name: string, opts?: { visibility?: "public" | "private"; inviteUsernames?: string[] }) => {
       if (!user) return;
       const slug = name.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, "");
       if (!slug) return;
-      await supabase.from("chat_channels").insert({ slug, name: slug, created_by: user.id, emoji: "✨" });
+      const visibility = opts?.visibility ?? "public";
+      const { data: created, error } = await supabase
+        .from("chat_channels")
+        .insert({ slug, name: slug, created_by: user.id, emoji: visibility === "private" ? "🔒" : "✨", visibility } as never)
+        .select("id")
+        .maybeSingle();
+      if (error || !created) {
+        setNewChannelOpen(false);
+        return;
+      }
+      // creator is implicit owner-member
+      await supabase.from("chat_channel_members").insert({
+        channel_id: (created as { id: string }).id,
+        user_id: user.id,
+        role: "owner",
+      } as never);
+      const usernames = (opts?.inviteUsernames ?? []).map((u) => u.trim()).filter(Boolean);
+      if (visibility === "private" && usernames.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, username")
+          .in("username", usernames);
+        const rows = (profs ?? []).map((p: { id: string }) => ({
+          channel_id: (created as { id: string }).id,
+          user_id: p.id,
+          role: "member",
+          invited_by: user.id,
+        }));
+        if (rows.length) await supabase.from("chat_channel_members").insert(rows as never);
+      }
       setNewChannelOpen(false);
     },
     [user],
@@ -559,19 +590,25 @@ export function ChatRoom() {
             <>
               <ChannelSection
                 title="Important"
-                channels={channels.filter((c) => categorize(c.slug) === "important")}
+                channels={channels.filter((c) => c.visibility !== "private" && categorize(c.slug) === "important")}
                 activeId={activeId}
                 onSelect={setActiveId}
               />
               <ChannelSection
                 title="Main"
-                channels={channels.filter((c) => categorize(c.slug) === "main")}
+                channels={channels.filter((c) => c.visibility !== "private" && categorize(c.slug) === "main")}
                 activeId={activeId}
                 onSelect={setActiveId}
               />
               <ChannelSection
                 title="Links"
-                channels={channels.filter((c) => categorize(c.slug) === "links")}
+                channels={channels.filter((c) => c.visibility !== "private" && categorize(c.slug) === "links")}
+                activeId={activeId}
+                onSelect={setActiveId}
+              />
+              <ChannelSection
+                title="Private rooms"
+                channels={channels.filter((c) => c.visibility === "private")}
                 activeId={activeId}
                 onSelect={setActiveId}
               />
@@ -579,7 +616,7 @@ export function ChatRoom() {
                 onClick={() => setNewChannelOpen(true)}
                 className="mx-2 flex w-[calc(100%-1rem)] items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-white/50 hover:bg-white/5 hover:text-white"
               >
-                <Plus className="h-3.5 w-3.5" /> New channel
+                <Plus className="h-3.5 w-3.5" /> New channel or room
               </button>
             </>
           )}
@@ -999,22 +1036,73 @@ function GifPicker({ onPick, onClose }: { onPick: (g: TenorGif) => void; onClose
   );
 }
 
-function NewChannelDialog({ onCreate, onClose }: { onCreate: (name: string) => void; onClose: () => void }) {
+function NewChannelDialog({
+  onCreate,
+  onClose,
+}: {
+  onCreate: (name: string, opts?: { visibility?: "public" | "private"; inviteUsernames?: string[] }) => void;
+  onClose: () => void;
+}) {
   const [name, setName] = useState("");
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [invites, setInvites] = useState("");
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-6 backdrop-blur-md" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-950 p-5">
-        <h3 className="text-sm font-bold text-white">New channel</h3>
+        <h3 className="text-sm font-bold text-white">New {visibility === "private" ? "private room" : "channel"}</h3>
+        <div className="mt-3 grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => setVisibility("public")}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold ${visibility === "public" ? "bg-white text-black" : "bg-white/5 text-white/70 hover:bg-white/10"}`}
+          >
+            🌐 Public
+          </button>
+          <button
+            onClick={() => setVisibility("private")}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold ${visibility === "private" ? "bg-white text-black" : "bg-white/5 text-white/70 hover:bg-white/10"}`}
+          >
+            🔒 Private
+          </button>
+        </div>
         <input
           autoFocus
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="channel-name"
+          placeholder={visibility === "private" ? "room-name" : "channel-name"}
           className="mt-3 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none"
         />
+        {visibility === "private" && (
+          <div className="mt-3">
+            <label className="mb-1 block text-[10px] uppercase tracking-wider text-white/45">
+              Invite usernames (comma-separated)
+            </label>
+            <input
+              value={invites}
+              onChange={(e) => setInvites(e.target.value)}
+              placeholder="alice, bob, charlie"
+              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:outline-none"
+            />
+            <p className="mt-1 text-[10px] text-white/40">
+              Only you and invited members can see or post here.
+            </p>
+          </div>
+        )}
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="rounded-md px-3 py-1.5 text-xs text-white/65 hover:bg-white/5">Cancel</button>
-          <button onClick={() => onCreate(name)} className="rounded-md bg-[rgb(var(--polaris-accent))] px-4 py-1.5 text-xs font-bold text-black">Create</button>
+          <button
+            onClick={() =>
+              onCreate(name, {
+                visibility,
+                inviteUsernames:
+                  visibility === "private"
+                    ? invites.split(/[,\s]+/).filter(Boolean)
+                    : [],
+              })
+            }
+            className="rounded-md bg-[rgb(var(--polaris-accent))] px-4 py-1.5 text-xs font-bold text-black"
+          >
+            Create
+          </button>
         </div>
       </div>
     </div>

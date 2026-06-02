@@ -15,6 +15,7 @@ import {
   Shield,
   Crown,
   Music,
+  Music2,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -34,6 +35,7 @@ const nav = [
   { to: "/emulator", label: "Emulator", icon: Joystick },
   { to: "/chat", label: "Chat", icon: MessageCircle },
   { to: "/music", label: "Music", icon: Music },
+  { to: "/soundboard", label: "Soundboard", icon: Music2 },
   { to: "/premium", label: "Premium", icon: Crown },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/partners", label: "Partners", icon: Handshake },
