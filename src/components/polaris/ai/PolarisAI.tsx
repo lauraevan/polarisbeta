@@ -954,17 +954,17 @@ function MessageBubble({ role, content, modelLabel }: { role: Role; content: str
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                    h1: ({ children }) => <h3 className="mb-2 mt-1 text-base font-bold">{children}</h3>,
-                    h2: ({ children }) => <h3 className="mb-2 mt-1 text-base font-bold">{children}</h3>,
-                    h3: ({ children }) => <h4 className="mb-1.5 mt-1 text-[15px] font-semibold">{children}</h4>,
-                    ul: ({ children }) => <ul className="mb-2 list-disc space-y-0.5 pl-5">{children}</ul>,
-                    ol: ({ children }) => <ol className="mb-2 list-decimal space-y-0.5 pl-5">{children}</ol>,
-                    li: ({ children }) => <li className="leading-snug">{children}</li>,
-                    a: ({ children, href }) => (
+                    p: ({ children }: { children?: ReactNode }) => <p className="mb-2 last:mb-0">{children}</p>,
+                    h1: ({ children }: { children?: ReactNode }) => <h3 className="mb-2 mt-1 text-base font-bold">{children}</h3>,
+                    h2: ({ children }: { children?: ReactNode }) => <h3 className="mb-2 mt-1 text-base font-bold">{children}</h3>,
+                    h3: ({ children }: { children?: ReactNode }) => <h4 className="mb-1.5 mt-1 text-[15px] font-semibold">{children}</h4>,
+                    ul: ({ children }: { children?: ReactNode }) => <ul className="mb-2 list-disc space-y-0.5 pl-5">{children}</ul>,
+                    ol: ({ children }: { children?: ReactNode }) => <ol className="mb-2 list-decimal space-y-0.5 pl-5">{children}</ol>,
+                    li: ({ children }: { children?: ReactNode }) => <li className="leading-snug">{children}</li>,
+                    a: ({ children, href }: { children?: ReactNode; href?: string }) => (
                       <a href={href} target="_blank" rel="noreferrer" className="underline" style={{ color: "rgb(var(--polaris-accent))" }}>{children}</a>
                     ),
-                    code: ({ children, className }) => {
+                    code: ({ children, className }: { children?: ReactNode; className?: string }) => {
                       const isBlock = /language-/.test(className || "");
                       if (isBlock) {
                         return (
@@ -975,9 +975,9 @@ function MessageBubble({ role, content, modelLabel }: { role: Role; content: str
                       }
                       return <code className="rounded bg-white/10 px-1 py-0.5 text-[12.5px]">{children}</code>;
                     },
-                    strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
-                    em: ({ children }) => <em className="italic text-white/90">{children}</em>,
-                    blockquote: ({ children }) => (
+                    strong: ({ children }: { children?: ReactNode }) => <strong className="font-semibold text-white">{children}</strong>,
+                    em: ({ children }: { children?: ReactNode }) => <em className="italic text-white/90">{children}</em>,
+                    blockquote: ({ children }: { children?: ReactNode }) => (
                       <blockquote className="my-2 border-l-2 pl-3 text-white/80" style={{ borderColor: "rgb(var(--polaris-accent) / 0.6)" }}>{children}</blockquote>
                     ),
                   }}
