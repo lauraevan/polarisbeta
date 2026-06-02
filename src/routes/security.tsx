@@ -214,16 +214,44 @@ function SecurityPage() {
           </div>
         </div>
 
-        {/* Floating search */}
+        {/* Floating search with autocomplete */}
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/40" />
           <input
             value={lookupQ}
-            onChange={(e) => setLookupQ(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && runLookup()}
+            onChange={(e) => { setLookupQ(e.target.value); setSuggestOpen(true); }}
+            onFocus={() => setSuggestOpen(true)}
+            onBlur={() => setTimeout(() => setSuggestOpen(false), 150)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                if (suggestions[0]) { setLookupQ(suggestions[0].query); setSuggestOpen(false); setTimeout(runLookup, 0); }
+                else runLookup();
+              } else if (e.key === "Escape") setSuggestOpen(false);
+            }}
             placeholder="Lookup user, IP, or fingerprint…"
             className="w-full rounded-full border border-white/10 bg-black/40 py-2 pl-9 pr-3 font-mono text-xs outline-none backdrop-blur placeholder:text-white/30 focus:border-white/30"
           />
+          {suggestOpen && suggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1 max-h-80 overflow-y-auto rounded-2xl border border-white/10 bg-black/85 p-1 text-xs backdrop-blur-xl">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { setLookupQ(s.query); setSuggestOpen(false); setTimeout(runLookup, 0); }}
+                  className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left hover:bg-white/10"
+                >
+                  <span className={`grid h-6 w-6 place-items-center rounded-full ${s.kind === "user" ? "bg-cyan-500/20" : "bg-white/10"}`}>
+                    {s.kind === "user" ? (s.emoji ?? "👤") : "👻"}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{s.label}{s.kind === "user" && s.banned && <span className="ml-1 text-red-300">· banned</span>}</span>
+                    <span className="block truncate text-[10px] text-white/45">{s.sub}</span>
+                  </span>
+                  <span className="text-[9px] uppercase tracking-wider text-white/35">{s.kind}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <button onClick={refresh} className="rounded-full bg-white/5 p-2 backdrop-blur hover:bg-white/10" title="Refresh">
