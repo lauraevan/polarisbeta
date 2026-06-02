@@ -801,19 +801,28 @@ async function probe(url: string, timeoutMs = 3500): Promise<{ ok: boolean; ms: 
   }
 }
 
-function LinkMakerSection() {
+function LinkMakerSection({ defaultEngine }: { defaultEngine: ProxyEngine }) {
   const [filter, setFilter] = useState<FilterId>("securly");
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [scanning, setScanning] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   function generate() {
-    const hosts = FILTER_HOST_RANK[filter];
-    const next: Candidate[] = hosts.map((h) => ({
-      url: `https://${randSlug()}.${h}`,
-      host: h,
-      status: "pending",
-    }));
+    const rankedEngines = FILTER_ENGINE_RANK[filter];
+    const targets = WORKING_TARGETS.slice(0, 5);
+    const next: Candidate[] = targets.map((target, idx) => {
+      const engine = target.engines.includes(defaultEngine)
+        ? defaultEngine
+        : rankedEngines[idx % rankedEngines.length];
+      return {
+        label: target.label,
+        target: normalizeUrl(target.url),
+        url: getPolarisBrowserUrl(engine, target.url),
+        engine,
+        note: target.note,
+        status: "pending",
+      };
+    });
     setCandidates(next);
   }
 
@@ -822,15 +831,25 @@ function LinkMakerSection() {
     setScanning(true);
     const list = candidates.length
       ? candidates
-      : FILTER_HOST_RANK[filter].map((h) => ({
-          url: `https://${randSlug()}.${h}`,
-          host: h,
-          status: "pending" as const,
-        }));
+      : WORKING_TARGETS.slice(0, 5).map((target, idx) => {
+          const rankedEngines = FILTER_ENGINE_RANK[filter];
+          const engine = target.engines.includes(defaultEngine)
+            ? defaultEngine
+            : rankedEngines[idx % rankedEngines.length];
+          return {
+            label: target.label,
+            target: normalizeUrl(target.url),
+            url: getPolarisBrowserUrl(engine, target.url),
+            engine,
+            note: target.note,
+            status: "pending" as const,
+          };
+        });
     setCandidates(list);
+    await Promise.all([registerStaticProxies("uv"), registerStaticProxies("scramjet")]);
     const results = await Promise.all(
       list.map(async (c) => {
-        const r = await probe(c.url);
+        const r = await probe(getProxyUrl(c.engine, c.target));
         return { ...c, status: r.ok ? ("ok" as const) : ("blocked" as const), ms: r.ms };
       }),
     );
@@ -846,14 +865,12 @@ function LinkMakerSection() {
     } catch { /* ignore */ }
   }
 
-  const hostInfo = (h: string) => ALL_HOSTS.find((x) => x.host === h)?.note ?? "";
-
   return (
     <section className="liquid-glass-themed rounded-2xl p-5">
       <SectionTitle
         icon={Link2}
         title="Link Maker"
-        subtitle="Generate fresh, free, no-signup host URLs tuned per school filter"
+        subtitle="Create working Polaris Browser links and check which proxy engine works here"
       />
 
       <div className="mt-4">
@@ -880,7 +897,7 @@ function LinkMakerSection() {
           onClick={generate}
           className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-black hover:bg-white/90"
         >
-          <RefreshCw className="h-3.5 w-3.5" /> Generate links
+          <RefreshCw className="h-3.5 w-3.5" /> Generate working links
         </button>
         <button
           onClick={scan}
@@ -888,7 +905,7 @@ function LinkMakerSection() {
           className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15 disabled:opacity-50"
         >
           <Shield className="h-3.5 w-3.5" />
-          {scanning ? "Scanning…" : "Scan reachability"}
+          {scanning ? "Scanning…" : "Test links"}
         </button>
       </div>
 
@@ -911,9 +928,9 @@ function LinkMakerSection() {
                 {c.status === "ok" ? "Open" : c.status === "blocked" ? "Blocked" : "Idle"}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="truncate font-mono text-xs text-white">{c.url}</div>
+                <div className="truncate text-xs font-bold text-white">{c.label}</div>
                 <div className="truncate text-[10px] text-white/45">
-                  {hostInfo(c.host)}{c.ms != null ? ` · ${c.ms} ms` : ""}
+                  {c.engine === "uv" ? "Ultraviolet" : "Scramjet"} · {c.note}{c.ms != null ? ` · ${c.ms} ms` : ""}
                 </div>
               </div>
               <button
@@ -929,7 +946,7 @@ function LinkMakerSection() {
                 rel="noreferrer"
                 className="inline-flex shrink-0 items-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/15"
               >
-                Open
+                Open <ExternalLink className="h-3 w-3" />
               </a>
             </div>
           ))}
@@ -937,10 +954,8 @@ function LinkMakerSection() {
       )}
 
       <p className="mt-4 text-[11px] leading-relaxed text-white/45">
-        Links are randomized subdomains on free, no-signup hosts (Cloudflare Pages, Bunny CDN,
-        Deno Deploy, etc.). "Scan reachability" pings each candidate from your network so you
-        can tell at a glance which hosts your filter is letting through right now. Lovable
-        doesn't host these endpoints — you'd point a free deploy at any of these URLs yourself.
+        These are real Polaris Browser URLs, not random empty domains. "Test links" starts the
+        local proxy workers and checks the selected sites through your current network.
       </p>
     </section>
   );
