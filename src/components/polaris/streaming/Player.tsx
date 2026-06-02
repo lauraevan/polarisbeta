@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, List, Play, SkipForward } from "lucide-react";
 import { PROVIDERS } from "@/lib/streaming-providers";
 import { tmdbApi, IMG, type MediaKind } from "@/lib/tmdb";
@@ -18,7 +18,6 @@ export function Player({ kind, id, title, onClose }: Props) {
   const [episode, setEpisode] = useState(1);
   const [chatOpen, setChatOpen] = useState(false);
   const [episodesOpen, setEpisodesOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
 
   const { data: details } = useQuery({
     queryKey: ["details", kind, id],
@@ -72,7 +71,7 @@ export function Player({ kind, id, title, onClose }: Props) {
   }, [onClose]);
 
   return (
-    <div ref={wrapRef} className="fixed inset-0 z-[55] flex flex-col bg-black/95 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[55] flex flex-col bg-black/95 backdrop-blur-xl">
       <div className="liquid-glass-strong flex flex-wrap items-center gap-3 rounded-none border-x-0 border-t-0 px-4 py-3">
         <button onClick={onClose} className="rounded-lg p-2 text-white/85 hover:bg-white/10" aria-label="Close">
           <X className="h-5 w-5" />
