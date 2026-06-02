@@ -10,7 +10,17 @@ import { PolarisBoot } from "./Boot";
 import { ProfileSheet } from "./ProfileSheet";
 import { useEffect, useState } from "react";
 
-export function AppShell({ children, hideDock = false }: { children: ReactNode; hideDock?: boolean }) {
+export function AppShell({
+  children,
+  hideDock = false,
+  wallpaperButton = false,
+}: {
+  children: ReactNode;
+  hideDock?: boolean;
+  /** Show the wallpaper-picker button in the dock. Defaults to false; only the
+   * home screen surfaces it so it doesn't clutter every page. */
+  wallpaperButton?: boolean;
+}) {
   const [wallpaperOpen, setWallpaperOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -30,8 +40,13 @@ export function AppShell({ children, hideDock = false }: { children: ReactNode; 
         <MyListProvider>
         <WallpaperLayer />
         <ShellLayout>{children}</ShellLayout>
-        {!hideDock && <Dock onOpenWallpaper={() => setWallpaperOpen(true)} />}
-        {!hideDock && <WallpaperPicker open={wallpaperOpen} onOpenChange={setWallpaperOpen} />}
+        {!hideDock && (
+          <Dock
+            onOpenWallpaper={() => setWallpaperOpen(true)}
+            showWallpaperButton={wallpaperButton}
+          />
+        )}
+        <WallpaperPicker open={wallpaperOpen} onOpenChange={setWallpaperOpen} />
         <ProfileSheet open={profileOpen} onClose={() => setProfileOpen(false)} />
         <PolarisBoot />
         </MyListProvider>
