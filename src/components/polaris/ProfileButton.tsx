@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User } from "lucide-react";
+import { User, Crown } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AuthDialog } from "./AuthDialog";
 import { ProfileSheet } from "./ProfileSheet";
@@ -9,6 +9,9 @@ export function ProfileButton({ collapsed }: { collapsed: boolean }) {
   const { profile, loading } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const isPro =
+    !!profile?.pro_until &&
+    (Number.isNaN(Date.parse(profile.pro_until)) || Date.parse(profile.pro_until) > Date.now());
 
   return (
     <>
@@ -20,22 +23,39 @@ export function ProfileButton({ collapsed }: { collapsed: boolean }) {
         }`}
       >
         {profile ? (
-          <span
-            className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-md text-[13px]"
-            style={{ background: `rgba(${profile.accent_color}/0.95)` }}
-          >
-            {profile.avatar_emoji ?? "✨"}
+          <span className="relative shrink-0">
+            <span
+              className="grid h-[22px] w-[22px] place-items-center rounded-md text-[13px]"
+              style={{ background: `rgba(${profile.accent_color}/0.95)` }}
+            >
+              {profile.avatar_emoji ?? "✨"}
+            </span>
+            {isPro && (
+              <span
+                title="Polaris Pro — VIP"
+                className="absolute -right-1.5 -top-1.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 ring-1 ring-black/40"
+              >
+                <Crown className="h-2 w-2 text-black" />
+              </span>
+            )}
           </span>
         ) : (
           <User className="h-[18px] w-[18px] shrink-0" />
         )}
         {!collapsed && (
-          <span className="truncate">
-            {loading
-              ? "…"
-              : profile
-                ? profile.display_name || profile.username
-                : "Sign up/in to Polaris"}
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate">
+              {loading
+                ? "…"
+                : profile
+                  ? profile.display_name || profile.username
+                  : "Sign up/in to Polaris"}
+            </span>
+            {isPro && (
+              <span className="inline-flex items-center gap-0.5 rounded-md bg-gradient-to-r from-amber-400 to-amber-600 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-black">
+                <Crown className="h-2.5 w-2.5" /> VIP
+              </span>
+            )}
           </span>
         )}
       </button>
