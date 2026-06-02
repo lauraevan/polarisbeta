@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import { useAdmin } from "@/lib/admin-context";
-import { useWallpaper } from "@/lib/wallpaper-context";
 import {
   adminListUsers, adminListChannels, adminGrantCoins, adminGrantCredits,
   adminPostAnnouncement, adminBanUser, adminUnbanUser, adminKickUser,
@@ -12,7 +11,7 @@ import {
 } from "@/lib/admin.functions";
 import {
   Shield, Coins, Sparkles, Megaphone, Ban, UserX, Hash, LogOut,
-  Crown, Users, Trash2, RefreshCw, Search, Home, Pencil, Filter, Lock,
+  Crown, Users, Trash2, RefreshCw, Search, Home, Pencil, Filter, Lock, Globe2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
@@ -42,12 +41,9 @@ type AdminStats = {
   recentMessages: Array<{ id: string; username: string; content: string | null; created_at: string; channel_id: string }>;
 };
 
-const BLEED_KEY = "polaris.admin.bleed.v1";
-
 function AdminPage() {
   const { user, profile, loading, refreshProfile } = useAuth();
   const { isAdmin, isOwner, unlock, lock } = useAdmin();
-  const { wallpaper } = useWallpaper();
   const navigate = useNavigate();
 
   const listUsers = useServerFn(adminListUsers);
@@ -71,16 +67,6 @@ function AdminPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
-
-  const [bleed, setBleed] = useState<number>(() => {
-    if (typeof window === "undefined") return 70;
-    const v = window.localStorage.getItem(BLEED_KEY);
-    return v ? Number(v) : 70;
-  });
-  useEffect(() => {
-    if (typeof window !== "undefined") window.localStorage.setItem(BLEED_KEY, String(bleed));
-  }, [bleed]);
-  const panelAlpha = useMemo(() => Math.max(0.12, 1 - (bleed / 100) * 0.88), [bleed]);
 
   const [ecoUser, setEcoUser] = useState(""); const [ecoCoins, setEcoCoins] = useState(100);
   const [credUser, setCredUser] = useState(""); const [credTier, setCredTier] = useState<"basic" | "premium">("basic");
@@ -120,17 +106,15 @@ function AdminPage() {
     || u.display_name?.toLowerCase().includes(q.toLowerCase()),
   );
 
-  const panelStyle = { background: `rgba(6,6,10,${panelAlpha})` };
-  const cardStyle = { background: `rgba(255,255,255,${Math.min(0.08, (1 - panelAlpha) * 0.18 + 0.03)})` };
+  const panelStyle = { background: "#06060a" };
+  const cardStyle = { background: "rgba(255,255,255,0.04)" };
+  const headerStyle = { background: "rgba(0,0,0,0.7)" };
+  const navStyle = { background: "rgba(0,0,0,0.55)" };
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col text-white overflow-y-auto" style={panelStyle}>
-      {bleed > 5 && wallpaper.poster && (
-        <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center"
-          style={{ backgroundImage: `url(${wallpaper.poster})`, opacity: bleed / 100 }} />
-      )}
       <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-6 py-4 backdrop-blur-2xl"
-        style={{ background: `rgba(0,0,0,${Math.max(0.45, panelAlpha)})` }}>
+        style={headerStyle}>
         <div className="flex items-center gap-3">
           <Shield className="h-6 w-6 text-red-400" />
           <div>
@@ -139,15 +123,12 @@ function AdminPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-1.5 text-[11px]">
-            <span className="text-white/55">Bleed</span>
-            <input type="range" min={0} max={100} step={5} value={bleed}
-              onChange={(e) => setBleed(Number(e.target.value))}
-              className="h-1.5 w-28 accent-white" />
-            <span className="tabular-nums text-white/55">{bleed}%</span>
-          </div>
           <button onClick={refresh} className="rounded-lg p-2 text-white/70 hover:bg-white/10" title="Refresh">
             <RefreshCw className="h-4 w-4" />
+          </button>
+          <button onClick={() => navigate({ to: "/security" })}
+            className="flex items-center gap-1.5 rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-semibold text-red-200 hover:bg-red-500/25">
+            <Globe2 className="h-3.5 w-3.5" /> Security HQ
           </button>
           <button onClick={() => navigate({ to: "/" })}
             className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">
@@ -161,7 +142,7 @@ function AdminPage() {
       </header>
 
       <nav className="flex flex-wrap gap-1 border-b border-white/10 px-4 backdrop-blur-xl"
-        style={{ background: `rgba(0,0,0,${Math.max(0.35, panelAlpha * 0.7)})` }}>
+        style={navStyle}>
         {([
           { id: "home", label: "Home", icon: Home },
           { id: "users", label: "Users", icon: Users },
