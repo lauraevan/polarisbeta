@@ -141,7 +141,8 @@ export async function registerStaticProxies(engine: ProxyEngine = "uv") {
   await Promise.race([setup(), new Promise((resolve) => setTimeout(resolve, 1800))]);
 
   // Wire bare-mux → epoxy → wisp before any proxied request is made.
-  await Promise.race([ensureWispTransport(), new Promise((resolve) => setTimeout(resolve, 2500))]);
+  // Probing the wisp pool can take a few seconds on first load.
+  await Promise.race([ensureWispTransport(), new Promise((resolve) => setTimeout(resolve, 12000))]);
 
   if (engine === "scramjet" && !window.__polarisScramjetReady) {
     window.__polarisScramjetReady = loadScript("/scramjet/scramjet.all.js").then(async () => {
