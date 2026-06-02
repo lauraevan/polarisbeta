@@ -241,59 +241,32 @@ function CineLauncher() {
 
 function GeForceNowLauncher() {
   return (
-    <div className="space-y-4">
-      <div
-        className="relative overflow-hidden rounded-2xl border border-white/10 p-6 sm:p-8"
-        style={{
-          background:
-            "radial-gradient(120% 90% at 0% 0%, rgba(118,185,0,0.35), transparent 60%), radial-gradient(80% 60% at 100% 100%, rgba(0,0,0,0.6), transparent 70%), linear-gradient(135deg, #0b1a00 0%, #0a0a0a 100%)",
-        }}
-      >
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-white/70">
-          <Zap className="h-3.5 w-3.5" /> NVIDIA · Cloud Gaming
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-white/65">
+          <Zap className="h-3.5 w-3.5 text-[#76b900]" /> NVIDIA · GeForce Now
         </div>
-        <h2 className="mt-2 text-2xl font-black tracking-tight text-white sm:text-4xl">
-          GeForce Now
-        </h2>
-        <p className="mt-2 max-w-2xl text-sm text-white/75">
-          Stream your Steam, Epic, Ubisoft, Xbox & GOG library from NVIDIA's RTX servers.
-          Free tier available — no install required, just sign in and play in your browser.
-        </p>
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <a
-            href="https://play.geforcenow.com/"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-[#76b900] px-5 py-2 text-sm font-bold text-black hover:brightness-110"
-          >
-            <Play className="h-4 w-4 fill-black" /> Launch GeForce Now
-          </a>
-          <a
-            href="https://www.nvidia.com/en-us/geforce-now/games/"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
-          >
-            Browse supported games <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </div>
-        <p className="mt-3 text-[11px] text-white/50">
-          Tip: GeForce Now needs to open in a new tab — it blocks being framed for security.
-        </p>
+        <a
+          href="https://play.geforcenow.com/"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#76b900] px-3 py-1.5 text-xs font-bold text-black hover:brightness-110"
+        >
+          Open in new tab <ExternalLink className="h-3 w-3" />
+        </a>
       </div>
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          { t: "Free tier", d: "1-hour sessions, basic rigs, no install." },
-          { t: "Priority / Ultimate", d: "RTX 4080-class GPUs, longer sessions, ray tracing." },
-          { t: "Your library", d: "Connect Steam, Epic, Ubisoft, Xbox & GOG accounts." },
-        ].map((c) => (
-          <div key={c.t} className="rounded-xl border border-white/10 bg-white/5 p-4">
-            <div className="text-sm font-semibold text-white">{c.t}</div>
-            <div className="mt-1 text-xs text-white/65">{c.d}</div>
-          </div>
-        ))}
+      <div className="overflow-hidden rounded-md border border-white/10 bg-black">
+        <iframe
+          src="https://play.geforcenow.com/"
+          title="GeForce Now"
+          className="h-[78vh] w-full border-0"
+          allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; xr-spatial-tracking; microphone; camera"
+          allowFullScreen
+        />
       </div>
+      <p className="text-[11px] text-white/50">
+        If the frame stays blank, NVIDIA is blocking embedding on your network — use "Open in new tab" above.
+      </p>
     </div>
   );
 }
