@@ -18,6 +18,7 @@ import { Route as MylistRouteImport } from './routes/mylist'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as EmulatorRouteImport } from './routes/emulator'
+import { Route as DeckRouteImport } from './routes/deck'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BrowserRouteImport } from './routes/browser'
 import { Route as AppsRouteImport } from './routes/apps'
@@ -71,6 +72,11 @@ const EmulatorRoute = EmulatorRouteImport.update({
   path: '/emulator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeckRoute = DeckRouteImport.update({
+  id: '/deck',
+  path: '/deck',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
+  '/deck': typeof DeckRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
+  '/deck': typeof DeckRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
+  '/deck': typeof DeckRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
+    | '/deck'
     | '/emulator'
     | '/games'
     | '/media'
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
+    | '/deck'
     | '/emulator'
     | '/games'
     | '/media'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
+    | '/deck'
     | '/emulator'
     | '/games'
     | '/media'
@@ -226,6 +238,7 @@ export interface RootRouteChildren {
   AppsRoute: typeof AppsRoute
   BrowserRoute: typeof BrowserRoute
   ChatRoute: typeof ChatRoute
+  DeckRoute: typeof DeckRoute
   EmulatorRoute: typeof EmulatorRoute
   GamesRoute: typeof GamesRoute
   MediaRoute: typeof MediaRoute
@@ -303,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmulatorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/deck': {
+      id: '/deck'
+      path: '/deck'
+      fullPath: '/deck'
+      preLoaderRoute: typeof DeckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat': {
       id: '/chat'
       path: '/chat'
@@ -362,6 +382,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppsRoute: AppsRoute,
   BrowserRoute: BrowserRoute,
   ChatRoute: ChatRoute,
+  DeckRoute: DeckRoute,
   EmulatorRoute: EmulatorRoute,
   GamesRoute: GamesRoute,
   MediaRoute: MediaRoute,
