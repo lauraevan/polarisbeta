@@ -42,9 +42,9 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile: always a compact top bar so phones get nav (and so content can't slip under) */}
+      {/* Phone + small tablet: compact top bar (icons-only, scrollable) */}
       <MobileTopNav path={path} />
-      {/* Desktop: side rail OR full-width top bar based on orientation */}
+      {/* Desktop (lg+): side rail OR full-width top bar based on orientation */}
       {orientation === "side" ? (
         <DesktopSide
           path={path}
@@ -98,7 +98,7 @@ function DesktopSide({
   const width = collapsed ? "w-[68px]" : "w-60";
   return (
     <aside
-      className={`liquid-glass-strong sticky top-0 z-20 hidden h-screen ${width} shrink-0 flex-col self-start rounded-none transition-[width] duration-300 ease-out md:flex`}
+      className={`liquid-glass-strong sticky top-0 z-20 hidden h-screen ${width} shrink-0 flex-col self-start rounded-none transition-[width] duration-300 ease-out lg:flex`}
     >
       {/* Brand */}
       <div className={`flex items-center pt-6 pb-2 ${collapsed ? "justify-center px-2" : "gap-3 px-5"}`}>
@@ -109,7 +109,7 @@ function DesktopSide({
       <button
         onClick={toggle}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="liquid-glass absolute -right-3 top-7 z-30 hidden h-6 w-6 items-center justify-center rounded-full text-white/85 hover:text-white md:flex"
+        className="liquid-glass absolute -right-3 top-7 z-30 hidden h-6 w-6 items-center justify-center rounded-full text-white/85 hover:text-white lg:flex"
       >
         {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
       </button>
@@ -118,7 +118,7 @@ function DesktopSide({
         onClick={toggleOrientation}
         aria-label="Switch to top bar"
         title="Switch to top bar"
-        className="liquid-glass absolute -right-3 top-16 z-30 hidden h-6 w-6 items-center justify-center rounded-full text-white/85 hover:text-white md:flex"
+        className="liquid-glass absolute -right-3 top-16 z-30 hidden h-6 w-6 items-center justify-center rounded-full text-white/85 hover:text-white lg:flex"
       >
         <PanelTop className="h-3.5 w-3.5" />
       </button>
@@ -167,10 +167,12 @@ function DesktopTop({
   toggleOrientation: () => void;
 }) {
   return (
-    <header className="liquid-glass-strong sticky top-0 z-20 hidden w-full items-center gap-3 rounded-none border-b border-white/5 px-4 py-2 md:flex">
-      <Brand small />
-      <span className="mx-1 h-6 w-px bg-white/15" />
-      <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
+    <header className="liquid-glass-strong sticky top-0 z-20 hidden w-full items-center gap-3 rounded-none border-b border-white/5 px-4 py-2 lg:flex">
+      <div className="shrink-0">
+        <Brand small />
+      </div>
+      <span className="mx-1 h-6 w-px shrink-0 bg-white/15" />
+      <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
         {nav.map((item) => {
           const active = path === item.to;
           const Icon = item.icon;
@@ -178,7 +180,8 @@ function DesktopTop({
             <Link
               key={item.to}
               to={item.to}
-              className={`relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition ${
+              title={item.label}
+              className={`relative flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm transition xl:px-3 ${
                 active ? "text-white" : "text-white/65 hover:bg-white/5 hover:text-white"
               }`}
             >
@@ -192,8 +195,8 @@ function DesktopTop({
                   }}
                 />
               )}
-              <Icon className="relative h-4 w-4" />
-              <span className="relative font-medium">{item.label}</span>
+              <Icon className="relative h-4 w-4 shrink-0" />
+              <span className="relative hidden font-medium xl:inline">{item.label}</span>
             </Link>
           );
         })}
@@ -202,20 +205,27 @@ function DesktopTop({
         onClick={toggleOrientation}
         aria-label="Switch to side bar"
         title="Switch to side bar"
-        className="liquid-glass grid h-8 w-8 place-items-center rounded-lg text-white/85 hover:text-white"
+        className="liquid-glass grid h-8 w-8 shrink-0 place-items-center rounded-lg text-white/85 hover:text-white"
       >
         <PanelLeft className="h-4 w-4" />
       </button>
-      <ProfileButton collapsed />
+      <div className="shrink-0">
+        <ProfileButton collapsed />
+      </div>
     </header>
   );
 }
 
 function MobileTopNav({ path }: { path: string }) {
   return (
-    <header className="liquid-glass-strong sticky top-0 z-20 flex w-full items-center gap-2 rounded-none border-b border-white/5 px-3 py-2 md:hidden">
-      <Brand small />
-      <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
+    <header className="liquid-glass-strong sticky top-0 z-20 flex w-full items-center gap-2 rounded-none border-b border-white/5 px-3 py-2 lg:hidden">
+      <div className="shrink-0">
+        <Brand small />
+      </div>
+      <nav
+        className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
         {nav.map((item) => {
           const active = path === item.to;
           const Icon = item.icon;
@@ -224,6 +234,7 @@ function MobileTopNav({ path }: { path: string }) {
               key={item.to}
               to={item.to}
               title={item.label}
+              aria-label={item.label}
               className={`relative grid h-9 w-9 shrink-0 place-items-center rounded-lg transition ${
                 active ? "text-white" : "text-white/60 hover:text-white"
               }`}
@@ -238,11 +249,14 @@ function MobileTopNav({ path }: { path: string }) {
                   }}
                 />
               )}
-              <Icon className="relative h-[18px] w-[18px]" />
+              <Icon className="relative h-[18px] w-[18px] shrink-0" />
             </Link>
           );
         })}
       </nav>
+      <div className="shrink-0">
+        <ProfileButton collapsed />
+      </div>
     </header>
   );
 }

@@ -43,7 +43,7 @@ export function AppShell({ children, hideDock = false }: { children: ReactNode; 
 function ShellLayout({ children }: { children: ReactNode }) {
   const { orientation } = useSidebarState();
   // Mobile always stacks (mobile nav is a top bar). Desktop follows orientation.
-  const desktopDir = orientation === "top" ? "md:flex-col" : "md:flex-row";
+  const desktopDir = orientation === "top" ? "lg:flex-col" : "lg:flex-row";
   return (
     <div className={`flex flex-col ${desktopDir} min-h-screen text-white`}>
       <Sidebar />
