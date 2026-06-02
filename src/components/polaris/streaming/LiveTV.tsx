@@ -4,26 +4,14 @@ import {
   Globe2, Flame, Star, Volume2, Maximize2, ListVideo, ChevronRight,
   Loader2, RefreshCw, Calendar,
 } from "lucide-react";
+import type { Channel, ChannelCategory } from "./channelTypes";
+import { IPTV_CHANNELS } from "./channelCatalog";
 
-type Channel = {
-  id: string;
-  name: string;
-  category: Category;
-  domain: string;          // used for favicon fallback chains
-  emoji: string;           // always-renders fallback
-  accent: string;          // brand tint for the chip backdrop
-  tagline?: string;
-  popular?: boolean;
-  highlight?: boolean;
-  now?: string;            // what's airing now (display-only)
-  next?: string;           // up next
-  streams: { label: string; url: string }[];
-};
+type Category = ChannelCategory;
 
-type Category = "All" | "Sports" | "News" | "Entertainment" | "Movies" | "Kids" | "Music" | "Documentary";
-
-// Direct public HLS feeds. No DaddyLive mirrors, no blocked iframe domains.
-const CHANNELS: Channel[] = [
+// Hand-curated channels with confirmed working HLS feeds. These take priority
+// over anything with the same name in the auto-generated IPTV catalog.
+const CURATED_CHANNELS: Channel[] = [
   { id: "fox-sports", name: "FOX Sports", category: "Sports", domain: "foxsports.com", emoji: "🏟️", accent: "30 80 180", tagline: "Sports coverage", popular: true, highlight: true, streams: [{ label: "FOX Sports", url: "https://d1jzu95oc8fgt3.cloudfront.net/FOX_Sports.m3u8" }, { label: "FOX Sports alt", url: "https://live-manifest.production-public.tubi.io/live/6035c7fd-efff-4ec7-93dc-aa0c7a58ba47/playlist.m3u8" }] },
   { id: "roku-sports", name: "Roku Sports Channel", category: "Sports", domain: "therokuchannel.roku.com", emoji: "🏆", accent: "100 60 200", tagline: "Sports shows · live events", popular: true, highlight: true, streams: [{ label: "Roku Sports", url: "https://d3ialx0k0mla2a.cloudfront.net/Roku_Sports_Channel.m3u8" }, { label: "Yahoo Sports", url: "https://d7vulbd7rxo7j.cloudfront.net/Yahoo_Sports_Network.m3u8" }] },
   { id: "pga-tour", name: "PGA Tour", category: "Sports", domain: "pgatour.com", emoji: "⛳", accent: "40 130 70", tagline: "Golf highlights · live windows", popular: true, streams: [{ label: "PGA Tour", url: "https://d11k1mnrgfposz.cloudfront.net/playlist.m3u8" }] },
