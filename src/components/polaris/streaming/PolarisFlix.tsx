@@ -98,11 +98,8 @@ function Hero({
         <div className="mt-5 flex items-center gap-2.5">
           <button
             onClick={() => onPlay(item)}
-            className="flex items-center gap-2 rounded-xl px-7 py-3 text-base font-bold text-white shadow-lg transition hover:brightness-110"
-            style={{
-              background: "linear-gradient(135deg, #f97316 0%, #ea580c 60%, #c2410c 100%)",
-              boxShadow: "0 12px 32px -8px rgba(234,88,12,0.65), inset 0 1px 0 rgba(255,255,255,0.25)",
-            }}
+            className="flex items-center gap-2 rounded-xl px-7 py-3 text-base font-bold text-white transition hover:brightness-110"
+            style={{ background: "#ea580c" }}
           >
             <Play className="h-5 w-5 fill-white" /> Watch Now
           </button>
