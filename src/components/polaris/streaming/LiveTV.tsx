@@ -69,6 +69,29 @@ const CATEGORIES: { id: Category; label: string; icon: typeof Tv2 }[] = [
   { id: "Documentary", label: "Docs", icon: FlaskConical },
 ];
 
+// Merge curated + IPTV-org catalog. Curated wins on name collisions.
+const CHANNELS: Channel[] = (() => {
+  const byKey = new Map<string, Channel>();
+  for (const c of CURATED_CHANNELS) byKey.set(c.name.toLowerCase(), c);
+  for (const c of IPTV_CHANNELS) {
+    const k = c.name.toLowerCase();
+    if (!byKey.has(k)) byKey.set(k, c);
+  }
+  return Array.from(byKey.values());
+})();
+
+// Keep the original const for backwards-compat references below.
+const _LEGACY_CATEGORIES_GUARD: { id: Category; label: string; icon: typeof Tv2 }[] = [
+  { id: "All", label: "All", icon: Globe2 },
+  { id: "Sports", label: "Sports", icon: Trophy },
+  { id: "News", label: "News", icon: Newspaper },
+  { id: "Entertainment", label: "Entertainment", icon: Tv2 },
+  { id: "Movies", label: "Movies", icon: Film },
+  { id: "Kids", label: "Kids", icon: Baby },
+  { id: "Music", label: "Music", icon: Music2 },
+  { id: "Documentary", label: "Docs", icon: FlaskConical },
+];
+
 /**
  * Channel logo with a multi-source fallback chain. Clearbit returns 404 for
  * many broadcaster domains; DuckDuckGo's icon service is dramatically more
