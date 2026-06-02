@@ -467,7 +467,12 @@ function ChannelPlayerFrame({ channel }: { channel: Channel }) {
     if (!video || !stream) return;
 
     let cancelled = false;
-    let hls: { destroy: () => void } | null = null;
+    let hls: {
+      destroy: () => void;
+      loadSource: (url: string) => void;
+      attachMedia: (media: HTMLMediaElement) => void;
+      on: (event: string, callback: (...args: any[]) => void) => void;
+    } | null = null;
     setStatus("Connecting…");
 
     const tryPlay = async () => {
