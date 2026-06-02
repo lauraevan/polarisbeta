@@ -20,6 +20,9 @@ import {
   Sliders,
   ListOrdered,
 } from "lucide-react";
+import { Compass } from "lucide-react";
+import { MusicCatalog, GenrePage } from "./MusicCatalog";
+import type { Genre } from "@/lib/music-catalog";
 import {
   vaporSearch,
   vaporPlayback,
@@ -66,8 +69,11 @@ export function PolarisMusic() {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<VaporItem[]>([]);
   const [searching, setSearching] = useState(false);
-  const [view, setView] = useState<"home" | "liked" | "playlist" | "search">("home");
+  const [view, setView] = useState<"home" | "browse" | "genre" | "liked" | "playlist" | "search">(
+    "browse",
+  );
   const [activePlaylist, setActivePlaylist] = useState<string | null>(null);
+  const [activeGenre, setActiveGenre] = useState<Genre | null>(null);
 
   const [playlists, setPlaylists] = useState<Playlist[]>(loadPlaylists());
   const [recent, setRecent] = useState<StoredTrack[]>(loadRecent());
@@ -401,6 +407,16 @@ export function PolarisMusic() {
             <span>Home</span>
           </button>
           <button
+            onClick={() => {
+              setView("browse");
+              setActiveGenre(null);
+            }}
+            className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${view === "browse" || view === "genre" ? "bg-white/10" : "hover:bg-white/5"}`}
+          >
+            <Compass className="h-4 w-4" />
+            <span>Browse</span>
+          </button>
+          <button
             onClick={() => setView("liked")}
             className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${view === "liked" ? "bg-white/10" : "hover:bg-white/5"}`}
           >
@@ -460,6 +476,24 @@ export function PolarisMusic() {
               liked={liked}
               playlists={playlists}
               onAdd={addToPlaylist}
+            />
+          )}
+
+          {view === "browse" && (
+            <MusicCatalog
+              onPlay={(t, list) => playTrack(t, list)}
+              onOpenGenre={(g) => {
+                setActiveGenre(g);
+                setView("genre");
+              }}
+            />
+          )}
+
+          {view === "genre" && activeGenre && (
+            <GenrePage
+              genre={activeGenre}
+              onPlay={(t, list) => playTrack(t, list)}
+              onBack={() => setView("browse")}
             />
           )}
 
