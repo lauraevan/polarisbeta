@@ -204,6 +204,41 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_channel_members: {
+        Row: {
+          channel_id: string
+          created_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_channels: {
         Row: {
           allowed_role: string | null
@@ -216,6 +251,7 @@ export type Database = {
           name: string
           slug: string
           topic: string | null
+          visibility: string
         }
         Insert: {
           allowed_role?: string | null
@@ -228,6 +264,7 @@ export type Database = {
           name: string
           slug: string
           topic?: string | null
+          visibility?: string
         }
         Update: {
           allowed_role?: string | null
@@ -240,6 +277,7 @@ export type Database = {
           name?: string
           slug?: string
           topic?: string | null
+          visibility?: string
         }
         Relationships: []
       }
@@ -957,6 +995,7 @@ export type Database = {
           type: Database["public"]["Enums"]["ban_type"]
         }[]
       }
+      is_channel_member: { Args: { _channel_id: string }; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
       is_pro: { Args: { _user_id: string }; Returns: boolean }
       redeem_pro_key: { Args: { _code: string }; Returns: Json }
