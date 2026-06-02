@@ -16,6 +16,8 @@ import {
   Crown,
   Music,
   Music2,
+  HardDrive,
+  Image as ImageIcon,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -31,6 +33,7 @@ const nav = [
   { to: "/browser", label: "Browser", icon: Globe2 },
   { to: "/apps", label: "Apps", icon: LayoutGrid },
   { to: "/ai", label: "AI Tools", icon: Sparkles },
+  { to: "/image-gen", label: "Image Gen 2", icon: ImageIcon },
   { to: "/mylist", label: "My List", icon: Bookmark },
   { to: "/emulator", label: "Emulator", icon: Joystick },
   { to: "/chat", label: "Chat", icon: MessageCircle },
@@ -39,7 +42,8 @@ const nav = [
   { to: "/premium", label: "Premium", icon: Crown },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/partners", label: "Partners", icon: Handshake },
-  { to: "/vpn", label: "VPN", icon: Shield },
+  { to: "/vpn", label: "Tunnel", icon: Shield },
+  { to: "/os", label: "Polaris OS", icon: HardDrive },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 

@@ -1,4 +1,4 @@
-export type ProxyEngine = "uv" | "scramjet";
+export type ProxyEngine = "uv" | "scramjet" | "dioxide";
 
 // Pool of public wisp relays. We probe them and pick the first one that
 // opens cleanly. Order matters — fastest/most-reliable first. If a relay
@@ -48,6 +48,10 @@ export function normalizeUrl(input: string) {
 export function getProxyUrl(engine: ProxyEngine, input: string) {
   const url = normalizeUrl(input);
   if (engine === "scramjet") return `/scramjet/go/${encodeURIComponent(url)}`;
+  // Dioxide is a Polaris-tuned UV pipeline (same wisp + bare-mux transport,
+  // different label + tuning). It piggybacks on the UV service worker so we
+  // don't have to ship a second SW bundle just for the brand.
+  if (engine === "dioxide") return `/uv/service/${encodeURIComponent(url)}#dx`;
   return `/uv/service/${encodeURIComponent(url)}`;
 }
 

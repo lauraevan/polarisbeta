@@ -3,30 +3,34 @@ import { Play, Square, Volume2, Music2 } from "lucide-react";
 
 type Pad = { id: string; label: string; emoji: string; url: string; category: string };
 
-// Curated free SFX (mixkit / pixabay CDN — no auth required).
+// GN Math-inspired soundboard. Curated classroom/meme/game SFX sourced from
+// myinstants (public, no-auth) and mixkit. Tap a pad to fire it.
+const M = (slug: string) => `https://www.myinstants.com/media/sounds/${slug}`;
 const PADS: Pad[] = [
+  // Classroom / GN Math classics
+  { id: "bell", label: "School bell", emoji: "🔔", category: "Classroom", url: M("school-bell.mp3") },
+  { id: "correct", label: "Correct!", emoji: "✅", category: "Classroom", url: M("correct-answer.mp3") },
+  { id: "wrong", label: "Wrong answer", emoji: "❌", category: "Classroom", url: M("wrong-answer-sound-effect.mp3") },
+  { id: "tada", label: "Ta-da!", emoji: "🎉", category: "Classroom", url: M("ta-da.mp3") },
+  { id: "ding-ding", label: "Ding ding ding", emoji: "🛎️", category: "Classroom", url: M("ding-ding-ding.mp3") },
+  { id: "buzzer", label: "Game show buzzer", emoji: "🚨", category: "Classroom", url: M("wrong-buzzer.mp3") },
   // Reactions
-  { id: "airhorn", label: "Air horn", emoji: "📣", category: "Reactions", url: "https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" },
-  { id: "applause", label: "Applause", emoji: "👏", category: "Reactions", url: "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3" },
-  { id: "boo", label: "Crowd boo", emoji: "👎", category: "Reactions", url: "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" },
-  { id: "laugh", label: "Laugh", emoji: "😂", category: "Reactions", url: "https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3" },
-  { id: "drumroll", label: "Drumroll", emoji: "🥁", category: "Reactions", url: "https://assets.mixkit.co/active_storage/sfx/2581/2581-preview.mp3" },
-  { id: "fanfare", label: "Fanfare", emoji: "🎺", category: "Reactions", url: "https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3" },
+  { id: "airhorn", label: "Air horn", emoji: "📣", category: "Reactions", url: M("mlg-airhorn.mp3") },
+  { id: "applause", label: "Applause", emoji: "👏", category: "Reactions", url: M("applause-sound-effect.mp3") },
+  { id: "drumroll", label: "Drumroll", emoji: "🥁", category: "Reactions", url: M("drum-roll.mp3") },
+  { id: "fanfare", label: "Fanfare", emoji: "🎺", category: "Reactions", url: M("trumpet-fanfare.mp3") },
+  { id: "crickets", label: "Crickets", emoji: "🦗", category: "Reactions", url: M("crickets-chirping.mp3") },
   // Meme
-  { id: "bruh", label: "Bruh", emoji: "🗿", category: "Meme", url: "https://www.myinstants.com/media/sounds/movie_1.mp3" },
-  { id: "windows", label: "Windows error", emoji: "💥", category: "Meme", url: "https://www.myinstants.com/media/sounds/erro.mp3" },
-  { id: "mariocoin", label: "Mario coin", emoji: "🪙", category: "Meme", url: "https://www.myinstants.com/media/sounds/smb_coin.wav" },
-  { id: "wow", label: "Wow", emoji: "🤩", category: "Meme", url: "https://www.myinstants.com/media/sounds/anime-wow-sound-effect_1.mp3" },
-  { id: "vine", label: "Vine boom", emoji: "💣", category: "Meme", url: "https://www.myinstants.com/media/sounds/vine-boom.mp3" },
+  { id: "bruh", label: "Bruh", emoji: "🗿", category: "Meme", url: M("bruh-sound-effect_1.mp3") },
+  { id: "vine", label: "Vine boom", emoji: "💣", category: "Meme", url: M("vine-boom.mp3") },
+  { id: "wow", label: "Anime wow", emoji: "🤩", category: "Meme", url: M("anime-wow-sound-effect_1.mp3") },
+  { id: "windows", label: "Windows error", emoji: "💥", category: "Meme", url: M("erro.mp3") },
+  { id: "rizz", label: "Rizz", emoji: "🦦", category: "Meme", url: M("rizz-sound-effect.mp3") },
   // Game
-  { id: "powerup", label: "Power-up", emoji: "⚡", category: "Game", url: "https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3" },
-  { id: "win", label: "Win jingle", emoji: "🏆", category: "Game", url: "https://assets.mixkit.co/active_storage/sfx/213/213-preview.mp3" },
-  { id: "lose", label: "Lose", emoji: "💀", category: "Game", url: "https://assets.mixkit.co/active_storage/sfx/253/253-preview.mp3" },
-  { id: "click", label: "Click", emoji: "🖱️", category: "Game", url: "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" },
-  // UI
-  { id: "ding", label: "Ding", emoji: "🔔", category: "UI", url: "https://assets.mixkit.co/active_storage/sfx/1849/1849-preview.mp3" },
-  { id: "swoosh", label: "Swoosh", emoji: "🌀", category: "UI", url: "https://assets.mixkit.co/active_storage/sfx/2569/2569-preview.mp3" },
-  { id: "pop", label: "Pop", emoji: "💧", category: "UI", url: "https://assets.mixkit.co/active_storage/sfx/2356/2356-preview.mp3" },
+  { id: "mariocoin", label: "Mario coin", emoji: "🪙", category: "Game", url: M("smb_coin.wav") },
+  { id: "mario1up", label: "1-Up", emoji: "🍄", category: "Game", url: M("smb_1-up.wav") },
+  { id: "powerup", label: "Power-up", emoji: "⚡", category: "Game", url: M("smb_powerup.wav") },
+  { id: "gameover", label: "Game over", emoji: "💀", category: "Game", url: M("smb_gameover.wav") },
 ];
 
 const CATS = ["All", ...Array.from(new Set(PADS.map((p) => p.category)))];

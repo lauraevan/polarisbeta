@@ -17,9 +17,11 @@ import { Route as SecurityRouteImport } from './routes/security'
 import { Route as RecsRouteImport } from './routes/recs'
 import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as PartnersRouteImport } from './routes/partners'
+import { Route as OsRouteImport } from './routes/os'
 import { Route as MylistRouteImport } from './routes/mylist'
 import { Route as MusicRouteImport } from './routes/music'
 import { Route as MediaRouteImport } from './routes/media'
+import { Route as ImageGenRouteImport } from './routes/image-gen'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as EmulatorRouteImport } from './routes/emulator'
 import { Route as ChatRouteImport } from './routes/chat'
@@ -71,6 +73,11 @@ const PartnersRoute = PartnersRouteImport.update({
   path: '/partners',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OsRoute = OsRouteImport.update({
+  id: '/os',
+  path: '/os',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MylistRoute = MylistRouteImport.update({
   id: '/mylist',
   path: '/mylist',
@@ -84,6 +91,11 @@ const MusicRoute = MusicRouteImport.update({
 const MediaRoute = MediaRouteImport.update({
   id: '/media',
   path: '/media',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImageGenRoute = ImageGenRouteImport.update({
+  id: '/image-gen',
+  path: '/image-gen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GamesRoute = GamesRouteImport.update({
@@ -146,9 +158,11 @@ export interface FileRoutesByFullPath {
   '/chat': typeof ChatRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
+  '/image-gen': typeof ImageGenRoute
   '/media': typeof MediaRoute
   '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
+  '/os': typeof OsRoute
   '/partners': typeof PartnersRoute
   '/premium': typeof PremiumRoute
   '/recs': typeof RecsRoute
@@ -169,9 +183,11 @@ export interface FileRoutesByTo {
   '/chat': typeof ChatRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
+  '/image-gen': typeof ImageGenRoute
   '/media': typeof MediaRoute
   '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
+  '/os': typeof OsRoute
   '/partners': typeof PartnersRoute
   '/premium': typeof PremiumRoute
   '/recs': typeof RecsRoute
@@ -193,9 +209,11 @@ export interface FileRoutesById {
   '/chat': typeof ChatRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
+  '/image-gen': typeof ImageGenRoute
   '/media': typeof MediaRoute
   '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
+  '/os': typeof OsRoute
   '/partners': typeof PartnersRoute
   '/premium': typeof PremiumRoute
   '/recs': typeof RecsRoute
@@ -218,9 +236,11 @@ export interface FileRouteTypes {
     | '/chat'
     | '/emulator'
     | '/games'
+    | '/image-gen'
     | '/media'
     | '/music'
     | '/mylist'
+    | '/os'
     | '/partners'
     | '/premium'
     | '/recs'
@@ -241,9 +261,11 @@ export interface FileRouteTypes {
     | '/chat'
     | '/emulator'
     | '/games'
+    | '/image-gen'
     | '/media'
     | '/music'
     | '/mylist'
+    | '/os'
     | '/partners'
     | '/premium'
     | '/recs'
@@ -264,9 +286,11 @@ export interface FileRouteTypes {
     | '/chat'
     | '/emulator'
     | '/games'
+    | '/image-gen'
     | '/media'
     | '/music'
     | '/mylist'
+    | '/os'
     | '/partners'
     | '/premium'
     | '/recs'
@@ -288,9 +312,11 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRoute
   EmulatorRoute: typeof EmulatorRoute
   GamesRoute: typeof GamesRoute
+  ImageGenRoute: typeof ImageGenRoute
   MediaRoute: typeof MediaRoute
   MusicRoute: typeof MusicRoute
   MylistRoute: typeof MylistRoute
+  OsRoute: typeof OsRoute
   PartnersRoute: typeof PartnersRoute
   PremiumRoute: typeof PremiumRoute
   RecsRoute: typeof RecsRoute
@@ -361,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PartnersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/os': {
+      id: '/os'
+      path: '/os'
+      fullPath: '/os'
+      preLoaderRoute: typeof OsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mylist': {
       id: '/mylist'
       path: '/mylist'
@@ -380,6 +413,13 @@ declare module '@tanstack/react-router' {
       path: '/media'
       fullPath: '/media'
       preLoaderRoute: typeof MediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/image-gen': {
+      id: '/image-gen'
+      path: '/image-gen'
+      fullPath: '/image-gen'
+      preLoaderRoute: typeof ImageGenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/games': {
@@ -464,9 +504,11 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRoute,
   EmulatorRoute: EmulatorRoute,
   GamesRoute: GamesRoute,
+  ImageGenRoute: ImageGenRoute,
   MediaRoute: MediaRoute,
   MusicRoute: MusicRoute,
   MylistRoute: MylistRoute,
+  OsRoute: OsRoute,
   PartnersRoute: PartnersRoute,
   PremiumRoute: PremiumRoute,
   RecsRoute: RecsRoute,

@@ -15,7 +15,9 @@ const QUICK_LINKS = [
 
 export function PolarisBrowser() {
   const search = useSearch({ strict: false }) as { engine?: ProxyEngine; url?: string };
-  const [engine, setEngine] = useState<ProxyEngine>(search.engine === "scramjet" ? "scramjet" : "uv");
+  const initialEngine: ProxyEngine =
+    search.engine === "scramjet" || search.engine === "dioxide" ? search.engine : "uv";
+  const [engine, setEngine] = useState<ProxyEngine>(initialEngine);
   const [query, setQuery] = useState(search.url ? normalizeUrl(search.url) : "google.com");
   const [target, setTarget] = useState(search.url ? normalizeUrl(search.url) : "https://www.google.com");
   const [ready, setReady] = useState(false);
@@ -76,14 +78,14 @@ export function PolarisBrowser() {
             </button>
           </form>
 
-          <div className="grid grid-cols-2 rounded-2xl border border-white/10 bg-black/25 p-1 text-xs font-bold">
-            {(["uv", "scramjet"] as const).map((next) => (
+          <div className="grid grid-cols-3 rounded-2xl border border-white/10 bg-black/25 p-1 text-xs font-bold">
+            {(["uv", "scramjet", "dioxide"] as const).map((next) => (
               <button
                 key={next}
                 onClick={() => setEngine(next)}
                 className={`rounded-xl px-3 py-2 ${engine === next ? "bg-white text-black" : "text-white/65 hover:bg-white/10"}`}
               >
-                {next === "uv" ? "Ultraviolet" : "Scramjet"}
+                {next === "uv" ? "Ultraviolet" : next === "scramjet" ? "Scramjet" : "Dioxide"}
               </button>
             ))}
           </div>
@@ -118,7 +120,7 @@ export function PolarisBrowser() {
               <div>
                 <div className="text-xl font-black text-white">Ready to browse</div>
                 <div className="mt-2 text-sm leading-6 text-white/55">
-                  {engine === "uv" ? "Ultraviolet" : "Scramjet"} is loaded. Launch the current website when you’re ready.
+                  {engine === "uv" ? "Ultraviolet" : engine === "scramjet" ? "Scramjet" : "Dioxide"} is loaded. Launch the current website when you’re ready.
                 </div>
               </div>
               <div className="flex flex-wrap justify-center gap-2">
@@ -133,7 +135,7 @@ export function PolarisBrowser() {
             <div className="space-y-2 px-6">
               <Zap className="mx-auto h-8 w-8 animate-pulse text-white" />
               <div className="text-sm font-bold text-white">Starting Polaris Browser</div>
-              <div className="text-xs text-white/50">Registering static Ultraviolet and Scramjet workers…</div>
+              <div className="text-xs text-white/50">Registering Ultraviolet, Scramjet, and Dioxide workers…</div>
             </div>
           </div>
         )}
