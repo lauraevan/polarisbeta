@@ -11,7 +11,7 @@ import {
   Settings as SettingsIcon,
   ShoppingBag,
   Bookmark,
-  Wand2,
+  Handshake,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -26,11 +26,11 @@ const nav = [
   { to: "/browser", label: "Browser", icon: Globe2 },
   { to: "/apps", label: "Apps", icon: LayoutGrid },
   { to: "/ai", label: "AI Tools", icon: Sparkles },
-  { to: "/recs", label: "Recs", icon: Wand2 },
   { to: "/mylist", label: "My List", icon: Bookmark },
   { to: "/emulator", label: "Emulator", icon: Joystick },
   { to: "/chat", label: "Chat", icon: MessageCircle },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
+  { to: "/partners", label: "Partners", icon: Handshake },
   { to: "/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 

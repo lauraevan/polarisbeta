@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RecsRouteImport } from './routes/recs'
+import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as MylistRouteImport } from './routes/mylist'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as GamesRouteImport } from './routes/games'
@@ -37,6 +38,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const RecsRoute = RecsRouteImport.update({
   id: '/recs',
   path: '/recs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnersRoute = PartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MylistRoute = MylistRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/mylist': typeof MylistRoute
+  '/partners': typeof PartnersRoute
   '/recs': typeof RecsRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/mylist': typeof MylistRoute
+  '/partners': typeof PartnersRoute
   '/recs': typeof RecsRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/games': typeof GamesRoute
   '/media': typeof MediaRoute
   '/mylist': typeof MylistRoute
+  '/partners': typeof PartnersRoute
   '/recs': typeof RecsRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/mylist'
+    | '/partners'
     | '/recs'
     | '/settings'
     | '/shop'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/mylist'
+    | '/partners'
     | '/recs'
     | '/settings'
     | '/shop'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/media'
     | '/mylist'
+    | '/partners'
     | '/recs'
     | '/settings'
     | '/shop'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   GamesRoute: typeof GamesRoute
   MediaRoute: typeof MediaRoute
   MylistRoute: typeof MylistRoute
+  PartnersRoute: typeof PartnersRoute
   RecsRoute: typeof RecsRoute
   SettingsRoute: typeof SettingsRoute
   ShopRoute: typeof ShopRoute
@@ -233,6 +246,13 @@ declare module '@tanstack/react-router' {
       path: '/recs'
       fullPath: '/recs'
       preLoaderRoute: typeof RecsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partners': {
+      id: '/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof PartnersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mylist': {
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   GamesRoute: GamesRoute,
   MediaRoute: MediaRoute,
   MylistRoute: MylistRoute,
+  PartnersRoute: PartnersRoute,
   RecsRoute: RecsRoute,
   SettingsRoute: SettingsRoute,
   ShopRoute: ShopRoute,
