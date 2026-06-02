@@ -363,4 +363,4 @@ export const WALLPAPERS: Wallpaper[] = [
 ];
 
 // Cozy bedroom at night — warm, low-key default for a calmer first impression.
-export const DEFAULT_WALLPAPER_ID = "marshland";
+export const DEFAULT_WALLPAPER_ID = "rocks-glow-with-autumn-fire";
