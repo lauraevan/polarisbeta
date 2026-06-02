@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAuth } from "./auth-context";
+import { safeGetItem, safeRemoveItem, safeSetItem } from "./safe-storage";
 
 // Device-local key — admin panel re-appears on this device until user logs out
 // of the admin panel explicitly. Profile.is_owner is the server source of truth.
@@ -22,18 +23,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setDeviceUnlocked(localStorage.getItem(LS_KEY) === "1");
+    setDeviceUnlocked(safeGetItem("localStorage", LS_KEY) === "1");
   }, []);
 
   const isOwner = !!(profile as { is_owner?: boolean } | null)?.is_owner;
   const isAdmin = isOwner && deviceUnlocked;
 
   const unlock = useCallback(() => {
-    localStorage.setItem(LS_KEY, "1");
+    safeSetItem("localStorage", LS_KEY, "1");
     setDeviceUnlocked(true);
   }, []);
   const lock = useCallback(() => {
-    localStorage.removeItem(LS_KEY);
+    safeRemoveItem("localStorage", LS_KEY);
     setDeviceUnlocked(false);
   }, []);
 
