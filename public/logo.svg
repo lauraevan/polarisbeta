@@ -44,19 +44,6 @@
             background: #000;
           }
 
-          /* Mobile */
-          @media (max-width: 767px) {
-            #fsbtn { top: env(safe-area-inset-top, 8px); right: 8px; font-size: 12px; padding: 6px 10px; }
-          }
-          /* iPad / tablets */
-          @media (min-width: 768px) and (max-width: 1366px) {
-            #fsbtn { top: 12px; right: 12px; font-size: 14px; padding: 8px 14px; }
-          }
-          /* Desktop / PC */
-          @media (min-width: 1367px) {
-            #fsbtn { top: 16px; right: 16px; font-size: 15px; padding: 10px 16px; }
-          }
-
           #loading {
             position: fixed;
             inset: 0;
@@ -67,22 +54,6 @@
             background: #000;
             font-size: 16px;
           }
-
-          #fsbtn {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            z-index: 2;
-            padding: 8px 14px;
-            background: rgba(0,0,0,0.6);
-            color: #fff;
-            border: 1px solid #fff;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-          }
-          #fsbtn:hover { background: rgba(255,255,255,0.15); }
-          #fsbtn.hidden { display: none; }
         ]]></style>
         <script><![CDATA[
           if (!location.hash) {
@@ -97,34 +68,10 @@
           syncViewport();
           window.addEventListener('resize', syncViewport);
           window.addEventListener('orientationchange', syncViewport);
-          function goFullscreen() {
-            var el = document.documentElement;
-            var req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
-            if (req) { req.call(el); }
-            var btn = document.getElementById('fsbtn');
-            if (btn) btn.classList.add('hidden');
-          }
-          // Try to enter fullscreen on first user gesture automatically
-          function autoFs() {
-            goFullscreen();
-            document.removeEventListener('click', autoFs);
-            document.removeEventListener('touchstart', autoFs);
-            document.removeEventListener('keydown', autoFs);
-          }
-          document.addEventListener('click', autoFs, { once: true });
-          document.addEventListener('touchstart', autoFs, { once: true });
-          document.addEventListener('keydown', autoFs, { once: true });
-          document.addEventListener('fullscreenchange', function() {
-            var btn = document.getElementById('fsbtn');
-            if (!btn) return;
-            if (document.fullscreenElement) btn.classList.add('hidden');
-            else btn.classList.remove('hidden');
-          });
         ]]></script>
       </head>
       <body>
         <div id="loading">Loading…</div>
-        <button id="fsbtn" onclick="goFullscreen()">⛶ Fullscreen</button>
         <iframe
           src="https://educationcatlearningandtutoring.com"
           allow="fullscreen; autoplay; clipboard-read; clipboard-write"
