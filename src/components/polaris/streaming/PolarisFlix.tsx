@@ -88,7 +88,18 @@ function Hero({
       ))}
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent" />
-      <div className="relative flex h-full max-w-2xl flex-col justify-end p-6 sm:p-8">
+      <div className="relative flex h-full items-end gap-5 p-6 sm:p-8">
+        {item.poster_path && (
+          <img
+            src={IMG(item.poster_path, "w300")}
+            alt={item.title || item.name}
+            loading="lazy"
+            decoding="async"
+            className="hidden h-[260px] w-[175px] shrink-0 rounded-xl object-cover shadow-2xl ring-1 ring-white/15 sm:block"
+            style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.7)" }}
+          />
+        )}
+        <div className="flex max-w-2xl flex-col justify-end">
         <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-white/65">Featured · Top 5 this week</div>
         <h1 className="text-3xl font-black text-white drop-shadow md:text-5xl">
           {item.title || item.name}
@@ -97,10 +108,13 @@ function Hero({
         <div className="mt-5 flex items-center gap-2.5">
           <button
             onClick={() => onPlay(item)}
-            className="flex items-center gap-2 rounded-xl px-7 py-3 text-base font-bold text-black shadow-lg transition hover:brightness-110"
-            style={{ backgroundColor: "rgb(var(--polaris-accent))", boxShadow: "0 10px 30px -10px rgb(var(--polaris-accent) / 0.6)" }}
+            className="flex items-center gap-2 rounded-xl px-7 py-3 text-base font-bold text-white shadow-lg transition hover:brightness-110"
+            style={{
+              background: "linear-gradient(135deg, #f97316 0%, #ea580c 60%, #c2410c 100%)",
+              boxShadow: "0 12px 32px -8px rgba(234,88,12,0.65), inset 0 1px 0 rgba(255,255,255,0.25)",
+            }}
           >
-            <Play className="h-5 w-5 fill-black" /> Watch Now
+            <Play className="h-5 w-5 fill-white" /> Watch Now
           </button>
           <button
             onClick={() => onInfo(item)}
@@ -114,10 +128,11 @@ function Hero({
                 key={idx}
                 onClick={() => setI(idx)}
                 className={`h-1.5 rounded-full transition-all ${idx === i ? "w-8" : "w-1.5 bg-white/40 hover:bg-white/70"}`}
-                style={idx === i ? { backgroundColor: "rgb(var(--polaris-accent))" } : undefined}
+                style={idx === i ? { backgroundColor: "#ea580c" } : undefined}
               />
             ))}
           </div>
+        </div>
         </div>
       </div>
     </div>
