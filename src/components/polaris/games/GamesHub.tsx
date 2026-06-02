@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Gamepad2, Globe, Calculator, Cloud, Library, Loader2, Play } from "lucide-react";
+import { Gamepad2, Globe, Calculator, Cloud, Library, Loader2, Play, Zap, MessageCircle, ExternalLink } from "lucide-react";
 import { PolarisCollection } from "./PolarisCollection";
 import { EmbedFrame } from "./EmbedFrame";
 import { GnMathCollection } from "./GnMathCollection";
@@ -9,7 +9,7 @@ import { SteamSplash } from "./SteamSplash";
 import { POLARIS_GAMES } from "@/lib/polaris-games";
 import { hydraSearch, hydraFeatured, steamHeader, type HydraEdge, type HydraFeatured } from "@/lib/hydra-api";
 
-type TabId = "home" | "polaris" | "cine" | "hydra" | "gnmath";
+type TabId = "home" | "polaris" | "cine" | "hydra" | "gnmath" | "gfn";
 
 const TABS: { id: TabId; label: string; icon: typeof Gamepad2; desc: string }[] = [
   { id: "home",    label: "Home",              icon: Library,    desc: "Mixed feed" },
@@ -17,6 +17,7 @@ const TABS: { id: TabId; label: string; icon: typeof Gamepad2; desc: string }[] 
   { id: "hydra",   label: "Hydra Network",     icon: Globe,      desc: "180k+ PC titles" },
   { id: "gnmath",  label: "Gn-Math",           icon: Calculator, desc: "Unblocked library" },
   { id: "cine",    label: "Cine Cloud",        icon: Cloud,      desc: "Cloud PC games" },
+  { id: "gfn",     label: "GeForce Now",       icon: Zap,        desc: "NVIDIA cloud gaming" },
 ];
 
 const POLARIS_CDN = "https://cdn.jsdelivr.net/npm/ugs-singlefiles@1.0.6/";
