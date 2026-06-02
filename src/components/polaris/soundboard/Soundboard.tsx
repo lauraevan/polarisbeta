@@ -297,34 +297,3 @@ function TabBtn({
     </button>
   );
 }
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {visible.map((p) => {
-          const active = activeId === p.id;
-          return (
-            <button
-              key={p.id}
-              onClick={() => play(p)}
-              className={`group relative aspect-square overflow-hidden rounded-2xl border p-3 text-left transition active:scale-95 ${
-                active
-                  ? "border-pink-400 bg-pink-500/15 shadow-[0_0_30px_-5px_rgba(236,72,153,0.6)]"
-                  : "border-white/10 bg-white/5 hover:bg-white/10"
-              }`}
-            >
-              <div className="text-4xl">{p.emoji}</div>
-              <div className="absolute right-2 top-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] uppercase tracking-wider text-white/60">
-                {p.category}
-              </div>
-              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-                <div className="truncate text-sm font-semibold">{p.label}</div>
-                <Play className="h-4 w-4 text-white/40 group-hover:text-white" />
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      <audio ref={audioRef} />
-    </div>
-  );
-}
