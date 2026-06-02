@@ -99,14 +99,14 @@ export const adminLookupTarget = createServerFn({ method: "POST" })
     const looksLikeIp = /^[0-9a-f.:]+$/i.test(q) && (q.includes(".") || q.includes(":"));
 
     // Resolve to a profile when possible
-    let profile: Record<string, unknown> | null = null;
+    let profile: Record<string, string | number | boolean | null> | null = null;
     if (isUuid) {
       const r = await supabaseAdmin.from("profiles").select("*").eq("id", q).maybeSingle();
-      profile = r.data;
+      profile = (r.data as typeof profile) ?? null;
     }
     if (!profile) {
       const r = await supabaseAdmin.from("profiles").select("*").ilike("username", q).maybeSingle();
-      profile = r.data;
+      profile = (r.data as typeof profile) ?? null;
     }
 
     // Sessions: by user_id, username, ip, or fingerprint
@@ -138,13 +138,13 @@ export const adminLookupTarget = createServerFn({ method: "POST" })
     if (profile?.id) orParts.push(`and(scope.eq.user,value.eq.${profile.id})`);
     for (const ip of ips) orParts.push(`and(scope.eq.ip,value.eq.${ip})`);
     for (const fp of fps) orParts.push(`and(scope.eq.device,value.eq.${fp})`);
-    let bans: unknown[] = [];
+    let bans: Array<Record<string, unknown>> = [];
     if (orParts.length) {
       const { data: targets } = await supabaseAdmin
         .from("ban_targets")
         .select("*, bans(*)")
         .or(orParts.join(","));
-      bans = targets ?? [];
+      bans = (targets ?? []) as Array<Record<string, unknown>>;
     }
 
     return {
