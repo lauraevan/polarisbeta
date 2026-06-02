@@ -850,6 +850,7 @@ function TrackTable({
 
 function NowPlaying({
   current,
+  pro,
   playing,
   loadingStream,
   progress,
@@ -859,6 +860,8 @@ function NowPlaying({
   repeat,
   liked,
   showLyrics,
+  showQueue,
+  sleepActive,
   onTogglePlay,
   onNext,
   onPrev,
@@ -868,8 +871,11 @@ function NowPlaying({
   onRepeat,
   onLike,
   onToggleLyrics,
+  onToggleQueue,
+  onShare,
 }: {
   current: StoredTrack | null;
+  pro: boolean;
   playing: boolean;
   loadingStream: boolean;
   progress: number;
@@ -879,6 +885,8 @@ function NowPlaying({
   repeat: "off" | "all" | "one";
   liked: boolean;
   showLyrics: boolean;
+  showQueue: boolean;
+  sleepActive: boolean;
   onTogglePlay: () => void;
   onNext: () => void;
   onPrev: () => void;
@@ -888,6 +896,8 @@ function NowPlaying({
   onRepeat: () => void;
   onLike: () => void;
   onToggleLyrics: () => void;
+  onToggleQueue: () => void;
+  onShare: () => void;
 }) {
   return (
     <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-t border-white/10 bg-zinc-950/95 px-4 py-2.5 backdrop-blur">
@@ -903,6 +913,14 @@ function NowPlaying({
             <button onClick={onLike} className="ml-2 rounded-full p-1.5 hover:bg-white/10">
               <Heart className={`h-4 w-4 ${liked ? "fill-pink-500 text-pink-500" : "text-white/60"}`} />
             </button>
+            {pro && (
+              <span
+                title="VIP — Polaris Pro"
+                className="ml-1 inline-flex items-center gap-0.5 rounded-md bg-gradient-to-r from-amber-400 to-amber-600 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-black"
+              >
+                <Crown className="h-2.5 w-2.5" /> VIP
+              </span>
+            )}
           </>
         ) : (
           <div className="flex items-center gap-2 text-xs text-white/40">
@@ -962,11 +980,30 @@ function NowPlaying({
       {/* Right: lyrics + vol */}
       <div className="flex items-center justify-end gap-3">
         <button
+          onClick={onShare}
+          className="hidden rounded p-1.5 text-white/60 hover:text-white lg:block"
+          title="Share"
+        >
+          <Share2 className="h-4 w-4" />
+        </button>
+        <button
+          onClick={onToggleQueue}
+          className={`hidden rounded p-1.5 lg:block ${showQueue ? "text-emerald-400" : "text-white/60 hover:text-white"}`}
+          title="Queue"
+        >
+          <ListOrdered className="h-4 w-4" />
+        </button>
+        <button
           onClick={onToggleLyrics}
           className={`hidden rounded p-1.5 lg:block ${showLyrics ? "text-emerald-400" : "text-white/60 hover:text-white"}`}
         >
           <Mic2 className="h-4 w-4" />
         </button>
+        {sleepActive && (
+          <span title="Sleep timer active" className="hidden text-indigo-300 lg:inline">
+            <Clock className="h-4 w-4" />
+          </span>
+        )}
         <Volume2 className="h-4 w-4 text-white/60" />
         <input
           type="range"
