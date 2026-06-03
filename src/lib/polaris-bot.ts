@@ -29,7 +29,10 @@ export type BotAction =
   | { kind: "admin"; op: "unmute"; username: string }
   | { kind: "admin"; op: "purge"; count: number; channelSlug?: string }
   | { kind: "admin"; op: "lock"; channelSlug?: string; role?: string | null }
-  | { kind: "admin"; op: "unlock"; channelSlug?: string };
+  | { kind: "admin"; op: "unlock"; channelSlug?: string }
+  | { kind: "admin"; op: "ipban"; username: string; reason: string; durationHours: number | "perm" }
+  | { kind: "admin"; op: "clear"; username?: string; count?: number; channelSlug?: string }
+  | { kind: "admin"; op: "slowmode"; seconds: number; channelSlug?: string };
 
 export type BotResult = { reply: string; action?: BotAction };
 
