@@ -195,6 +195,12 @@ function SettingsPage() {
           </p>
         </header>
 
+        {/* Pro Dashboard (visible to Pro users; teaser to others) */}
+        <ProDashboard />
+
+        {/* Customizer toggle */}
+        <CustomizerToggleSection />
+
         {/* Admin access */}
         <section className="liquid-glass-themed rounded-2xl p-5">
           <SectionTitle icon={Shield} title="Admin access" subtitle={isAdmin ? "Admin panel is active on this device" : isOwner ? "Owner detected — unlock the admin panel on this device" : "Restricted — enter the Polaris admin key"} />
