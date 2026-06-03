@@ -106,8 +106,8 @@ export const COMMANDS: Record<string, BotCommand> = {
   help: {
     name: "help", description: "Show the command list",
     run: ({ isAdmin }) => {
-      const member = Object.values(COMMANDS).filter((c) => !c.adminOnly).map((c) => `\`#${c.name}\` — ${c.description}`).join("\n");
-      const admin = Object.values(COMMANDS).filter((c) => c.adminOnly).map((c) => `\`#${c.name}\` — ${c.description}`).join("\n");
+      const member = Object.values(COMMANDS).filter((c) => !c.adminOnly).map((c) => `\`/${c.name}\` — ${c.description}`).join("\n");
+      const admin = Object.values(ADMIN_COMMANDS).map((c) => `\`/${c.name}\` — ${c.description}`).join("\n");
       return `**🤖 Polaris Bot — commands**\n\n**Everyone:**\n${member}${isAdmin ? `\n\n**Admin only:**\n${admin}` : ""}`;
     },
   },
