@@ -388,6 +388,16 @@ export function ChatRoom() {
         setDmWarning(`You're muted ${ends}.`);
         return;
       }
+      // Slow-mode (owner bypass).
+      const slow = ch?.slow_mode_seconds ?? 0;
+      if (slow > 0 && !isOwner) {
+        const last = lastSendRef.current[activeId] ?? 0;
+        const waitMs = last + slow * 1000 - Date.now();
+        if (waitMs > 0) {
+          setDmWarning(`Slow-mode: wait ${Math.ceil(waitMs / 1000)}s before sending again.`);
+          return;
+        }
+      }
       setSending(true);
       const { error } = await supabase.from("chat_messages").insert({
         channel_id: activeId,
@@ -401,7 +411,10 @@ export function ChatRoom() {
         reply_to: replyTo?.id ?? null,
       });
       setSending(false);
-      if (!error) { setText(""); setReplyTo(null); }
+      if (!error) {
+        setText(""); setReplyTo(null);
+        lastSendRef.current[activeId] = Date.now();
+      }
 
       // Replying directly to Polaris Bot → friendly auto-greeting.
       if (replyTo && replyTo.username === POLARIS_BOT_USERNAME) {
