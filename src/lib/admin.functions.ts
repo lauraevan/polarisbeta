@@ -200,22 +200,22 @@ export const adminUnbanUser = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Mute a user for a duration (or permanently). Enforced client-side in chat. */
+/** Mute a user for a duration in minutes (or permanently). Enforced client-side in chat. */
 export const adminMuteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z.object({
       username: z.string().min(1).max(60),
       reason: z.string().max(500).optional(),
-      durationHours: z.union([z.literal("perm"), z.number().int().min(1).max(24 * 365)]).default(1),
+      durationMinutes: z.union([z.literal("perm"), z.number().int().min(1).max(60 * 24 * 365)]).default(60),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
     await requireOwner(context.userId);
     const muted_until =
-      data.durationHours === "perm"
+      data.durationMinutes === "perm"
         ? new Date("9999-12-31T00:00:00Z").toISOString()
-        : new Date(Date.now() + data.durationHours * 3600_000).toISOString();
+        : new Date(Date.now() + data.durationMinutes * 60_000).toISOString();
     const { error } = await supabaseAdmin.from("profiles")
       .update({ muted_until, mute_reason: data.reason ?? null } as never)
       .eq("username", data.username);
