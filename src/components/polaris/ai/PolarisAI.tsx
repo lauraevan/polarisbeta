@@ -274,6 +274,120 @@ export function PolarisAI() {
     });
   }
 
+  // Bind active stream to <video>
+  useEffect(() => {
+    if (screenVideoRef.current && screenStream) {
+      screenVideoRef.current.srcObject = screenStream;
+    }
+    return () => {
+      // ended via browser UI? clean up.
+      if (!screenStream) return;
+      const onEnded = () => stopScreenShare();
+      screenStream.getVideoTracks().forEach((t) => t.addEventListener("ended", onEnded, { once: true }));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenStream]);
+
+  async function startScreenShare() {
+    if (screenStream) return;
+    try {
+      const md = (navigator.mediaDevices as MediaDevices | undefined);
+      if (!md || typeof md.getDisplayMedia !== "function") {
+        setError("Screen sharing isn't supported in this browser.");
+        return;
+      }
+      const stream = await md.getDisplayMedia({ video: true, audio: false });
+      setScreenStream(stream);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Couldn't start screen share";
+      if (!/denied|cancel/i.test(msg)) setError(msg);
+    }
+  }
+
+  function stopScreenShare() {
+    setScreenStream((s) => {
+      s?.getTracks().forEach((t) => t.stop());
+      return null;
+    });
+  }
+
+  async function captureScreenFrame(): Promise<string | null> {
+    const video = screenVideoRef.current;
+    if (!video || video.readyState < 2) return null;
+    const canvas = document.createElement("canvas");
+    const w = video.videoWidth || 1280;
+    const h = video.videoHeight || 720;
+    // Cap to a reasonable size for vision models
+    const max = 1280;
+    const scale = Math.min(1, max / Math.max(w, h));
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.8);
+  }
+
+  async function analyzeScreen(promptText: string) {
+    if (screenAnalyzing) return;
+    if (!screenStream) { setError("Start screen sharing first."); return; }
+    setError(null);
+    const dataUrl = await captureScreenFrame();
+    if (!dataUrl) { setError("Couldn't capture a frame yet — try again."); return; }
+
+    let chat = active;
+    if (!chat) {
+      chat = { id: uid(), title: promptText.slice(0, 40) || "Screen analysis", messages: [], updatedAt: Date.now() };
+      setChats((p) => [chat!, ...p]);
+      setActiveId(chat.id);
+    }
+    const chatId = chat.id;
+    const userMsg: ChatMessage = {
+      id: uid(),
+      role: "user",
+      content: `📺 **Screen frame**\n\n${promptText.trim() || "What's on my screen?"}\n\n![screen](${dataUrl})`,
+    };
+    const assistantMsg: ChatMessage = { id: uid(), role: "assistant", content: "Analyzing your screen…" };
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === chatId
+          ? { ...c, messages: [...c.messages, userMsg, assistantMsg], updatedAt: Date.now() }
+          : c,
+      ),
+    );
+    setInput("");
+    setScreenAnalyzing(true);
+    try {
+      const res = await fetch("/api/ai-vision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: promptText, imageDataUrl: dataUrl }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
+      const text: string = j.text || "(no response)";
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === chatId
+            ? { ...c, messages: c.messages.map((m) => (m.id === assistantMsg.id ? { ...m, content: text } : m)) }
+            : c,
+        ),
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Vision analysis failed";
+      setError(msg);
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === chatId
+            ? { ...c, messages: c.messages.map((m) => (m.id === assistantMsg.id ? { ...m, content: `⚠️ ${msg}` } : m)) }
+            : c,
+        ),
+      );
+    } finally {
+      setScreenAnalyzing(false);
+    }
+  }
+
   async function send(text: string) {
     if (!text.trim() || streaming) return;
     setError(null);
