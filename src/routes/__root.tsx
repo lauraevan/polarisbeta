@@ -21,6 +21,8 @@ import { BanOverlay } from "../components/polaris/BanOverlay";
 import { PremiumStyleMount } from "../components/polaris/premium/ProCustomization";
 import { CustomizerProvider } from "../lib/customizer-context";
 import { CustomizerOverlay } from "../components/customizer/CustomizerOverlay";
+import { PolarisModeProvider } from "../lib/polaris-mode";
+import { ModePicker } from "../components/polaris/ModePicker";
 
 function NotFoundComponent() {
   return (
@@ -155,12 +157,15 @@ function RootComponent() {
             <PanicModeProvider>
               <AdminProvider>
                 <CustomizerProvider>
-                  {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-                  <Outlet />
-                  <PanicOverlay />
-                  <BanOverlay />
-                  <PremiumStyleMount />
-                  <CustomizerOverlay />
+                  <PolarisModeProvider>
+                    {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                    <Outlet />
+                    <PanicOverlay />
+                    <BanOverlay />
+                    <PremiumStyleMount />
+                    <CustomizerOverlay />
+                    <ModePicker />
+                  </PolarisModeProvider>
                 </CustomizerProvider>
               </AdminProvider>
             </PanicModeProvider>

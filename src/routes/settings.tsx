@@ -15,6 +15,8 @@ import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
 import { ProCustomization } from "@/components/polaris/premium/ProCustomization";
 import { useCustomizer } from "@/lib/customizer-context";
+import { usePolarisMode } from "@/lib/polaris-mode";
+import { Feather } from "lucide-react";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
@@ -198,6 +200,9 @@ function SettingsPage() {
 
         {/* Customizer toggle */}
         <CustomizerToggleSection />
+
+        {/* Polaris Mode (Heavy / Lite) */}
+        <PolarisModeSection />
 
         {/* Admin access */}
         <section className="liquid-glass-themed rounded-2xl p-5">
@@ -778,4 +783,47 @@ export const Route = createFileRoute("/settings")({
     </AppShell>
   ),
 });
+
+function PolarisModeSection() {
+  const { mode, setMode } = usePolarisMode();
+  return (
+    <section className="liquid-glass-themed rounded-2xl p-5">
+      <SectionTitle
+        icon={Feather}
+        title="Polaris Mode"
+        subtitle={`Currently: ${mode === "lite" ? "Lightweight" : "Heavyweight"} — switch any time`}
+      />
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <button
+          onClick={() => setMode("heavy")}
+          className={`rounded-xl border p-4 text-left transition ${
+            mode === "heavy"
+              ? "border-white bg-white/10"
+              : "border-white/10 hover:border-white/30"
+          }`}
+        >
+          <div className="text-sm font-bold text-white">Heavyweight</div>
+          <div className="mt-1 text-[11px] uppercase tracking-[0.25em] text-white/55">Full Polaris</div>
+          <p className="mt-2 text-xs text-white/65">
+            Cinematic wallpapers, liquid glass, boot animation, dock, every page.
+          </p>
+        </button>
+        <button
+          onClick={() => setMode("lite")}
+          className={`rounded-xl border p-4 text-left transition ${
+            mode === "lite"
+              ? "border-white bg-white/10"
+              : "border-white/10 hover:border-white/30"
+          }`}
+        >
+          <div className="text-sm font-bold text-white">Lightweight</div>
+          <div className="mt-1 text-[11px] uppercase tracking-[0.25em] text-white/55">~Under 5&nbsp;MB</div>
+          <p className="mt-2 text-xs text-white/65">
+            Stripped UI — no wallpapers, no animations, no boot. Games, AI, Flix, Music, Browser. Like koopbin.site.
+          </p>
+        </button>
+      </div>
+    </section>
+  );
+}
 
