@@ -11,14 +11,12 @@ type Props = {
   id: number;
   title: string;
   onClose: () => void;
-  initialSeason?: number;
-  initialEpisode?: number;
 };
 
-export function Player({ kind, id, title, onClose, initialSeason, initialEpisode }: Props) {
+export function Player({ kind, id, title, onClose }: Props) {
   const [providerIdx, setProviderIdx] = useState(0);
-  const [season, setSeason] = useState(initialSeason ?? 1);
-  const [episode, setEpisode] = useState(initialEpisode ?? 1);
+  const [season, setSeason] = useState(1);
+  const [episode, setEpisode] = useState(1);
   const [chatOpen, setChatOpen] = useState(false);
   const [episodesOpen, setEpisodesOpen] = useState(false);
   const [partyOpen, setPartyOpen] = useState(false);
