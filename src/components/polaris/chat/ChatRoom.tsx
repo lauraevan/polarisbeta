@@ -945,17 +945,25 @@ function ToolbarBtn({ children, label, onClick }: { children: React.ReactNode; l
 }
 
 function MessageBubble({
-  m, mine, prevSame, nextSame, onAvatarClick, onMention,
+  m, mine, prevSame, nextSame, parent, onAvatarClick, onMention, onReply,
 }: {
   m: Message; mine: boolean; prevSame: boolean; nextSame: boolean;
-  onAvatarClick: () => void; onMention: () => void;
+  parent: Message | null;
+  onAvatarClick: () => void; onMention: () => void; onReply: () => void;
 }) {
   const time = new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const isBot = m.username === "Polaris Bot";
   // iMessage-style grouped corners
   const topRound = prevSame ? (mine ? "rounded-tr-md" : "rounded-tl-md") : "";
   const botRound = nextSame ? (mine ? "rounded-br-md" : "rounded-bl-md") : "";
   const bubbleBase = "max-w-[78%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-[14px] leading-snug shadow-sm";
-  const bubbleStyle: React.CSSProperties = mine
+  const bubbleStyle: React.CSSProperties = isBot
+    ? {
+        background: "linear-gradient(135deg, rgba(255,140,60,0.18), rgba(255,200,100,0.10))",
+        color: "rgba(255,255,255,0.94)",
+        boxShadow: "inset 0 0 0 1px rgba(255,170,90,0.35)",
+      }
+    : mine
     ? {
         background: "linear-gradient(180deg, rgba(var(--polaris-accent)/0.95), rgba(var(--polaris-accent)/0.78))",
         color: "white",
@@ -995,16 +1003,37 @@ function MessageBubble({
         {!mine && !prevSame && (
           <button
             onClick={onAvatarClick}
-            className="mb-0.5 px-1 text-[11px] font-semibold hover:underline"
+            className="mb-0.5 flex items-center gap-1 px-1 text-[11px] font-semibold hover:underline"
             style={{ color: `rgb(${m.accent_color || "240 240 240"})` }}
           >
             {m.username}
+            {isBot && <span className="rounded-sm bg-gradient-to-r from-amber-400 to-orange-500 px-1 py-px text-[8px] font-black uppercase text-black">Bot</span>}
           </button>
         )}
 
+        {parent && (
+          <div className={`mb-0.5 max-w-[78%] truncate rounded-md border-l-2 border-[rgb(var(--polaris-accent))] bg-white/5 px-2 py-0.5 text-[10px] text-white/55 ${mine ? "self-end" : ""}`}>
+            ↪ <b className="text-white/80">{parent.username}</b>: {parent.content?.slice(0, 80) || "(attachment)"}
+          </div>
+        )}
+
         {m.content && (
-          <div className={`${bubbleBase} ${topRound} ${botRound}`} style={bubbleStyle}>
-            {m.content}
+          <div className="relative">
+            <div className={`${bubbleBase} ${topRound} ${botRound}`} style={bubbleStyle}>
+              {m.content}
+            </div>
+            {/* Discord-style action row, shows on hover */}
+            <div className={`pointer-events-none absolute -top-3 ${mine ? "left-2" : "right-2"} flex gap-0.5 rounded-md border border-white/15 bg-zinc-900/95 p-0.5 opacity-0 shadow-lg backdrop-blur transition group-hover:pointer-events-auto group-hover:opacity-100`}>
+              <button onClick={onReply} title="Reply" className="rounded p-1 text-white/75 hover:bg-white/10 hover:text-white">
+                <Reply className="h-3 w-3" />
+              </button>
+              <button onClick={onMention} title="Mention" className="rounded p-1 text-white/75 hover:bg-white/10 hover:text-white">
+                <AtSign className="h-3 w-3" />
+              </button>
+              <button onClick={() => navigator.clipboard?.writeText(m.content ?? "")} title="Copy" className="rounded p-1 text-white/75 hover:bg-white/10 hover:text-white">
+                <Code className="h-3 w-3" />
+              </button>
+            </div>
           </div>
         )}
 
