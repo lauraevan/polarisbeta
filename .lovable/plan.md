@@ -1,68 +1,100 @@
+# Phase 5 — Wallpapers, Customizer, Pro Dashboard
 
-This is a large update. I'll ship it in 3 phases so each piece is reviewable and the preview never stays broken. Confirm or tweak before I start.
-
-## Phase 1 — Foundation (the boring but critical stuff)
-
-**Database (Lovable Cloud)**
-New tables to power the economy:
-- `user_wallet` — `user_id`, `coins`, `basic_credits`, `premium_credits`
-- `user_inventory` — owned themes, accessories, badges, icons (one row per item)
-- `shop_items` — catalog: id, kind (`theme` | `accessory` | `badge` | `icon` | `bundle`), name, price_coins or price_credits, payload (colors/asset refs), bundle_contents
-- `quests` — catalog of available quests + reward range
-- `user_quest_progress` — per-user progress, claimed flag, verification payload (heartbeats for movies)
-- `coin_transactions` — audit log (earn / spend / exchange), required so coins can never be inflated client-side
-
-All writes go through `createServerFn` with `requireSupabaseAuth` — client cannot mint coins. Exchange Coins→Credits (25 basic / 50 premium) lives in a server fn too.
-
-**Rename**
-- `Media` → `Cinema` everywhere (route stays `/media` to avoid breaking links; nav label + titles change). If you want the URL changed to `/cinema` too, say so and I'll add a redirect.
-
-**Fix GN Math GPT 5.4 bot**
-- I'll downgrade the default model to `google/gemini-2.5-flash` (free tier, no credit ceiling) and add a graceful 402/429 fallback that swaps models automatically instead of erroring out.
-
-## Phase 2 — Visual polish + posters
-
-**Cozy/warm poster styling for Cinema + Games**
-- Replace the current flat tiles with premium poster cards: warm amber/ember gradient frames, soft inner glow, subtle film-grain overlay, rounded corners, hover lift with warm shadow.
-- Cinema rows already pull TMDB posters — I'll restyle the `Row`/poster components.
-- Games hub will use the existing Steam/Hydra cover art with the same poster treatment.
-- Warmer accent tokens added to `styles.css` (ember, candle, sunset).
-
-**New nature wallpapers**
-- I'll add ~4 new cozy/warm nature wallpapers (forest morning, autumn cabin, golden hour meadow, fireplace). All royalty-free sources, properly attributed in the file.
-
-**PC layout reflow**
-- Home (Polaris) and Proxy UI currently size for mobile/tablet — I'll add proper desktop breakpoints so search, dock, and proxy cards scale up on ≥1024px (bigger type, wider cards, more breathing room).
-
-## Phase 3 — Shop, Quests, Split Windows
-
-**Shop tab (`/shop`)**
-Three sub-pages:
-1. **Store** — themes, accessories, badges, icons grid. Singles 900 coins, bundles 1600. Badges/icons priced in credits.
-2. **Exchange** — Coins → AI credits (25:1 basic, 50:1 premium). Server-side rate-limited.
-3. **Quests / Achievements** — list of quests with progress bars + Claim button.
-
-**Quests** (examples, 100–750 coins by difficulty)
-- Play a game 10–15 min (heartbeat ping every 30s while game iframe is focused)
-- Watch a full movie/show (anti-skip: server records timestamp heartbeats every 60s; quest only claimable if heartbeats cover ≥85% of runtime with monotonic progression — no jumping ahead, no scrubbing past unwatched chunks)
-- Send N chat messages, customize profile, try a new wallpaper, etc.
-
-**Anti-cheat**
-- All "watched" / "played" verification is server-side. Client sends heartbeats with `(item_id, position_seconds, session_id)`; server validates monotonic-ish progression and total covered duration before allowing claim.
-
-**Coins vs Credits rule**
-- Coins ONLY buy cosmetics (themes, accessories, badges, icons). Hard-coded server-side — no path to unlock features with coins. Credits stay the unit for AI features.
-
-**Tab windows + split windows**
-- New windowing layer on top of `AppShell`: open any route as a window, drag, minimize, snap to left/right half (split view). Useful for browser + chat side-by-side, or cinema + games.
-- Keyboard: `Cmd/Ctrl+\` to split, drag a tab to a screen edge to snap.
-- This is the largest UI surface — done last because it touches every route.
+Three coordinated systems. Customizer is the heavy lift; wallpapers/Pro dashboard are smaller.
 
 ---
 
-## Questions before I start
+## 1. Custom & community wallpapers
 
-1. **Scope confirm:** OK to ship in 3 phases (Foundation → Polish → Shop+Windows), one phase per turn? Otherwise this becomes one massive unreviewable change.
-2. **Cinema URL:** keep `/media` (just relabel) or change to `/cinema` with a redirect?
-3. **Starting coins:** should new users get a welcome bonus (e.g. 500 coins) or start at 0?
-4. **Bundle contents:** want me to design the first ~3 bundles myself (e.g. "Cozy Cabin pack" = warm theme + fireplace banner + 2 badges), or do you want to spec them?
+**Backend (one migration):**
+- `community_wallpapers` table: `id, uploader_id, uploader_username, name, image_url, accent (rgb triplet), type ('static'|'animated'), is_animated, downloads, hearts, status ('active'|'hidden'), created_at`. Auto-publish; owner can hide.
+- `wallpaper_reports` table: `id, wallpaper_id, reporter_id, reason, created_at`. Owner reads, anyone signed-in can insert (1 per user per wallpaper unique).
+- Public storage bucket `wallpapers` (already-public-allowed; falls back to private + signed URLs if blocked).
+- RPC `hide_reported_wallpaper(_id)` owner-only for moderation.
+
+**Frontend:**
+- Extend `WallpaperPicker.tsx` with tabs: **Built-in / My uploads / Community / Upload**.
+- "My uploads" stored in `localStorage` as `polaris:wallpapers:custom` (file → object URL, persisted as base64 for small images, or upload-to-cloud for big ones).
+- Upload flow: pick file → name it → auto-extract dominant color (canvas sample) → optional "share to community" checkbox → upload to bucket → insert row.
+- Community grid sorted by hearts/recency, with heart + report buttons.
+- Owner sees a "Hide" button inline.
+
+---
+
+## 2. Polaris Customizer
+
+A **separate `/customize` route** with a top-bar editor overlay that wraps the existing app. Toggle on/off from Settings *and* from a new "Customize" entry in Sidebar > Account.
+
+**State model (`src/lib/customizer-context.tsx`):**
+- One JSON document per saved layout: `{ id, name, version, tokens: {accent, radius, glassOpacity, fontScale}, items: { [elementId]: { x?, y?, scale?, rotation?, hidden?, color?, decal?, categoryId? } }, categories: [...] }`.
+- Persisted to `localStorage` (free tier: 1 layout). Pro: up to 5 layouts in `user_layouts` table.
+- **History stack** (undo/redo) — capped at 50 steps; "Reset all" wipes the document.
+
+**Editor chrome (`src/components/customizer/CustomizerOverlay.tsx`):**
+- Floating top toolbar: Save / Undo / Redo / Reset / Grid-snap toggle (8/16/24 px) / Smooth toggle / Exit.
+- Right inspector panel: when an element is selected → color picker, scale slider, decal picker, hide toggle, "send to category" dropdown.
+- ESC deselects; Delete hides the element.
+
+**Edit-mode mechanics:**
+- Any DOM node with `data-polaris-edit-id="xxx"` becomes editable when overlay is active.
+- Wrap targets with a lightweight `<Editable id="...">` helper that applies transforms from context and adds a hover outline + drag handle in edit mode.
+- Drag = pointer events on the wrapper; grid-snap rounds delta to grid size; free mode does not.
+- Resize via corner handle (uniform scale 0.5x–2x).
+- **Locked surfaces:** Player iframe, Shop, Admin, Security, Auth dialog, Watch Party panel, modals — these wrappers do not opt into `<Editable>` so they can never be moved or decal'd.
+
+**Categories (Pro):**
+- Create a named category in the inspector → drag any sidebar item into it.
+- Categories render as new collapsible groups in `Sidebar.tsx`, reading from customizer context.
+
+**Decals (Pro, client-only):**
+- 24 built-in SVG decals (stars, flames, sparkles, gradients, ribbons) shipped as inline SVG sprites.
+- Decal renders as absolutely-positioned overlay on the editable element with adjustable opacity/scale.
+- Note in the UI: "Decals are visible only to you." Enforced naturally because state lives in `localStorage` / per-user `user_layouts`.
+
+**Pro gating (matches your pick):**
+- Free: change `--polaris-accent`, reorder sidebar items, hide/show items, button-scale slider, reset.
+- Pro lock badges over: free-form drag (vs grid-snap reorder), decals, custom categories, undo *history* (free gets single-level undo only), multiple saved layouts.
+
+---
+
+## 3. Pro Dashboard
+
+New section inside `src/routes/settings.tsx` (`ProDashboard.tsx`), only visible if `is_pro`:
+- **Status card:** plan tier, days remaining, key history (last 5 redeemed `pro_keys` for `redeemed_by = auth.uid()`).
+- **VIP visibility toggle:** writes `polaris:pro:hide_vip` to localStorage; `ProfileButton.tsx` and any "Pro" / "VIP" badges respect it.
+- **Saved layouts manager:** list, rename, switch, delete (calls layout server fns).
+
+A small `is_pro_active(profile)` helper centralizes the check; reused everywhere we currently inline `pro_until > now()`.
+
+---
+
+## Technical notes
+
+```text
+src/lib/
+  customizer-context.tsx     # state, history, persist
+  customizer-decals.tsx      # SVG sprite + picker
+  customizer.functions.ts    # save/load/delete user_layouts (Pro)
+  wallpaper-custom.ts        # local custom WP storage + upload helper
+src/components/
+  customizer/
+    CustomizerOverlay.tsx
+    Editable.tsx
+    Inspector.tsx
+    Toolbar.tsx
+    LockedNotice.tsx
+  polaris/
+    WallpaperPicker.tsx      # extended with tabs
+    premium/ProDashboard.tsx
+src/routes/
+  customize.tsx              # editor mode
+  settings.tsx               # add Pro Dashboard section
+```
+
+Migration adds: `community_wallpapers`, `wallpaper_reports`, `user_layouts` (Pro: `{ id, user_id, name, document jsonb, updated_at }`, unique per user up to 5 enforced by trigger). All three get explicit GRANTs + RLS scoped to `auth.uid()` or public-read where appropriate.
+
+`wallpapers` storage bucket created via `supabase--storage_create_bucket` (public). RLS on `storage.objects` lets authenticated users upload to `wallpapers/{auth.uid()}/...` and read anything in the bucket.
+
+No edits to locked files (`client.ts`, `types.ts`, etc.). All server-side work uses `createServerFn`.
+
+Approve and I'll start with the migration + storage bucket, then ship in order: wallpapers → customizer core → Pro dashboard.

@@ -374,6 +374,48 @@ export type Database = {
         }
         Relationships: []
       }
+      community_wallpapers: {
+        Row: {
+          accent: string
+          created_at: string
+          downloads: number
+          hearts: number
+          id: string
+          image_url: string
+          name: string
+          status: string
+          type: string
+          uploader_id: string
+          uploader_username: string
+        }
+        Insert: {
+          accent?: string
+          created_at?: string
+          downloads?: number
+          hearts?: number
+          id?: string
+          image_url: string
+          name: string
+          status?: string
+          type?: string
+          uploader_id: string
+          uploader_username: string
+        }
+        Update: {
+          accent?: string
+          created_at?: string
+          downloads?: number
+          hearts?: number
+          id?: string
+          image_url?: string
+          name?: string
+          status?: string
+          type?: string
+          uploader_id?: string
+          uploader_username?: string
+        }
+        Relationships: []
+      }
       device_sessions: {
         Row: {
           asn: string | null
@@ -909,6 +951,36 @@ export type Database = {
           },
         ]
       }
+      user_layouts: {
+        Row: {
+          created_at: string
+          document: Json
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_quest_progress: {
         Row: {
           claimed: boolean
@@ -979,6 +1051,64 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      wallpaper_hearts: {
+        Row: {
+          created_at: string
+          user_id: string
+          wallpaper_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+          wallpaper_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+          wallpaper_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallpaper_hearts_wallpaper_id_fkey"
+            columns: ["wallpaper_id"]
+            isOneToOne: false
+            referencedRelation: "community_wallpapers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallpaper_reports: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string
+          reporter_id: string
+          wallpaper_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason: string
+          reporter_id: string
+          wallpaper_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string
+          reporter_id?: string
+          wallpaper_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallpaper_reports_wallpaper_id_fkey"
+            columns: ["wallpaper_id"]
+            isOneToOne: false
+            referencedRelation: "community_wallpapers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       watch_parties: {
         Row: {
@@ -1081,10 +1211,12 @@ export type Database = {
           type: Database["public"]["Enums"]["ban_type"]
         }[]
       }
+      hide_wallpaper: { Args: { _id: string }; Returns: undefined }
       is_channel_member: { Args: { _channel_id: string }; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
       is_pro: { Args: { _user_id: string }; Returns: boolean }
       redeem_pro_key: { Args: { _code: string }; Returns: Json }
+      toggle_wallpaper_heart: { Args: { _id: string }; Returns: Json }
     }
     Enums: {
       ban_scope: "user" | "ip" | "ip_range" | "device" | "asn" | "country"
