@@ -982,6 +982,7 @@ export function ChatRoom() {
         />
       )}
       <ProfileSheet open={!!viewProfileId} onClose={() => setViewProfileId(null)} viewUserId={viewProfileId} />
+      <BotProfileSheet open={botProfileOpen} onClose={() => setBotProfileOpen(false)} />
     </div>
   );
 }
