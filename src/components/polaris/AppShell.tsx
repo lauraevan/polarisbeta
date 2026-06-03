@@ -9,6 +9,8 @@ import { MyListProvider } from "@/lib/mylist-context";
 import { PolarisBoot } from "./Boot";
 import { ProfileSheet } from "./ProfileSheet";
 import { useEffect, useState } from "react";
+import { usePolarisMode } from "@/lib/polaris-mode";
+import { LiteShell } from "./lite/LiteShell";
 
 export function AppShell({
   children,
@@ -23,6 +25,7 @@ export function AppShell({
 }) {
   const [wallpaperOpen, setWallpaperOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const { mode, ready } = usePolarisMode();
 
   useEffect(() => {
     const open = () => setProfileOpen(true);
@@ -33,6 +36,17 @@ export function AppShell({
       window.removeEventListener("polaris:signed-up", open);
     };
   }, []);
+
+  // Lightweight short-circuit: skip wallpaper layer, boot, dock, profile sheet,
+  // sidebar, and the heavy children entirely. LiteShell renders its own page
+  // based on the current route.
+  if (ready && mode === "lite") {
+    return (
+      <MyListProvider>
+        <LiteShell>{children}</LiteShell>
+      </MyListProvider>
+    );
+  }
 
   return (
     <WallpaperProvider>
