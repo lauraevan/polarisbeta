@@ -1185,6 +1185,48 @@ export function PolarisAI() {
                 >
                   <Monitor className="h-2.5 w-2.5" /> {screenStream ? "Sharing" : "Screen"}
                 </button>
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  disabled={!voiceSupported}
+                  className="flex items-center gap-1 rounded-full border px-2 py-0.5 transition disabled:opacity-40"
+                  style={
+                    voiceListening
+                      ? {
+                          borderColor: "rgba(239,68,68,0.7)",
+                          background: "rgba(239,68,68,0.22)",
+                          color: "#fff",
+                        }
+                      : { borderColor: "rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.7)" }
+                  }
+                  title={voiceListening ? "Stop listening" : "Talk to Polaris AI"}
+                >
+                  {voiceListening ? <MicOff className="h-2.5 w-2.5" /> : <Mic className="h-2.5 w-2.5" />}
+                  {voiceListening ? "Listening" : "Voice"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVoiceAuto((v) => {
+                      if (v) stopSpeaking();
+                      return !v;
+                    });
+                  }}
+                  className="flex items-center gap-1 rounded-full border px-2 py-0.5 transition"
+                  style={
+                    voiceAuto
+                      ? {
+                          borderColor: "rgba(var(--polaris-accent)/0.6)",
+                          background: "rgba(var(--polaris-accent)/0.2)",
+                          color: "#fff",
+                        }
+                      : { borderColor: "rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.7)" }
+                  }
+                  title={voiceAuto ? "Stop reading replies aloud" : "Read replies aloud"}
+                >
+                  {voiceAuto ? <Volume2 className="h-2.5 w-2.5" /> : <VolumeX className="h-2.5 w-2.5" />}
+                  Speak
+                </button>
                 <span className="hidden sm:inline text-white/30">·  Enter ↵ to send</span>
               </div>
               <button
