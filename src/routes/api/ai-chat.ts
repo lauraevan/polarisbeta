@@ -6,13 +6,47 @@ type Msg = { role: "system" | "user" | "assistant"; content: string };
 // fall back to a robust free model so chats like the GN Maths bot don't break.
 const FALLBACK_MODEL = "google/gemini-2.5-flash";
 
-async function callGateway(apiKey: string, model: string, messages: Msg[]) {
+type Provider = "lovable" | "groq" | "openrouter";
+
+/**
+ * Resolve a model id like `groq/llama-3.3-70b-versatile` or `openrouter/anthropic/claude-3.5-sonnet`
+ * into a provider + the actual upstream model id.
+ */
+function resolveProvider(modelId: string): { provider: Provider; model: string } {
+  if (modelId.startsWith("groq/")) return { provider: "groq", model: modelId.slice("groq/".length) };
+  if (modelId.startsWith("openrouter/")) return { provider: "openrouter", model: modelId.slice("openrouter/".length) };
+  return { provider: "lovable", model: modelId };
+}
+
+async function callUpstream(provider: Provider, model: string, messages: Msg[]) {
+  if (provider === "groq") {
+    const key = process.env.GROQ_API_KEY;
+    if (!key) throw new Error("GROQ_API_KEY not configured");
+    return fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model, messages, stream: true, max_tokens: 1024 }),
+    });
+  }
+  if (provider === "openrouter") {
+    const key = process.env.OPENROUTER_API_KEY;
+    if (!key) throw new Error("OPENROUTER_API_KEY not configured");
+    return fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://polarisbeta.lovable.app",
+        "X-Title": "Polaris One",
+      },
+      body: JSON.stringify({ model, messages, stream: true, max_tokens: 1024 }),
+    });
+  }
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("LOVABLE_API_KEY not configured");
   return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model, messages, stream: true, max_tokens: 1024 }),
   });
 }
@@ -23,29 +57,19 @@ export const Route = createFileRoute("/api/ai-chat")({
       POST: async ({ request }) => {
         try {
           const body = (await request.json()) as { model?: string; messages?: Msg[]; system?: string };
-          const apiKey = process.env.LOVABLE_API_KEY;
-          if (!apiKey) {
-            return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
-              status: 500,
-              headers: { "Content-Type": "application/json" },
-            });
-          }
-
-          const model = body.model || "google/gemini-3-flash-preview";
+          const requested = body.model || "google/gemini-3-flash-preview";
+          const { provider, model } = resolveProvider(requested);
           const messages: Msg[] = [];
           if (body.system) messages.push({ role: "system", content: body.system });
           for (const m of body.messages || []) messages.push(m);
 
-          let upstream = await callGateway(apiKey, model, messages);
+          let upstream = await callUpstream(provider, model, messages);
 
-          // Auto-fallback for the GN Maths (gpt-5.4) bot and other premium models
-          // when credits are exhausted or we hit a transient rate-limit.
-          if (
-            (upstream.status === 402 || upstream.status === 429) &&
-            model !== FALLBACK_MODEL
-          ) {
-            console.warn(`[ai-chat] ${model} returned ${upstream.status}; falling back to ${FALLBACK_MODEL}`);
-            upstream = await callGateway(apiKey, FALLBACK_MODEL, messages);
+          // Auto-fallback to a robust Lovable Gateway model when upstream is rate-limited
+          // or out of credits. This keeps premium / third-party models from breaking chats.
+          if ((upstream.status === 402 || upstream.status === 429) && !(provider === "lovable" && model === FALLBACK_MODEL)) {
+            console.warn(`[ai-chat] ${provider}/${model} returned ${upstream.status}; falling back to ${FALLBACK_MODEL}`);
+            upstream = await callUpstream("lovable", FALLBACK_MODEL, messages);
           }
 
           if (!upstream.ok) {
