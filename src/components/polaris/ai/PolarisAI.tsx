@@ -973,21 +973,51 @@ export function PolarisAI() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              send(input);
+              if (screenStream) analyzeScreen(input);
+              else send(input);
             }}
             className="mx-auto flex max-w-xl flex-col gap-1 rounded-2xl border border-white/15 bg-black/35 p-1 backdrop-blur-2xl transition-all focus-within:border-[rgba(var(--polaris-accent)/0.7)] focus-within:shadow-[0_8px_28px_-12px_rgba(0,0,0,0.6),0_0_0_2px_rgba(var(--polaris-accent)/0.18)]"
           >
+            {screenStream && (
+              <div className="mb-1 flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 p-1.5">
+                <video
+                  ref={screenVideoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="h-16 w-28 rounded-md bg-black object-contain"
+                />
+                <div className="flex-1 text-[11px] leading-tight text-white/70">
+                  <div className="font-semibold text-white/90">Screen sharing live</div>
+                  <div className="text-white/50">Type a question, then send to analyze the current frame.</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={stopScreenShare}
+                  className="rounded-md border border-white/10 bg-white/[0.06] px-2 py-1 text-[11px] text-white/80 hover:bg-white/[0.12]"
+                >
+                  Stop
+                </button>
+              </div>
+            )}
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  send(input);
+                  if (screenStream) analyzeScreen(input);
+                  else send(input);
                 }
               }}
               rows={1}
-              placeholder={imageMode ? "Describe the image you want…" : `Message ${model.label}…`}
+              placeholder={
+                screenStream
+                  ? "Ask about what's on your screen…"
+                  : imageMode
+                    ? "Describe the image you want…"
+                    : `Message ${model.label}…`
+              }
               className="min-h-[28px] max-h-[140px] w-full resize-none bg-transparent px-2.5 py-1 text-[13px] text-white placeholder:text-white/40 focus:outline-none"
             />
             <div className="flex items-center justify-between gap-2 px-1">
@@ -1026,11 +1056,28 @@ export function PolarisAI() {
                 >
                   <ImageIcon className="h-2.5 w-2.5" /> Image
                 </button>
+                <button
+                  type="button"
+                  onClick={() => (screenStream ? stopScreenShare() : startScreenShare())}
+                  className="flex items-center gap-1 rounded-full border px-2 py-0.5 transition"
+                  style={
+                    screenStream
+                      ? {
+                          borderColor: "rgba(var(--polaris-accent)/0.6)",
+                          background: "rgba(var(--polaris-accent)/0.2)",
+                          color: "#fff",
+                        }
+                      : { borderColor: "rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.7)" }
+                  }
+                  title={screenStream ? "Stop screen share" : "Share your screen for AI vision"}
+                >
+                  <Monitor className="h-2.5 w-2.5" /> {screenStream ? "Sharing" : "Screen"}
+                </button>
                 <span className="hidden sm:inline text-white/30">·  Enter ↵ to send</span>
               </div>
               <button
                 type="submit"
-                disabled={streaming || !input.trim()}
+                disabled={streaming || screenAnalyzing || (!input.trim() && !screenStream)}
                 className="group/btn relative grid h-7 w-7 place-items-center rounded-xl text-white transition disabled:opacity-40"
                 style={{
                   background:
@@ -1040,7 +1087,11 @@ export function PolarisAI() {
                 }}
                 aria-label="Send"
               >
-                <Send className="h-3.5 w-3.5 transition group-hover/btn:translate-x-0.5" />
+                {screenStream ? (
+                  <ScanEye className="h-3.5 w-3.5" />
+                ) : (
+                  <Send className="h-3.5 w-3.5 transition group-hover/btn:translate-x-0.5" />
+                )}
               </button>
             </div>
           </form>
