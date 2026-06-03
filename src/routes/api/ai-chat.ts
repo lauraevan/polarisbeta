@@ -9,6 +9,10 @@ const MODEL_ALIASES: Record<string, string> = {
   "openrouter/anthropic/claude-3.5-sonnet": "openrouter/anthropic/claude-sonnet-4.5",
   "openrouter/anthropic/claude-3.7-sonnet": "openrouter/anthropic/claude-sonnet-4.6",
   "openrouter/mistralai/mistral-large": "openrouter/mistralai/mistral-large-2512",
+  // DeepSeek V4 Pro (premium): DeepSeek hasn't released a public V4 yet, so we
+  // route to their newest available frontier model on OpenRouter. When DeepSeek
+  // publishes the real V4-Pro id, update this single mapping.
+  "openrouter/deepseek/deepseek-v4-pro": "openrouter/deepseek/deepseek-v3.2-exp",
 };
 
 const PROVIDER_FALLBACK: Record<Provider, { provider: Provider; model: string }> = {
