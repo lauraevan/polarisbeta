@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { GameTile } from "./GameTile";
 import { EmbedFrame } from "./EmbedFrame";
@@ -12,6 +12,7 @@ export function HydraNetwork() {
   const [q, setQ] = useState("");
   const [limit, setLimit] = useState(PAGE);
   const [play, setPlay] = useState<{ src: string; title: string } | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -30,12 +31,28 @@ export function HydraNetwork() {
 
   const visible = filtered.slice(0, limit);
 
+  // Auto-load more rows when the sentinel scrolls into view.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setLimit((n) => (n < filtered.length ? n + PAGE : n));
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [filtered.length]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="text-[11px] uppercase tracking-[0.3em] text-white/55">Hydra Network</div>
-          <h2 className="text-2xl font-black tracking-tight text-white">HTML5 game vault</h2>
+          <h2 className="text-2xl font-black tracking-tight text-white">Hydra Network</h2>
           <p className="text-xs text-white/55">
             {all ? `${all.length.toLocaleString()} games` : "Loading catalogue…"} · open-source GitHub mirror
           </p>
@@ -82,13 +99,12 @@ export function HydraNetwork() {
             ))}
           </div>
           {visible.length < filtered.length && (
-            <div className="flex justify-center pt-2">
-              <button
-                onClick={() => setLimit((n) => n + PAGE)}
-                className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-xs font-semibold uppercase tracking-wider text-white/80 hover:bg-white/10"
-              >
-                Load more ({filtered.length - visible.length} left)
-              </button>
+            <div
+              ref={sentinelRef}
+              className="flex justify-center py-8 text-white/40"
+              aria-hidden
+            >
+              <Loader2 className="h-5 w-5 animate-spin" />
             </div>
           )}
           {filtered.length === 0 && (

@@ -1,7 +1,8 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Search, Sparkles, Loader2 } from "lucide-react";
 import { EmbedFrame } from "./EmbedFrame";
 import { GameTile } from "./GameTile";
+import { getProxyUrl, registerStaticProxies } from "@/lib/proxy-utils";
 
 const ZONES_URL = "https://cdn.jsdelivr.net/gh/freebuisness/assets@latest/zones.json";
 const COVER_URL = "https://cdn.jsdelivr.net/gh/freebuisness/covers@main";
@@ -28,9 +29,14 @@ export function GnMathCollection() {
   const [page, setPage] = useState(1);
   const [playing, setPlaying] = useState<{ src: string; title: string } | null>(null);
   const dq = useDeferredValue(q.trim().toLowerCase());
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    // Spin up the UV service worker + wisp transport so games can stream
+    // through the proxy instead of jsdelivr's raw HTML (which a lot of
+    // school filters now block).
+    registerStaticProxies("uv").catch(() => {/* fallback handled inside */});
     fetch(ZONES_URL)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((data: Zone[]) => {
@@ -52,8 +58,26 @@ export function GnMathCollection() {
   const visible = filtered.slice(0, page * PAGE);
   const featured = useMemo(() => (games ? games.slice(0, 12) : []), [games]);
 
+  // Route each game through the UV proxy so the iframe loads inside the
+  // service-worker scope. EmbedFrame uses mode="src" for proxied URLs.
   const play = (g: Zone) =>
-    setPlaying({ src: resolve(g.url), title: g.name });
+    setPlaying({ src: getProxyUrl("uv", resolve(g.url)), title: g.name });
+
+  // Auto-load more rows as the user scrolls toward the bottom.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && visible.length < filtered.length) {
+          setPage((p) => p + 1);
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [visible.length, filtered.length]);
 
   if (err) {
     return (
@@ -123,13 +147,8 @@ export function GnMathCollection() {
           ))}
         </div>
         {visible.length < filtered.length && (
-          <div className="mt-6 flex justify-center">
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              className="rounded-md border border-white/15 bg-white/5 px-6 py-2 text-sm font-medium text-white transition hover:bg-white/10"
-            >
-              Load more ({(filtered.length - visible.length).toLocaleString()} left)
-            </button>
+          <div ref={sentinelRef} className="mt-6 flex justify-center py-8 text-white/40" aria-hidden>
+            <Loader2 className="h-5 w-5 animate-spin" />
           </div>
         )}
       </section>
@@ -138,7 +157,7 @@ export function GnMathCollection() {
         <EmbedFrame
           src={playing.src}
           title={playing.title}
-          mode="srcdoc"
+          mode="src"
           onClose={() => setPlaying(null)}
         />
       )}
