@@ -48,7 +48,7 @@ export function ProfileButton({ collapsed }: { collapsed: boolean }) {
         )}
         {!collapsed && (
           <span className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate">
+            <span className={`truncate ${isPro ? "pro-username-glow" : ""}`}>
               {loading
                 ? "…"
                 : profile

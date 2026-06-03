@@ -29,6 +29,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getAiWallet, exchangeCoinsForCredits, consumeAiCredit } from "@/lib/shop.functions";
 import { useNavigate } from "@tanstack/react-router";
 import { parseNavigation, toNavigateOptions } from "@/lib/ai-navigation";
+import { isProActive } from "@/lib/pro-utils";
 
 type Role = "user" | "assistant";
 type ChatMessage = { id: string; role: Role; content: string };
@@ -64,6 +65,18 @@ const MODELS: Model[] = [
   { id: "openai/gpt-5.4-pro", label: "GPT-5.4 Pro", blurb: "Premium reasoning", tier: "premium", badge: "5", color: "bg-zinc-950" },
   { id: "openai/gpt-5.5", label: "GPT-5.5", blurb: "State of the art", tier: "premium", badge: "5", color: "bg-zinc-950" },
   { id: "openai/gpt-5.5-pro", label: "GPT-5.5 Pro", blurb: "Hardest problems", tier: "premium", badge: "5", color: "bg-black" },
+  // GROQ — ultra-fast inference (Pro)
+  { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq)", blurb: "Fastest 70B · Pro", tier: "premium", badge: "L", color: "bg-orange-600" },
+  { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B (Groq)", blurb: "Instant replies · Pro", tier: "premium", badge: "L", color: "bg-orange-500" },
+  { id: "groq/qwen/qwen3-32b", label: "Qwen 3 32B (Groq)", blurb: "Multilingual · Pro", tier: "premium", badge: "Q", color: "bg-rose-600" },
+  { id: "groq/moonshotai/kimi-k2-instruct", label: "Kimi K2 (Groq)", blurb: "Long context · Pro", tier: "premium", badge: "K", color: "bg-violet-600" },
+  // OPENROUTER — frontier models (Pro)
+  { id: "openrouter/anthropic/claude-3.5-sonnet", label: "Claude 3.5 Sonnet", blurb: "Anthropic · Pro", tier: "premium", badge: "C", color: "bg-amber-700" },
+  { id: "openrouter/anthropic/claude-3.7-sonnet", label: "Claude 3.7 Sonnet", blurb: "Anthropic reasoning · Pro", tier: "premium", badge: "C", color: "bg-amber-800" },
+  { id: "openrouter/deepseek/deepseek-r1", label: "DeepSeek R1", blurb: "Open reasoning · Pro", tier: "premium", badge: "D", color: "bg-blue-700" },
+  { id: "openrouter/x-ai/grok-2-1212", label: "Grok 2", blurb: "xAI · Pro", tier: "premium", badge: "X", color: "bg-zinc-900" },
+  { id: "openrouter/meta-llama/llama-3.3-70b-instruct", label: "Llama 3.3 70B", blurb: "Meta · Pro", tier: "premium", badge: "L", color: "bg-orange-700" },
+  { id: "openrouter/mistralai/mistral-large", label: "Mistral Large", blurb: "Mistral · Pro", tier: "premium", badge: "M", color: "bg-red-600" },
 ];
 
 type Mode = { id: string; label: string; system: string };
@@ -137,6 +150,7 @@ export function PolarisAI() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const isSignedIn = !!profile;
+  const isPro = isProActive(profile);
   const DAILY_LIMITS = isSignedIn ? DAILY_LIMITS_USER : DAILY_LIMITS_GUEST;
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -235,6 +249,11 @@ export function PolarisAI() {
   async function send(text: string) {
     if (!text.trim() || streaming) return;
     setError(null);
+    // Pro-gated third-party models (Groq / OpenRouter).
+    if (!imageMode && (model.id.startsWith("groq/") || model.id.startsWith("openrouter/")) && !isPro) {
+      setError("This model is part of Polaris Pro. Upgrade in Premium to unlock Groq + OpenRouter models.");
+      return;
+    }
     // Navigation intent — Polaris AI can take you to pages, movies, games, etc.
     if (!imageMode) {
       const nav = parseNavigation(text);

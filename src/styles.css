@@ -367,3 +367,28 @@ button:active, a:active, [role="button"]:active { transform: scale(0.97); }
     color: var(--color-foreground);
   }
 }
+
+/* ===== Polaris Pro · animated banner + glow username ===== */
+@keyframes pro-banner-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes pro-glow-pulse {
+  0%, 100% { text-shadow: 0 0 6px rgba(255, 200, 80, 0.55), 0 0 14px rgba(255, 140, 80, 0.35); }
+  50%      { text-shadow: 0 0 10px rgba(255, 220, 120, 0.85), 0 0 22px rgba(255, 120, 200, 0.55); }
+}
+.pro-banner-animated {
+  background: linear-gradient(120deg, #f59e0b, #ec4899, #6366f1, #06b6d4, #f59e0b);
+  background-size: 300% 300%;
+  animation: pro-banner-shift 12s ease infinite;
+}
+.pro-username-glow {
+  background: linear-gradient(120deg, #fbbf24, #f472b6, #818cf8, #fbbf24);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: pro-banner-shift 6s ease infinite, pro-glow-pulse 3s ease-in-out infinite;
+  font-weight: 700;
+}
