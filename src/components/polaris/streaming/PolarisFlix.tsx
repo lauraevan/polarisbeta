@@ -755,7 +755,7 @@ function AiMatch({ onSelect }: { onSelect: (item: TmdbItem, kind: MediaKind) => 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reasonByKey, setReasonByKey] = useState<Record<string, string>>({});
-  const [results, setResults] = useState<{ item: TmdbItem; kind: MediaKind; reason?: string }[]>([]);
+  const [results, setResults] = useState<{ item: TmdbItem; kind: MediaKind; reason: string | undefined }[]>([]);
 
   async function suggest() {
     const q = seed.trim();
