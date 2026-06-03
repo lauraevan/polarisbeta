@@ -55,10 +55,19 @@ const TOP_TERMS = [
   "the daily", "smartless", "crime junkie", "stuff you should know", "serial",
   "tim ferriss", "freakonomics", "ted talks daily", "armchair expert",
   "morbid", "call her daddy", "comedy", "technology", "history", "business",
+  "theo von", "shawn ryan", "this past weekend", "conan o brien", "dax shepard",
+  "my favorite murder", "radiolab", "planet money", "hardcore history",
+  "rotten mango", "up first", "wait wait", "fresh air", "99 percent invisible",
+  "reply all", "economist", "wall street journal", "new york times", "ezra klein",
+  "sam harris", "bill simmons", "pat mcafee", "my first million", "all in podcast",
+  "acquired", "masters of scale", "how i built this", "huberman lab",
+  "modern wisdom", "jordan peterson", "ben shapiro", "tucker carlson",
+  "candace owens", "piers morgan", "megyn kelly", "political gabfest", "science",
+  "sports", "true crime", "music", "education",
 ];
 export async function topPodcasts(_limit = 50): Promise<Podcast[]> {
   const results = await Promise.all(
-    TOP_TERMS.map((t) => searchPodcasts(t, 3).catch(() => [] as Podcast[])),
+    TOP_TERMS.map((t) => searchPodcasts(t, 4).catch(() => [] as Podcast[])),
   );
   const seen = new Set<number>();
   const out: Podcast[] = [];
