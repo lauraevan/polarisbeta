@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info, Radio, Shuffle, Mic2, Download, Wand2, Loader2 } from "lucide-react";
+import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info, Radio, Shuffle, Mic2, Download } from "lucide-react";
 import { tmdbApi, IMG, type TmdbItem, type MediaKind } from "@/lib/tmdb";
 import { Row } from "./Row";
 import { MovieModal } from "./MovieModal";
@@ -12,7 +12,7 @@ import { PodcastsTab } from "./Podcasts";
 import { useMyList } from "@/lib/mylist-context";
 import polarisLogo from "@/assets/polaris-logo.png";
 
-type Tab = "home" | "movies" | "shows" | "anime" | "live" | "roulette" | "podcasts" | "aimatch";
+type Tab = "home" | "movies" | "shows" | "anime" | "live" | "roulette" | "podcasts";
 
 // TMDB genre IDs. Movie and TV share many but not all.
 const MOVIE_GENRES = [
@@ -301,7 +301,6 @@ function FlixInner() {
     { id: "movies", label: "Movies", icon: Film },
     { id: "shows", label: "Shows", icon: Tv2 },
     { id: "anime", label: "Anime", icon: Sparkles },
-    { id: "aimatch", label: "AI Match", icon: Wand2 },
     { id: "podcasts", label: "Podcasts", icon: Mic2 },
     { id: "live", label: "Live TV", icon: Radio },
     { id: "roulette", label: "Roulette", icon: Shuffle },
@@ -470,8 +469,6 @@ function FlixInner() {
               <Roulette embedded />
             ) : tab === "podcasts" ? (
               <PodcastsTab />
-            ) : tab === "aimatch" ? (
-              <AiMatch onSelect={(item, k) => setSelected({ item, kind: k })} />
             ) : (
             <>
             {heroItems.length > 0 && (
