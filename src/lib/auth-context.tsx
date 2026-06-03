@@ -114,6 +114,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loadProfile]);
 
+  // Realtime: if an admin flips `force_logout_at` (kick/ban) on this user's
+  // profile, force a client-side sign-out so the next request hits auth/ban.
+  useEffect(() => {
+    if (!user) return;
+    const signedInAt = Date.now();
+    const sub = supabase
+      .channel(`profile_force_logout_${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+        (payload) => {
+          const next = payload.new as { force_logout_at?: string | null };
+          const ts = next.force_logout_at ? Date.parse(next.force_logout_at) : 0;
+          if (ts && ts >= signedInAt - 5000) {
+            supabase.auth.signOut().finally(() => {
+              if (typeof window !== "undefined") window.location.assign("/");
+            });
+          }
+        },
+      )
+      .subscribe();
+    return () => { sub.unsubscribe(); };
+  }, [user]);
+
   const signUp = useCallback(async (username: string, password: string) => {
     const clean = username.trim();
     if (clean.length < 3) return { error: "Username must be at least 3 characters." };
