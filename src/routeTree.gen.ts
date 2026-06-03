@@ -26,6 +26,7 @@ import { Route as ImageGenRouteImport } from './routes/image-gen'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as EmulatorRouteImport } from './routes/emulator'
 import { Route as CustomizeRouteImport } from './routes/customize'
+import { Route as CloudRouteImport } from './routes/cloud'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BrowserRouteImport } from './routes/browser'
 import { Route as AppsRouteImport } from './routes/apps'
@@ -34,6 +35,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSoundboardRouteImport } from './routes/api/soundboard'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
+import { Route as ApiAiVisionRouteImport } from './routes/api/ai-vision'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
 
 const VpnRoute = VpnRouteImport.update({
@@ -121,6 +123,11 @@ const CustomizeRoute = CustomizeRouteImport.update({
   path: '/customize',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CloudRoute = CloudRouteImport.update({
+  id: '/cloud',
+  path: '/cloud',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -161,6 +168,11 @@ const ApiGenerateImageRoute = ApiGenerateImageRouteImport.update({
   path: '/api/generate-image',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAiVisionRoute = ApiAiVisionRouteImport.update({
+  id: '/api/ai-vision',
+  path: '/api/ai-vision',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAiChatRoute = ApiAiChatRouteImport.update({
   id: '/api/ai-chat',
   path: '/api/ai-chat',
@@ -174,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
+  '/cloud': typeof CloudRoute
   '/customize': typeof CustomizeRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
@@ -192,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/soundboard': typeof SoundboardRoute
   '/vpn': typeof VpnRoute
   '/api/ai-chat': typeof ApiAiChatRoute
+  '/api/ai-vision': typeof ApiAiVisionRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/soundboard': typeof ApiSoundboardRoute
 }
@@ -202,6 +216,7 @@ export interface FileRoutesByTo {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
+  '/cloud': typeof CloudRoute
   '/customize': typeof CustomizeRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
@@ -220,6 +235,7 @@ export interface FileRoutesByTo {
   '/soundboard': typeof SoundboardRoute
   '/vpn': typeof VpnRoute
   '/api/ai-chat': typeof ApiAiChatRoute
+  '/api/ai-vision': typeof ApiAiVisionRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/soundboard': typeof ApiSoundboardRoute
 }
@@ -231,6 +247,7 @@ export interface FileRoutesById {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
+  '/cloud': typeof CloudRoute
   '/customize': typeof CustomizeRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
@@ -249,6 +266,7 @@ export interface FileRoutesById {
   '/soundboard': typeof SoundboardRoute
   '/vpn': typeof VpnRoute
   '/api/ai-chat': typeof ApiAiChatRoute
+  '/api/ai-vision': typeof ApiAiVisionRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/soundboard': typeof ApiSoundboardRoute
 }
@@ -261,6 +279,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
+    | '/cloud'
     | '/customize'
     | '/emulator'
     | '/games'
@@ -279,6 +298,7 @@ export interface FileRouteTypes {
     | '/soundboard'
     | '/vpn'
     | '/api/ai-chat'
+    | '/api/ai-vision'
     | '/api/generate-image'
     | '/api/soundboard'
   fileRoutesByTo: FileRoutesByTo
@@ -289,6 +309,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
+    | '/cloud'
     | '/customize'
     | '/emulator'
     | '/games'
@@ -307,6 +328,7 @@ export interface FileRouteTypes {
     | '/soundboard'
     | '/vpn'
     | '/api/ai-chat'
+    | '/api/ai-vision'
     | '/api/generate-image'
     | '/api/soundboard'
   id:
@@ -317,6 +339,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
+    | '/cloud'
     | '/customize'
     | '/emulator'
     | '/games'
@@ -335,6 +358,7 @@ export interface FileRouteTypes {
     | '/soundboard'
     | '/vpn'
     | '/api/ai-chat'
+    | '/api/ai-vision'
     | '/api/generate-image'
     | '/api/soundboard'
   fileRoutesById: FileRoutesById
@@ -346,6 +370,7 @@ export interface RootRouteChildren {
   AppsRoute: typeof AppsRoute
   BrowserRoute: typeof BrowserRoute
   ChatRoute: typeof ChatRoute
+  CloudRoute: typeof CloudRoute
   CustomizeRoute: typeof CustomizeRoute
   EmulatorRoute: typeof EmulatorRoute
   GamesRoute: typeof GamesRoute
@@ -364,6 +389,7 @@ export interface RootRouteChildren {
   SoundboardRoute: typeof SoundboardRoute
   VpnRoute: typeof VpnRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
+  ApiAiVisionRoute: typeof ApiAiVisionRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
   ApiSoundboardRoute: typeof ApiSoundboardRoute
 }
@@ -489,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomizeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cloud': {
+      id: '/cloud'
+      path: '/cloud'
+      fullPath: '/cloud'
+      preLoaderRoute: typeof CloudRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat': {
       id: '/chat'
       path: '/chat'
@@ -545,6 +578,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGenerateImageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ai-vision': {
+      id: '/api/ai-vision'
+      path: '/api/ai-vision'
+      fullPath: '/api/ai-vision'
+      preLoaderRoute: typeof ApiAiVisionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ai-chat': {
       id: '/api/ai-chat'
       path: '/api/ai-chat'
@@ -562,6 +602,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppsRoute: AppsRoute,
   BrowserRoute: BrowserRoute,
   ChatRoute: ChatRoute,
+  CloudRoute: CloudRoute,
   CustomizeRoute: CustomizeRoute,
   EmulatorRoute: EmulatorRoute,
   GamesRoute: GamesRoute,
@@ -580,19 +621,10 @@ const rootRouteChildren: RootRouteChildren = {
   SoundboardRoute: SoundboardRoute,
   VpnRoute: VpnRoute,
   ApiAiChatRoute: ApiAiChatRoute,
+  ApiAiVisionRoute: ApiAiVisionRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
   ApiSoundboardRoute: ApiSoundboardRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
