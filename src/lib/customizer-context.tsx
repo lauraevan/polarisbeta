@@ -14,7 +14,7 @@ export type ItemTransform = {
 
 export type CustomizerDocument = {
   version: 1;
-  tokens: { accent?: string; radius?: number; buttonScale?: number };
+  tokens: { accent?: string; radius?: number; buttonScale?: number; homeFontScale?: number };
   items: Record<string, ItemTransform>;
 };
 
@@ -82,6 +82,11 @@ export function CustomizerProvider({ children }: { children: ReactNode }) {
       document.documentElement.style.setProperty("--polaris-button-scale", String(doc.tokens.buttonScale));
     } else {
       document.documentElement.style.removeProperty("--polaris-button-scale");
+    }
+    if (typeof doc.tokens.homeFontScale === "number") {
+      document.documentElement.style.setProperty("--polaris-home-font-scale", String(doc.tokens.homeFontScale));
+    } else {
+      document.documentElement.style.removeProperty("--polaris-home-font-scale");
     }
   }, [doc.tokens]);
 

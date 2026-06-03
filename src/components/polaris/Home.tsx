@@ -109,7 +109,10 @@ function HomeWeb() {
   );
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex-col items-center justify-center px-5 py-10 lg:py-16">
+    <div
+      className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl flex-col items-center justify-center px-5 py-10 lg:py-16"
+      style={{ fontSize: `calc(1rem * var(--polaris-home-font-scale, 1))` }}
+    >
       {/* Compact title */}
       <div className="mb-6 lg:mb-10 text-center">
         <DateStamp />

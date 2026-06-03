@@ -45,6 +45,7 @@ function Toolbar({ pro }: { pro: boolean }) {
   const c = useCustomizer();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const fontScale = c.doc.tokens.homeFontScale ?? 1;
   const exit = () => {
     c.setActive(false);
     c.setSelected(null);
@@ -81,6 +82,18 @@ function Toolbar({ pro }: { pro: boolean }) {
             {g === 0 ? <MousePointer2 className="h-3 w-3" /> : <span className="flex items-center gap-0.5"><Grid3x3 className="h-3 w-3" />{g}</span>}
           </button>
         ))}
+      </div>
+      <Divider />
+      <div className="flex items-center gap-1 rounded-lg bg-black/30 px-1.5 py-0.5">
+        <span className="text-[9px] uppercase tracking-wider text-white/55">Aa</span>
+        <input
+          type="range" min={0.8} max={1.8} step={0.05}
+          value={fontScale}
+          onChange={(e) => c.updateTokens({ homeFontScale: Number(e.target.value) })}
+          className="w-20 accent-[rgb(var(--polaris-accent))]"
+          title="Home text size"
+        />
+        <span className="w-7 text-right text-[9px] text-white/55">{fontScale.toFixed(2)}×</span>
       </div>
       <Divider />
       <Link
