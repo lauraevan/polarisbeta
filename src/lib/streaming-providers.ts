@@ -6,8 +6,11 @@ export type Provider = {
   build: (kind: StreamKind, id: number, season?: number, episode?: number) => string;
 };
 
-// Vidfast rotating mirrors — pro primary, net secondary, then alternates listed on their site.
-const VIDFAST_HOSTS = ["vidfast.pro", "vidfast.net", "vidfast.to", "vidfast.cc", "vidfast.io"];
+// Vidfast rotating mirrors — full host list so we never run out of fallbacks.
+const VIDFAST_HOSTS = [
+  "vidfast.pro", "vidfast.in", "vidfast.io", "vidfast.me",
+  "vidfast.net", "vidfast.pm", "vidfast.xyz", "vidfast.to", "vidfast.cc",
+];
 
 const vidfast = (host: string): Provider => ({
   id: `vidfast-${host}`,
