@@ -14,7 +14,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
 import { ProCustomization } from "@/components/polaris/premium/ProCustomization";
-import { ProDashboard } from "@/components/polaris/premium/ProDashboard";
 import { useCustomizer } from "@/lib/customizer-context";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
@@ -195,8 +194,7 @@ function SettingsPage() {
           </p>
         </header>
 
-        {/* Pro Dashboard (visible to Pro users; teaser to others) */}
-        <ProDashboard />
+        {/* Pro Dashboard moved to Profile → Pro tab */}
 
         {/* Customizer toggle */}
         <CustomizerToggleSection />

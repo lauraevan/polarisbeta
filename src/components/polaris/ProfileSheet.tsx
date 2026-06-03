@@ -466,6 +466,34 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
                     </Section>
                   )}
 
+                  {!isView && tab === "pro" && (
+                    <Section label="Pro Dashboard" accent={accent}>
+                      <div className="-mx-1"><ProDashboard /></div>
+                    </Section>
+                  )}
+
+                  {!isView && tab === "profile" && (
+                    <>
+                      <Divider accent={accent} />
+                      <Section label="Privacy" accent={accent}>
+                        <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border px-3 py-2.5"
+                          style={{ background: "rgba(0,0,0,0.4)", borderColor: accentRing }}>
+                          <span className="flex items-center gap-2 text-sm text-white/85">
+                            <VenetianMask className="h-4 w-4" style={{ color: accentRgb }} />
+                            Browse anonymously
+                            <span className="text-[10px] text-white/45">Hides your name & avatar across Polaris</span>
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={!!merged.is_anonymous}
+                            onChange={(e) => setDraft({ ...draft, is_anonymous: e.target.checked })}
+                            className="h-4 w-4 accent-[rgb(var(--polaris-accent))]"
+                          />
+                        </label>
+                      </Section>
+                    </>
+                  )}
+
                   {isView && (
                     <Section label="About" accent={accent}>
                       {merged.about_me ? (
