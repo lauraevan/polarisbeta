@@ -15,7 +15,7 @@ const DOCK = [
   { to: "/", label: "Home", Icon: Home },
   { to: "/games", label: "Games", Icon: Gamepad2 },
   { to: "/browser", label: "Browser", Icon: Globe },
-  { to: "/", label: "T9", Icon: Compass, brand: true },
+  { to: "/", label: "Polaris", Icon: Compass, brand: true },
   { to: "/media", label: "Flix", Icon: PlaySquare },
   { to: "/music", label: "Music", Icon: Music },
   { to: "/ai", label: "AI", Icon: MessageCircle },
@@ -58,7 +58,8 @@ export function LiteShell(_: { children?: ReactNode }) {
     <div
       className="relative min-h-screen overflow-hidden text-white"
       style={{
-        background: "radial-gradient(ellipse at 50% 60%, #1a2042 0%, #0c1024 55%, #070912 100%)",
+        background:
+          "radial-gradient(ellipse at 50% 65%, #3a1a14 0%, #1c0a10 55%, #0a0608 100%)",
         fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
       }}
     >
@@ -74,7 +75,7 @@ export function LiteShell(_: { children?: ReactNode }) {
               width: p.s,
               height: p.s,
               borderRadius: "50%",
-              background: "#cfd3e3",
+              background: "#ffd9b0",
               opacity: p.o,
             }}
           />
@@ -84,7 +85,7 @@ export function LiteShell(_: { children?: ReactNode }) {
       {/* Top bar — minimal, only Settings + Heavy switch */}
       <header className="relative z-20 flex items-center justify-between px-4 py-3">
         <Link to="/" className="text-xs font-black tracking-[0.3em] text-white/70 hover:text-white">
-          T9·LITE
+          POLARIS·LITE
         </Link>
         <div className="flex items-center gap-2">
           <Link
@@ -115,7 +116,7 @@ export function LiteShell(_: { children?: ReactNode }) {
       <nav className="fixed inset-x-0 bottom-5 z-30 flex justify-center px-3">
         <div
           className="flex items-center gap-1 rounded-full border border-white/10 px-2 py-2 backdrop-blur-xl"
-          style={{ background: "rgba(15,18,38,0.78)", boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}
+          style={{ background: "rgba(28,12,14,0.78)", boxShadow: "0 10px 40px rgba(0,0,0,0.55)" }}
         >
           {DOCK.map((d, i) => {
             const active =
@@ -127,7 +128,7 @@ export function LiteShell(_: { children?: ReactNode }) {
                 aria-label={d.label}
                 className={`group flex h-10 w-10 items-center justify-center rounded-full transition ${
                   d.brand
-                    ? "bg-gradient-to-br from-sky-400 to-indigo-500 text-white shadow-[0_0_18px_rgba(80,140,255,0.55)]"
+                    ? "bg-gradient-to-br from-orange-400 via-pink-500 to-fuchsia-500 text-white shadow-[0_0_18px_rgba(255,122,89,0.6)]"
                     : active
                       ? "bg-white/15 text-white"
                       : "text-white/75 hover:bg-white/10 hover:text-white"
