@@ -685,6 +685,8 @@ export type Database = {
           is_anonymous: boolean
           is_banned: boolean
           is_owner: boolean
+          mute_reason: string | null
+          muted_until: string | null
           play_history: Json
           pro_tier: string | null
           pro_until: string | null
@@ -714,6 +716,8 @@ export type Database = {
           is_anonymous?: boolean
           is_banned?: boolean
           is_owner?: boolean
+          mute_reason?: string | null
+          muted_until?: string | null
           play_history?: Json
           pro_tier?: string | null
           pro_until?: string | null
@@ -743,6 +747,8 @@ export type Database = {
           is_anonymous?: boolean
           is_banned?: boolean
           is_owner?: boolean
+          mute_reason?: string | null
+          muted_until?: string | null
           play_history?: Json
           pro_tier?: string | null
           pro_until?: string | null
