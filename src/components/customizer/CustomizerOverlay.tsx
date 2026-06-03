@@ -7,7 +7,7 @@ import { useCustomizer } from "@/lib/customizer-context";
 import { useAuth } from "@/lib/auth-context";
 import { isProActive } from "@/lib/pro-utils";
 import { DecalPicker } from "./decals";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 
 /**
  * Floating editor chrome shown when Customizer is active.
@@ -43,6 +43,13 @@ export function CustomizerOverlay() {
 
 function Toolbar({ pro }: { pro: boolean }) {
   const c = useCustomizer();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const exit = () => {
+    c.setActive(false);
+    c.setSelected(null);
+    if (pathname === "/customize") navigate({ to: "/" });
+  };
   return (
     <div
       className="liquid-glass-strong fixed top-3 left-1/2 z-[60] -translate-x-1/2 flex items-center gap-1.5 rounded-2xl px-2.5 py-1.5 text-xs font-semibold text-white shadow-2xl"
@@ -84,7 +91,7 @@ function Toolbar({ pro }: { pro: boolean }) {
         <Save className="inline h-3 w-3" /> Layouts
       </Link>
       <button
-        onClick={() => c.setActive(false)}
+        onClick={exit}
         className="rounded-lg bg-red-500 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-400"
       >
         <X className="inline h-3 w-3" /> Exit

@@ -14,7 +14,7 @@ export function PolarisBoot() {
     if (safeGetItem("sessionStorage", KEY) === "1") return;
     setShow(true);
     const start = Date.now();
-    const dur = 5200;
+    const dur = 2000;
     const tick = setInterval(() => {
       const p = Math.min(1, (Date.now() - start) / dur);
       setProgress(p);
@@ -24,7 +24,7 @@ export function PolarisBoot() {
     const b = setTimeout(() => {
       setShow(false);
       safeSetItem("sessionStorage", KEY, "1");
-    }, dur + 700);
+    }, dur + 400);
     return () => {
       clearInterval(tick);
       clearTimeout(a);

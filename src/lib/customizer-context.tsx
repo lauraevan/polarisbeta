@@ -48,7 +48,6 @@ type Ctx = {
 
 const CustomizerCtx = createContext<Ctx | null>(null);
 const LOCAL_KEY = "polaris:customizer:doc";
-const ACTIVE_KEY = "polaris:customizer:active";
 
 export function CustomizerProvider({ children }: { children: ReactNode }) {
   const [doc, setDoc] = useState<CustomizerDocument>(EMPTY_DOC);
@@ -68,12 +67,12 @@ export function CustomizerProvider({ children }: { children: ReactNode }) {
       const raw = safeGetItem("localStorage", LOCAL_KEY);
       if (raw) setDoc(JSON.parse(raw) as CustomizerDocument);
     } catch { /* ignore */ }
-    if (safeGetItem("localStorage", ACTIVE_KEY) === "1") setActive(true);
+    // Never auto-open the editor on load — it's opt-in via /customize or Settings.
   }, []);
 
   // Persist
   useEffect(() => { safeSetItem("localStorage", LOCAL_KEY, JSON.stringify(doc)); }, [doc]);
-  useEffect(() => { safeSetItem("localStorage", ACTIVE_KEY, active ? "1" : "0"); }, [active]);
+  // `active` is intentionally session-only — do not persist.
 
   // Apply token side-effects (accent / button scale / radius)
   useEffect(() => {
