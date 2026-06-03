@@ -193,6 +193,8 @@ function DesktopSide({
   const [showDiscord] = useShowDiscord();
   const { pins, isPinned, toggle: togglePin } = usePins();
   const { collapsed: groupCollapsed, toggleGroup } = useCollapsedGroups();
+  const c = useCustomizer();
+  const orderOf = (to: string) => c.getItem(`nav:${to}`).order;
   const pinned = pins
     .map((to) => ALL_ITEMS.find((i) => i.to === to))
     .filter((x): x is NavItem => Boolean(x));
