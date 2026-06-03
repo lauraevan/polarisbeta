@@ -26,6 +26,7 @@ import {
   PinOff,
   Wand2,
   Monitor,
+  Cloud,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useSidebarState } from "@/lib/sidebar-context";
