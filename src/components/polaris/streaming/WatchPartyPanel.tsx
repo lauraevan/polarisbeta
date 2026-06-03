@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Users, X, Copy, LogOut, Crown, Play, Pause, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Users, X, Copy, LogOut, Crown, Play, Pause, Sparkles, Smile } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -12,6 +12,9 @@ import {
   type WatchParty,
   type WatchPartyMember,
 } from "@/lib/watch-party";
+
+const REACTIONS = ["❤️", "🔥", "😂", "😱", "👏", "🎉", "🤯", "😴"] as const;
+type FloatReaction = { id: string; emoji: string; left: number };
 
 type Props = {
   kind: "movie" | "tv";
@@ -34,6 +37,8 @@ export function WatchPartyPanel(props: Props) {
   const [joinCode, setJoinCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [floats, setFloats] = useState<FloatReaction[]>([]);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const isHost = party && user && party.host_id === user.id;
 
@@ -59,12 +64,43 @@ export function WatchPartyPanel(props: Props) {
       .on("postgres_changes", { event: "*", schema: "public", table: "watch_party_members", filter: `party_id=eq.${party.id}` }, () => {
         listMembers(party.id).then(setMembers);
       })
+      .on("broadcast", { event: "reaction" }, (msg) => {
+        const emoji = (msg.payload as { emoji?: string })?.emoji;
+        if (!emoji) return;
+        const r: FloatReaction = {
+          id: Math.random().toString(36).slice(2),
+          emoji,
+          left: 10 + Math.random() * 75,
+        };
+        setFloats((prev) => [...prev, r]);
+        window.setTimeout(() => {
+          setFloats((prev) => prev.filter((x) => x.id !== r.id));
+        }, 2400);
+      })
       .subscribe();
+    channelRef.current = ch;
     return () => {
+      channelRef.current = null;
       supabase.removeChannel(ch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [party?.id, user?.id]);
+
+  function sendReaction(emoji: string) {
+    const ch = channelRef.current;
+    if (!ch) return;
+    ch.send({ type: "broadcast", event: "reaction", payload: { emoji } });
+    // Mirror locally so the sender also sees their reaction
+    const r: FloatReaction = {
+      id: Math.random().toString(36).slice(2),
+      emoji,
+      left: 10 + Math.random() * 75,
+    };
+    setFloats((prev) => [...prev, r]);
+    window.setTimeout(() => {
+      setFloats((prev) => prev.filter((x) => x.id !== r.id));
+    }, 2400);
+  }
 
   // Host: push local state changes to the room
   useEffect(() => {
