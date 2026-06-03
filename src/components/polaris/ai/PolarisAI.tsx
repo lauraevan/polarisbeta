@@ -68,6 +68,17 @@ const MODELS: Model[] = [
   { id: "openrouter/openai/gpt-oss-120b:free", label: "GPT OSS 120B", blurb: "Open model · free route", tier: "free", badge: "O", color: "bg-zinc-700" },
   { id: "openrouter/nvidia/nemotron-3-super-120b-a12b:free", label: "Nemotron 3 Super", blurb: "NVIDIA · free route", tier: "free", badge: "N", color: "bg-green-700" },
   { id: "openrouter/mistralai/mistral-large-2512", label: "Mistral Large 3", blurb: "Mistral · standard", tier: "free", badge: "M", color: "bg-red-600" },
+  // FREE — More additions
+  { id: "groq/llama-3.2-90b-vision-preview", label: "Llama 3.2 90B Vision", blurb: "Multimodal · free", tier: "free", badge: "L", color: "bg-orange-500" },
+  { id: "groq/llama-3.2-11b-vision-preview", label: "Llama 3.2 11B Vision", blurb: "Lightweight vision · free", tier: "free", badge: "L", color: "bg-orange-400" },
+  { id: "groq/mixtral-8x7b-32768", label: "Mixtral 8x7B", blurb: "MoE · 32k ctx · free", tier: "free", badge: "M", color: "bg-red-700" },
+  { id: "groq/llama3-groq-70b-8192-tool-use-preview", label: "Llama 3 70B Tool Use", blurb: "Function calling · free", tier: "free", badge: "L", color: "bg-orange-700" },
+  { id: "openrouter/meta-llama/llama-4-maverick:free", label: "Llama 4 Maverick", blurb: "Meta flagship · free route", tier: "free", badge: "L", color: "bg-orange-800" },
+  { id: "openrouter/meta-llama/llama-4-scout:free", label: "Llama 4 Scout", blurb: "Fast Meta · free route", tier: "free", badge: "L", color: "bg-orange-600" },
+  { id: "openrouter/google/gemini-2.0-flash-exp:free", label: "Gemini 2.0 Flash (Exp)", blurb: "Google · free route", tier: "free", badge: "G", color: "bg-sky-500" },
+  { id: "openrouter/microsoft/phi-4:free", label: "Phi 4", blurb: "Microsoft · free route", tier: "free", badge: "P", color: "bg-cyan-700" },
+  { id: "openrouter/x-ai/grok-4-fast:free", label: "Grok 4 Fast", blurb: "xAI · free route", tier: "free", badge: "X", color: "bg-zinc-800" },
+  { id: "openrouter/nousresearch/hermes-4-405b:free", label: "Hermes 4 405B", blurb: "Nous · free route", tier: "free", badge: "H", color: "bg-purple-700" },
   // PREMIUM — Lovable AI (advanced, credit-gated)
   { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash", blurb: "Fast · Pro", tier: "premium", badge: "G", color: "bg-emerald-500" },
   { id: "google/gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash Lite", blurb: "Cheap · Pro", tier: "premium", badge: "G", color: "bg-emerald-600" },
