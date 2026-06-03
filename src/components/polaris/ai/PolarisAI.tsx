@@ -46,37 +46,36 @@ type Model = {
 };
 
 const MODELS: Model[] = [
-  // FREE
-  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash", blurb: "Fast · default", tier: "free", badge: "G", color: "bg-emerald-500" },
-  { id: "google/gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash Lite", blurb: "Cheap · quick", tier: "free", badge: "G", color: "bg-emerald-600" },
-  { id: "openai/gpt-5-nano", label: "GPT-5 Nano", blurb: "Fast · light", tier: "free", badge: "5", color: "bg-zinc-700" },
-  { id: "openai/gpt-5-mini", label: "GPT-5 Mini", blurb: "Smart · balanced", tier: "free", badge: "5", color: "bg-zinc-800" },
-  { id: "openai/gpt-5.4-nano", label: "GPT-5.4 Nano", blurb: "Reasoning · fast", tier: "free", badge: "5", color: "bg-zinc-700" },
-  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash", blurb: "Efficient", tier: "free", badge: "G", color: "bg-sky-500" },
-  { id: "google/gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite", blurb: "Cheap · fast", tier: "free", badge: "G", color: "bg-sky-400" },
-  // PREMIUM
-  { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro", blurb: "Most capable", tier: "premium", badge: "G", color: "bg-indigo-500" },
-  { id: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", blurb: "Next-gen reasoning", tier: "premium", badge: "G", color: "bg-indigo-600" },
-  { id: "google/gemini-3.5-flash", label: "Gemini 3.5 Flash", blurb: "Agentic · fast", tier: "premium", badge: "G", color: "bg-sky-600" },
-  { id: "openai/gpt-5", label: "GPT-5", blurb: "Frontier", tier: "premium", badge: "5", color: "bg-black" },
-  { id: "openai/gpt-5.2", label: "GPT-5.2", blurb: "Enhanced reasoning", tier: "premium", badge: "5", color: "bg-zinc-900" },
-  { id: "openai/gpt-5.4", label: "GPT-5.4 (GN Maths)", blurb: "Advanced reasoning", tier: "premium", badge: "5", color: "bg-zinc-900" },
-  { id: "openai/gpt-5.4-mini", label: "GPT-5.4 Mini", blurb: "Balanced · cheap", tier: "premium", badge: "5", color: "bg-zinc-800" },
-  { id: "openai/gpt-5.4-pro", label: "GPT-5.4 Pro", blurb: "Premium reasoning", tier: "premium", badge: "5", color: "bg-zinc-950" },
-  { id: "openai/gpt-5.5", label: "GPT-5.5", blurb: "State of the art", tier: "premium", badge: "5", color: "bg-zinc-950" },
-  { id: "openai/gpt-5.5-pro", label: "GPT-5.5 Pro", blurb: "Hardest problems", tier: "premium", badge: "5", color: "bg-black" },
-  // GROQ — ultra-fast inference (Pro)
-  { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq)", blurb: "Fastest 70B · Pro", tier: "premium", badge: "L", color: "bg-orange-600" },
-  { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B (Groq)", blurb: "Instant replies · Pro", tier: "premium", badge: "L", color: "bg-orange-500" },
-  { id: "groq/qwen/qwen3-32b", label: "Qwen 3 32B (Groq)", blurb: "Multilingual · Pro", tier: "premium", badge: "Q", color: "bg-rose-600" },
-  { id: "groq/moonshotai/kimi-k2-instruct", label: "Kimi K2 (Groq)", blurb: "Long context · Pro", tier: "premium", badge: "K", color: "bg-violet-600" },
-  // OPENROUTER — frontier models (Pro)
-  { id: "openrouter/anthropic/claude-3.5-sonnet", label: "Claude 3.5 Sonnet", blurb: "Anthropic · Pro", tier: "premium", badge: "C", color: "bg-amber-700" },
-  { id: "openrouter/anthropic/claude-3.7-sonnet", label: "Claude 3.7 Sonnet", blurb: "Anthropic reasoning · Pro", tier: "premium", badge: "C", color: "bg-amber-800" },
-  { id: "openrouter/deepseek/deepseek-r1", label: "DeepSeek R1", blurb: "Open reasoning · Pro", tier: "premium", badge: "D", color: "bg-blue-700" },
-  { id: "openrouter/x-ai/grok-2-1212", label: "Grok 2", blurb: "xAI · Pro", tier: "premium", badge: "X", color: "bg-zinc-900" },
-  { id: "openrouter/meta-llama/llama-3.3-70b-instruct", label: "Llama 3.3 70B", blurb: "Meta · Pro", tier: "premium", badge: "L", color: "bg-orange-700" },
-  { id: "openrouter/mistralai/mistral-large", label: "Mistral Large", blurb: "Mistral · Pro", tier: "premium", badge: "M", color: "bg-red-600" },
+  // FREE — Groq (ultra-fast inference)
+  { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B (Groq)", blurb: "Instant · default", tier: "free", badge: "L", color: "bg-orange-500" },
+  { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq)", blurb: "Fastest 70B · free", tier: "free", badge: "L", color: "bg-orange-600" },
+  { id: "groq/qwen/qwen3-32b", label: "Qwen 3 32B (Groq)", blurb: "Multilingual · free", tier: "free", badge: "Q", color: "bg-rose-600" },
+  { id: "groq/moonshotai/kimi-k2-instruct", label: "Kimi K2 (Groq)", blurb: "Long context · free", tier: "free", badge: "K", color: "bg-violet-600" },
+  // FREE — OpenRouter (frontier models, free)
+  { id: "openrouter/anthropic/claude-3.5-sonnet", label: "Claude 3.5 Sonnet", blurb: "Anthropic · free", tier: "free", badge: "C", color: "bg-amber-700" },
+  { id: "openrouter/anthropic/claude-3.7-sonnet", label: "Claude 3.7 Sonnet", blurb: "Anthropic reasoning · free", tier: "free", badge: "C", color: "bg-amber-800" },
+  { id: "openrouter/deepseek/deepseek-r1", label: "DeepSeek R1", blurb: "Open reasoning · free", tier: "free", badge: "D", color: "bg-blue-700" },
+  { id: "openrouter/x-ai/grok-2-1212", label: "Grok 2", blurb: "xAI · free", tier: "free", badge: "X", color: "bg-zinc-900" },
+  { id: "openrouter/meta-llama/llama-3.3-70b-instruct", label: "Llama 3.3 70B", blurb: "Meta · free", tier: "free", badge: "L", color: "bg-orange-700" },
+  { id: "openrouter/mistralai/mistral-large", label: "Mistral Large", blurb: "Mistral · free", tier: "free", badge: "M", color: "bg-red-600" },
+  // PREMIUM — Lovable AI (advanced, credit-gated)
+  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash", blurb: "Fast · Pro", tier: "premium", badge: "G", color: "bg-emerald-500" },
+  { id: "google/gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash Lite", blurb: "Cheap · Pro", tier: "premium", badge: "G", color: "bg-emerald-600" },
+  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash", blurb: "Efficient · Pro", tier: "premium", badge: "G", color: "bg-sky-500" },
+  { id: "google/gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite", blurb: "Cheap · Pro", tier: "premium", badge: "G", color: "bg-sky-400" },
+  { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro", blurb: "Most capable · Pro", tier: "premium", badge: "G", color: "bg-indigo-500" },
+  { id: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", blurb: "Next-gen · Pro", tier: "premium", badge: "G", color: "bg-indigo-600" },
+  { id: "google/gemini-3.5-flash", label: "Gemini 3.5 Flash", blurb: "Agentic · Pro", tier: "premium", badge: "G", color: "bg-sky-600" },
+  { id: "openai/gpt-5-nano", label: "GPT-5 Nano", blurb: "Fast · Pro", tier: "premium", badge: "5", color: "bg-zinc-700" },
+  { id: "openai/gpt-5-mini", label: "GPT-5 Mini", blurb: "Balanced · Pro", tier: "premium", badge: "5", color: "bg-zinc-800" },
+  { id: "openai/gpt-5", label: "GPT-5", blurb: "Frontier · Pro", tier: "premium", badge: "5", color: "bg-black" },
+  { id: "openai/gpt-5.2", label: "GPT-5.2", blurb: "Enhanced · Pro", tier: "premium", badge: "5", color: "bg-zinc-900" },
+  { id: "openai/gpt-5.4-nano", label: "GPT-5.4 Nano", blurb: "Reasoning · Pro", tier: "premium", badge: "5", color: "bg-zinc-700" },
+  { id: "openai/gpt-5.4-mini", label: "GPT-5.4 Mini", blurb: "Balanced · Pro", tier: "premium", badge: "5", color: "bg-zinc-800" },
+  { id: "openai/gpt-5.4", label: "GPT-5.4", blurb: "Advanced · Pro", tier: "premium", badge: "5", color: "bg-zinc-900" },
+  { id: "openai/gpt-5.4-pro", label: "GPT-5.4 Pro", blurb: "Premium · Pro", tier: "premium", badge: "5", color: "bg-zinc-950" },
+  { id: "openai/gpt-5.5", label: "GPT-5.5", blurb: "State of the art · Pro", tier: "premium", badge: "5", color: "bg-zinc-950" },
+  { id: "openai/gpt-5.5-pro", label: "GPT-5.5 Pro", blurb: "Hardest problems · Pro", tier: "premium", badge: "5", color: "bg-black" },
 ];
 
 type Mode = { id: string; label: string; system: string };
@@ -249,9 +248,9 @@ export function PolarisAI() {
   async function send(text: string) {
     if (!text.trim() || streaming) return;
     setError(null);
-    // Pro-gated third-party models (Groq / OpenRouter).
-    if (!imageMode && (model.id.startsWith("groq/") || model.id.startsWith("openrouter/")) && !isPro) {
-      setError("This model is part of Polaris Pro. Upgrade in Premium to unlock Groq + OpenRouter models.");
+    // Premium Lovable AI models require Pro (Groq + OpenRouter are free).
+    if (!imageMode && model.tier === "premium" && !isPro) {
+      setError("This model is part of Polaris Pro. Upgrade in Premium to unlock advanced Lovable AI models — Groq and OpenRouter models are free for everyone.");
       return;
     }
     // Navigation intent — Polaris AI can take you to pages, movies, games, etc.
@@ -596,10 +595,10 @@ export function PolarisAI() {
               <ChevronDown className="h-3.5 w-3.5 opacity-70" />
             </button>
             {modelOpen && (
-              <div className="liquid-glass-strong absolute left-1/2 top-[calc(100%+8px)] z-40 w-[320px] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/10 p-2">
-                <ModelGroup title="Free" models={MODELS.filter((m) => m.tier === "free")} current={model} pick={(m) => { setModel(m); setModelOpen(false); }} />
+              <div className="liquid-glass-strong absolute left-1/2 top-[calc(100%+8px)] z-40 max-h-[60vh] w-[320px] -translate-x-1/2 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 p-2">
+                <ModelGroup title="Free · Groq + OpenRouter" models={MODELS.filter((m) => m.tier === "free")} current={model} pick={(m) => { setModel(m); setModelOpen(false); }} />
                 <div className="my-1 h-px bg-white/10" />
-                <ModelGroup title="Polaris · Premium" models={MODELS.filter((m) => m.tier === "premium")} current={model} pick={(m) => { setModel(m); setModelOpen(false); }} />
+                <ModelGroup title="Polaris Pro · Lovable AI" models={MODELS.filter((m) => m.tier === "premium")} current={model} pick={(m) => { setModel(m); setModelOpen(false); }} />
               </div>
             )}
           </div>
