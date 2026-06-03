@@ -528,7 +528,7 @@ export function ChatRoom() {
         }
       }
     },
-    [user, profile, activeId, channels, replyTo, isOwner, isMuted, mutedUntil, banFn, unbanFn, kickFn, muteFn, unmuteFn, purgeFn, lockFn],
+    [user, profile, activeId, channels, replyTo, isOwner, isMuted, mutedUntil, banFn, unbanFn, kickFn, muteFn, unmuteFn, purgeFn, lockFn, ipBanFn, clearFn, slowmodeFn],
   );
 
   const sendGartic = useCallback(async () => {
