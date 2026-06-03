@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Play, Plus, Check, X, Star, Clock, Calendar, Globe2 } from "lucide-react";
 import { IMG, tmdbApi, type TmdbItem, type MediaKind } from "@/lib/tmdb";
 import { useMyList } from "@/lib/mylist-context";
@@ -8,7 +9,7 @@ type Props = {
   item: TmdbItem;
   kind: MediaKind;
   onClose: () => void;
-  onPlay: () => void;
+  onPlay: (s?: number, e?: number) => void;
 };
 
 export function MovieModal({ item, kind, onClose, onPlay }: Props) {
@@ -30,6 +31,14 @@ export function MovieModal({ item, kind, onClose, onPlay }: Props) {
   const seasons = details.data?.number_of_seasons;
   const episodes = details.data?.number_of_episodes;
   const cast = credits.data?.cast?.slice(0, 8) ?? [];
+  const tvSeasons = (details.data?.seasons ?? []).filter((s) => s.season_number > 0);
+  const [activeSeason, setActiveSeason] = useState<number | null>(null);
+  const seasonNumber = activeSeason ?? tvSeasons[0]?.season_number ?? 1;
+  const season = useQuery({
+    queryKey: ["modal-season", item.id, seasonNumber],
+    queryFn: () => tmdbApi.season(item.id, seasonNumber),
+    enabled: kind === "tv" && tvSeasons.length > 0,
+  });
 
   return (
     <div
@@ -100,11 +109,11 @@ export function MovieModal({ item, kind, onClose, onPlay }: Props) {
           <p className="text-sm leading-relaxed text-white/80">{item.overview || "No description available."}</p>
           <div className="mt-5 flex flex-wrap gap-2">
             <button
-              onClick={onPlay}
-              className="flex items-center gap-2 rounded-xl px-7 py-3 text-base font-bold text-black shadow-lg transition hover:brightness-110"
-              style={{ backgroundColor: "rgb(var(--polaris-accent))", boxShadow: "0 10px 30px -10px rgb(var(--polaris-accent) / 0.6)" }}
+              onClick={() => onPlay()}
+              className="flex items-center gap-3 rounded-2xl px-10 py-4 text-lg font-black text-black shadow-2xl transition hover:scale-[1.03] hover:brightness-110"
+              style={{ backgroundColor: "rgb(var(--polaris-accent))", boxShadow: "0 18px 50px -12px rgb(var(--polaris-accent) / 0.7)" }}
             >
-              <Play className="h-5 w-5 fill-black" /> Watch Now
+              <Play className="h-7 w-7 fill-black" /> {kind === "tv" ? "Play S1·E1" : "Watch Now"}
             </button>
             <button
               onClick={() =>
@@ -116,6 +125,64 @@ export function MovieModal({ item, kind, onClose, onPlay }: Props) {
               {inList ? "In My List" : "Add to My List"}
             </button>
           </div>
+
+          {/* Episodes (TV / anime only) */}
+          {kind === "tv" && tvSeasons.length > 0 && (
+            <div className="mt-6">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-white/70">Episodes</h3>
+                <select
+                  value={seasonNumber}
+                  onChange={(e) => setActiveSeason(Number(e.target.value))}
+                  className="liquid-glass rounded-lg bg-transparent px-3 py-1.5 text-sm font-semibold text-white"
+                >
+                  {tvSeasons.map((s) => (
+                    <option key={s.season_number} value={s.season_number} className="bg-black">
+                      {s.name || `Season ${s.season_number}`} · {s.episode_count} eps
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <ul className="divide-y divide-white/5">
+                {(season.data?.episodes ?? []).map((ep) => (
+                  <li key={ep.id}>
+                    <button
+                      onClick={() => onPlay(seasonNumber, ep.episode_number)}
+                      className="group flex w-full items-start gap-3 rounded-lg p-2 text-left transition hover:bg-white/5"
+                    >
+                      <div className="relative h-20 w-32 flex-shrink-0 overflow-hidden rounded-md bg-white/5">
+                        {ep.still_path ? (
+                          <img src={IMG(ep.still_path, "w300")} alt="" className="h-full w-full object-cover" loading="lazy" />
+                        ) : item.backdrop_path ? (
+                          <img src={IMG(item.backdrop_path, "w300")} alt="" className="h-full w-full object-cover opacity-40" />
+                        ) : null}
+                        <div className="absolute inset-0 grid place-items-center bg-black/30 opacity-0 transition group-hover:opacity-100">
+                          <div
+                            className="grid h-10 w-10 place-items-center rounded-full text-black"
+                            style={{ backgroundColor: "rgb(var(--polaris-accent))" }}
+                          >
+                            <Play className="h-5 w-5 fill-black" />
+                          </div>
+                        </div>
+                        <div className="absolute left-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                          {ep.episode_number}
+                        </div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="truncate text-sm font-bold text-white">{ep.name || `Episode ${ep.episode_number}`}</div>
+                          {ep.runtime && <div className="text-[11px] text-white/55">{ep.runtime}m</div>}
+                        </div>
+                        <div className="line-clamp-2 text-xs text-white/60">{ep.overview || "No description."}</div>
+                        {ep.air_date && <div className="mt-0.5 text-[10px] text-white/40">{new Date(ep.air_date).toLocaleDateString()}</div>}
+                      </div>
+                    </button>
+                  </li>
+                ))}
+                {season.isLoading && <li className="py-6 text-center text-sm text-white/50">Loading episodes…</li>}
+              </ul>
+            </div>
+          )}
 
           {/* Cast */}
           {cast.length > 0 && (
