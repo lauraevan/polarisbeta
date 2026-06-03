@@ -338,6 +338,97 @@ export function PolarisAI() {
     return canvas.toDataURL("image/jpeg", 0.8);
   }
 
+  // ---------- Voice mode ----------
+  function speak(text: string) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    // Strip markdown noise so TTS sounds natural
+    const clean = text
+      .replace(/```[\s\S]*?```/g, " (code block) ")
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+      .replace(/\[[^\]]*\]\([^)]*\)/g, "")
+      .replace(/[*_`#>]/g, "")
+      .trim();
+    if (!clean) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(clean);
+      u.rate = 1.05;
+      u.pitch = 1;
+      window.speechSynthesis.speak(u);
+    } catch { /* noop */ }
+  }
+
+  function stopSpeaking() {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  }
+
+  function toggleListening() {
+    if (typeof window === "undefined") return;
+    const Ctor =
+      (window as unknown as { SpeechRecognition?: new () => unknown }).SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: new () => unknown }).webkitSpeechRecognition;
+    if (!Ctor) {
+      setVoiceSupported(false);
+      setError("Voice input isn't supported in this browser. Try Chrome or Edge.");
+      return;
+    }
+    if (voiceListening) {
+      try {
+        (recognitionRef.current as { stop?: () => void } | null)?.stop?.();
+      } catch { /* noop */ }
+      setVoiceListening(false);
+      return;
+    }
+    const rec = new Ctor() as {
+      lang: string;
+      interimResults: boolean;
+      continuous: boolean;
+      onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void;
+      onend: () => void;
+      onerror: (e: { error?: string }) => void;
+      start: () => void;
+      stop: () => void;
+    };
+    rec.lang = "en-US";
+    rec.interimResults = true;
+    rec.continuous = false;
+    let finalText = "";
+    rec.onresult = (e) => {
+      let interim = "";
+      for (let i = 0; i < e.results.length; i++) {
+        const r = e.results[i];
+        const t = r[0]?.transcript ?? "";
+        if (r.isFinal) finalText += t;
+        else interim += t;
+      }
+      setInput((finalText + interim).trim());
+    };
+    rec.onerror = (e) => {
+      if (e.error && !/aborted|no-speech/.test(e.error)) {
+        setError(`Mic error: ${e.error}`);
+      }
+    };
+    rec.onend = () => {
+      setVoiceListening(false);
+      const text = finalText.trim();
+      if (text) {
+        setInput("");
+        if (screenStream) analyzeScreen(text);
+        else send(text);
+      }
+    };
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+      setVoiceListening(true);
+      stopSpeaking();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't start mic");
+    }
+  }
+
   async function analyzeScreen(promptText: string) {
     if (screenAnalyzing) return;
     if (!screenStream) { setError("Start screen sharing first."); return; }
