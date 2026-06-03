@@ -2,11 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
-import { PolarisAI } from "@/components/polaris/ai/PolarisAI";
+import { AiToolsHub } from "@/components/polaris/ai/AiToolsHub";
 import { PolarisRecs } from "@/components/polaris/recs/PolarisRecs";
 
 export const Route = createFileRoute("/ai")({
-  head: () => ({ meta: [{ title: "Polaris AI — Polaris One" }] }),
+  head: () => ({ meta: [{ title: "AI Tools — Polaris One" }] }),
   component: AiPage,
 });
 
@@ -16,7 +16,7 @@ function AiPage() {
     <AppShell hideDock>
       <div className="relative h-[calc(100vh-32px)] overflow-hidden">
         <div className="h-full overflow-y-auto">
-          <PolarisAI />
+          <AiToolsHub />
         </div>
 
         {/* Edge handle to slide Recs panel in/out */}
