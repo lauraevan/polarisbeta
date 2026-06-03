@@ -441,7 +441,14 @@ export function PolarisAI() {
       const res = await fetch("/api/ai-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: model.id, system: mode.system, messages: history }),
+        body: JSON.stringify({
+          model: model.id,
+          system:
+            `You are Polaris AI. You are currently running on the "${model.label}" model (provider id: \`${model.id}\`). ` +
+            `If a user asks which model you are, answer honestly with that name. Do NOT claim to be ChatGPT, Claude, Gemini, etc. unless that matches your actual model. ` +
+            mode.system,
+          messages: history,
+        }),
       });
       if (!res.ok || !res.body) {
         const j = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
