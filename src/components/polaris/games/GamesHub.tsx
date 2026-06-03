@@ -272,67 +272,6 @@ function GeForceNowLauncher() {
   );
 }
 
-function RobloxEmulator() {
-  const SERVERS: { id: string; label: string; src: string }[] = [
-    { id: "nowgg",   label: "now.gg",        src: "https://now.gg/apps/roblox-corporation/5349/roblox.html" },
-    { id: "stratus", label: "Stratus",       src: "https://stratus.us.kg/play/Roblox" },
-    { id: "nowggio", label: "now.gg (alt)",  src: "https://nowgg.io/play/Roblox" },
-  ];
-  const [idx, setIdx] = useState(0);
-  const [key, setKey] = useState(0);
-  const server = SERVERS[idx];
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-white/65">
-          <Gamepad2 className="h-3.5 w-3.5" /> Roblox · Browser Emulator
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {SERVERS.map((s, i) => (
-            <button
-              key={s.id}
-              onClick={() => { setIdx(i); setKey((k) => k + 1); }}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
-                i === idx ? "bg-white text-black" : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-          <button
-            onClick={() => setKey((k) => k + 1)}
-            className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/80 hover:bg-white/20 hover:text-white"
-            title="Reload server"
-          >
-            Reload
-          </button>
-          <a
-            href={server.src}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1 text-[11px] font-bold text-black hover:brightness-110"
-          >
-            New tab <ExternalLink className="h-3 w-3" />
-          </a>
-        </div>
-      </div>
-      <div className="overflow-hidden rounded-md border border-white/10 bg-black">
-        <iframe
-          key={`${server.id}-${key}`}
-          src={server.src}
-          title={`Roblox · ${server.label}`}
-          className="h-[78vh] w-full border-0"
-          allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; microphone; camera"
-          allowFullScreen
-        />
-      </div>
-      <p className="text-[11px] text-white/50">
-        If a server stays blank or fails to load, switch to another server above or open it in a new tab. Sign in with your Roblox account inside the emulator to play your own games.
-      </p>
-    </div>
-  );
-}
-
 function DiscordCallout() {
   return (
     <a
