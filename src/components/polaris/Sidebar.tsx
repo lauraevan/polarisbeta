@@ -24,12 +24,15 @@ import {
   ChevronDown,
   Pin,
   PinOff,
+  Wand2,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useSidebarState } from "@/lib/sidebar-context";
 import { useShowDiscord } from "@/lib/ui-prefs";
 import { safeGetItem, safeSetItem } from "@/lib/safe-storage";
 import { ProfileButton } from "./ProfileButton";
+import { useCustomizer } from "@/lib/customizer-context";
+import { DecalIcon } from "@/components/customizer/decals";
 
 type NavItem = { to: string; label: string; icon: typeof Home };
 type NavGroup = { id: string; label: string; items: NavItem[] };
@@ -75,12 +78,21 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/premium", label: "Premium", icon: Crown },
       { to: "/shop", label: "Shop", icon: ShoppingBag },
+      { to: "/customize", label: "Customize", icon: Wand2 },
       { to: "/settings", label: "Settings", icon: SettingsIcon },
     ],
   },
 ];
 
 const ALL_ITEMS: NavItem[] = [HOME_ITEM, ...GROUPS.flatMap((g) => g.items)];
+
+function sortByCustomOrder<T extends { to: string }>(items: T[], orderOf: (to: string) => number | undefined): T[] {
+  return [...items].sort((a, b) => {
+    const oa = orderOf(a.to) ?? 0;
+    const ob = orderOf(b.to) ?? 0;
+    return oa - ob;
+  });
+}
 const PINS_KEY = "polaris-sidebar-pins";
 const COLLAPSED_GROUPS_KEY = "polaris-sidebar-collapsed-groups";
 
@@ -181,6 +193,8 @@ function DesktopSide({
   const [showDiscord] = useShowDiscord();
   const { pins, isPinned, toggle: togglePin } = usePins();
   const { collapsed: groupCollapsed, toggleGroup } = useCollapsedGroups();
+  const c = useCustomizer();
+  const orderOf = (to: string) => c.getItem(`nav:${to}`).order;
   const pinned = pins
     .map((to) => ALL_ITEMS.find((i) => i.to === to))
     .filter((x): x is NavItem => Boolean(x));
@@ -218,6 +232,7 @@ function DesktopSide({
 
         {GROUPS.map((g) => {
           const open = !groupCollapsed[g.id];
+          const items = sortByCustomOrder(g.items, orderOf);
           return (
             <Section
               key={g.id}
@@ -226,7 +241,7 @@ function DesktopSide({
               open={open}
               onToggle={() => toggleGroup(g.id)}
             >
-              {g.items.map((item) => (
+              {items.map((item) => (
                 <NavRow
                   key={item.to}
                   item={item}
@@ -321,6 +336,11 @@ function NavRow({
   onTogglePin: () => void;
 }) {
   const Icon = item.icon;
+  const c = useCustomizer();
+  const editId = `nav:${item.to}`;
+  const t = c.getItem(editId);
+  if (t.hidden && !c.active) return null;
+  const isSelected = c.active && c.selected === editId;
   return (
     <Link
       to={item.to}
@@ -328,6 +348,18 @@ function NavRow({
       className={`group relative flex items-center rounded-xl text-sm transition-all ${
         collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2"
       } ${active ? "text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
+      style={{
+        transform: t.scale ? `scale(${t.scale})` : undefined,
+        transformOrigin: "left center",
+        outline: isSelected ? "2px solid rgb(var(--polaris-accent))" : undefined,
+        opacity: t.hidden ? 0.4 : 1,
+      }}
+      onClickCapture={(e) => {
+        if (!c.active) return;
+        e.preventDefault();
+        e.stopPropagation();
+        c.setSelected(editId);
+      }}
     >
       {active && (
         <span
@@ -338,7 +370,10 @@ function NavRow({
           }}
         />
       )}
-      <Icon className="relative h-[18px] w-[18px] shrink-0" />
+      <span className="relative shrink-0">
+        <Icon className="h-[18px] w-[18px]" style={t.color ? { color: `rgb(${t.color})` } : undefined} />
+        {t.decal && <DecalIcon id={t.decal} size={10} />}
+      </span>
       {!collapsed && (
         <>
           <span className="relative flex-1 truncate font-medium">{item.label}</span>

@@ -24,6 +24,7 @@ import { Route as MediaRouteImport } from './routes/media'
 import { Route as ImageGenRouteImport } from './routes/image-gen'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as EmulatorRouteImport } from './routes/emulator'
+import { Route as CustomizeRouteImport } from './routes/customize'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BrowserRouteImport } from './routes/browser'
 import { Route as AppsRouteImport } from './routes/apps'
@@ -109,6 +110,11 @@ const EmulatorRoute = EmulatorRouteImport.update({
   path: '/emulator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CustomizeRoute = CustomizeRouteImport.update({
+  id: '/customize',
+  path: '/customize',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
+  '/customize': typeof CustomizeRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/image-gen': typeof ImageGenRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
+  '/customize': typeof CustomizeRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/image-gen': typeof ImageGenRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
+  '/customize': typeof CustomizeRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/image-gen': typeof ImageGenRoute
@@ -243,6 +252,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
+    | '/customize'
     | '/emulator'
     | '/games'
     | '/image-gen'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
+    | '/customize'
     | '/emulator'
     | '/games'
     | '/image-gen'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
+    | '/customize'
     | '/emulator'
     | '/games'
     | '/image-gen'
@@ -322,6 +334,7 @@ export interface RootRouteChildren {
   AppsRoute: typeof AppsRoute
   BrowserRoute: typeof BrowserRoute
   ChatRoute: typeof ChatRoute
+  CustomizeRoute: typeof CustomizeRoute
   EmulatorRoute: typeof EmulatorRoute
   GamesRoute: typeof GamesRoute
   ImageGenRoute: typeof ImageGenRoute
@@ -449,6 +462,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmulatorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/customize': {
+      id: '/customize'
+      path: '/customize'
+      fullPath: '/customize'
+      preLoaderRoute: typeof CustomizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat': {
       id: '/chat'
       path: '/chat'
@@ -522,6 +542,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppsRoute: AppsRoute,
   BrowserRoute: BrowserRoute,
   ChatRoute: ChatRoute,
+  CustomizeRoute: CustomizeRoute,
   EmulatorRoute: EmulatorRoute,
   GamesRoute: GamesRoute,
   ImageGenRoute: ImageGenRoute,
@@ -544,13 +565,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

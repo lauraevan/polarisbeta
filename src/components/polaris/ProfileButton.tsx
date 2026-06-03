@@ -3,15 +3,15 @@ import { User, Crown } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AuthDialog } from "./AuthDialog";
 import { ProfileSheet } from "./ProfileSheet";
+import { useHideVip, isProActive } from "@/lib/pro-utils";
 
 /** Sidebar profile button. Opens auth dialog if signed out, profile sheet if signed in. */
 export function ProfileButton({ collapsed }: { collapsed: boolean }) {
   const { profile, loading } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const isPro =
-    !!profile?.pro_until &&
-    (Number.isNaN(Date.parse(profile.pro_until)) || Date.parse(profile.pro_until) > Date.now());
+  const [hideVip] = useHideVip();
+  const isPro = isProActive(profile) && !hideVip;
 
   return (
     <>
