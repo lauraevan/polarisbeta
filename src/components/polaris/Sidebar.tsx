@@ -24,6 +24,7 @@ import {
   ChevronDown,
   Pin,
   PinOff,
+  Wand2,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useSidebarState } from "@/lib/sidebar-context";
@@ -75,6 +76,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { to: "/premium", label: "Premium", icon: Crown },
       { to: "/shop", label: "Shop", icon: ShoppingBag },
+      { to: "/customize", label: "Customize", icon: Wand2 },
       { to: "/settings", label: "Settings", icon: SettingsIcon },
     ],
   },
