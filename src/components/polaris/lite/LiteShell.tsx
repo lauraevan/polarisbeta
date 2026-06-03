@@ -1,13 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { usePolarisMode } from "@/lib/polaris-mode";
 import { LiteHome } from "./LiteHome";
-import { LiteGames } from "./LiteGames";
-import { LiteAI } from "./LiteAI";
-import { LiteFlix } from "./LiteFlix";
-import { LiteMusic } from "./LiteMusic";
-import { LiteBrowser } from "./LiteBrowser";
-import { LiteSettings } from "./LiteSettings";
+
+// Lazy-load every non-home page so Lite's first paint ships only the home + shell.
+const LiteGames = lazy(() => import("./LiteGames").then((m) => ({ default: m.LiteGames })));
+const LiteAI = lazy(() => import("./LiteAI").then((m) => ({ default: m.LiteAI })));
+const LiteFlix = lazy(() => import("./LiteFlix").then((m) => ({ default: m.LiteFlix })));
+const LiteMusic = lazy(() => import("./LiteMusic").then((m) => ({ default: m.LiteMusic })));
+const LiteBrowser = lazy(() => import("./LiteBrowser").then((m) => ({ default: m.LiteBrowser })));
+const LiteSettings = lazy(() => import("./LiteSettings").then((m) => ({ default: m.LiteSettings })));
 
 const NAV = [
   { to: "/", label: "Home" },
@@ -77,7 +79,11 @@ export function LiteShell({ children }: { children: ReactNode }) {
           </button>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl">{liteContent(pathname, children)}</main>
+      <main className="mx-auto max-w-6xl">
+        <Suspense fallback={<div className="px-4 py-10 text-center text-xs text-neutral-500">Loading…</div>}>
+          {liteContent(pathname, children)}
+        </Suspense>
+      </main>
       <footer className="mx-auto mt-10 max-w-6xl px-4 pb-10 text-center text-xs text-neutral-600">
         Polaris Lite · system fonts · no animations · no wallpapers
       </footer>
