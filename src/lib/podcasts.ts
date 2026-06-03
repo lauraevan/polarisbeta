@@ -1,4 +1,4 @@
-// iTunes Search API — free, no key. Episodes via RSS proxy.
+// iTunes Search API — free, no key. Episodes via a CORS proxy.
 
 export type Podcast = {
   id: number; // collectionId
@@ -20,12 +20,26 @@ export type Episode = {
 };
 
 const ITUNES = "https://itunes.apple.com";
-// Try several CORS proxies — if one is down podcasts still load.
-const RSS_PROXIES = [
-  "https://api.allorigins.win/raw?url=",
-  "https://corsproxy.io/?",
-  "https://api.codetabs.com/v1/proxy?quest=",
+// Try several CORS proxies — if one is down or rate-limited podcasts still load.
+// Each entry is `(url) => proxiedUrl` so we can vary the wrapping format.
+const RSS_PROXIES: ((u: string) => string)[] = [
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  (u) => `https://cors.eu.org/${u}`,
+  (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
+  (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
 ];
+
+async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
 
 function mapPodcast(r: Record<string, unknown>): Podcast {
   const art = (r.artworkUrl600 as string) || (r.artworkUrl100 as string) || "";
@@ -82,13 +96,26 @@ export async function topPodcasts(_limit = 50): Promise<Podcast[]> {
 export async function fetchEpisodes(feedUrl: string, limit = 50): Promise<Episode[]> {
   if (!feedUrl) return [];
   let text = "";
-  for (const proxy of RSS_PROXIES) {
+  let lastErr: unknown = null;
+  for (const wrap of RSS_PROXIES) {
+    const url = wrap(feedUrl);
     try {
-      const r = await fetch(proxy + encodeURIComponent(feedUrl));
-      if (r.ok) { text = await r.text(); if (text) break; }
-    } catch { /* try next */ }
+      const r = await fetchWithTimeout(url, 8000);
+      if (!r.ok) { lastErr = new Error(`Proxy ${r.status}`); continue; }
+      let body = await r.text();
+      // allorigins `/get` wraps the feed in JSON: { contents: "<xml…>" }
+      if (url.includes("allorigins.win/get")) {
+        try { body = (JSON.parse(body) as { contents?: string }).contents ?? ""; } catch { /* */ }
+      }
+      if (body && body.includes("<")) { text = body; break; }
+    } catch (e) {
+      lastErr = e;
+    }
   }
-  if (!text) return [];
+  if (!text) {
+    console.warn("[podcasts] all proxies failed for", feedUrl, lastErr);
+    return [];
+  }
   const doc = new DOMParser().parseFromString(text, "application/xml");
   const items = Array.from(doc.querySelectorAll("item")).slice(0, limit);
   return items.map((it) => {
