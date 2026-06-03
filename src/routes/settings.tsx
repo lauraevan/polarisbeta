@@ -15,6 +15,8 @@ import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
 import { ProCustomization } from "@/components/polaris/premium/ProCustomization";
 import { useCustomizer } from "@/lib/customizer-context";
+import { usePolarisMode } from "@/lib/polaris-mode";
+import { Feather } from "lucide-react";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
@@ -198,6 +200,9 @@ function SettingsPage() {
 
         {/* Customizer toggle */}
         <CustomizerToggleSection />
+
+        {/* Polaris Mode (Heavy / Lite) */}
+        <PolarisModeSection />
 
         {/* Admin access */}
         <section className="liquid-glass-themed rounded-2xl p-5">
