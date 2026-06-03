@@ -69,6 +69,9 @@ export function LiteFlix() {
                 src={IMG + it.poster_path}
                 alt={title}
                 loading="lazy"
+                decoding="async"
+                width={171}
+                height={257}
                 className="aspect-[2/3] w-full rounded border border-neutral-800 bg-neutral-900 object-cover"
               />
               <div className="mt-1 truncate text-[11px] text-neutral-400">{title}</div>
