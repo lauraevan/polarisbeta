@@ -15,7 +15,7 @@ import { checkDmSafety } from "@/lib/dm-filter";
 import logo from "@/assets/polaris-logo.png";
 import {
   runBotCommand, POLARIS_BOT_ID, POLARIS_BOT_USERNAME,
-  POLARIS_BOT_AVATAR, POLARIS_BOT_ACCENT,
+  POLARIS_BOT_AVATAR, POLARIS_BOT_ACCENT, POLARIS_BOT_BIO, POLARIS_BOT_TAGLINE, botGreeting,
 } from "@/lib/polaris-bot";
 import { Reply } from "lucide-react";
 
@@ -112,6 +112,7 @@ export function ChatRoom() {
   const [drawOpen, setDrawOpen] = useState(false);
   const [newChannelOpen, setNewChannelOpen] = useState(false);
   const [viewProfileId, setViewProfileId] = useState<string | null>(null);
+  const [botProfileOpen, setBotProfileOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   // DMs
   const [dmPartners, setDmPartners] = useState<DMPartner[]>([]);
@@ -367,12 +368,26 @@ export function ChatRoom() {
       setSending(false);
       if (!error) { setText(""); setReplyTo(null); }
 
+      // Replying directly to Polaris Bot → friendly auto-greeting.
+      if (replyTo && replyTo.username === POLARIS_BOT_USERNAME) {
+        await supabase.from("chat_messages").insert({
+          channel_id: activeId,
+          user_id: user.id,
+          username: POLARIS_BOT_USERNAME,
+          avatar_emoji: "🤖",
+          avatar_url: POLARIS_BOT_AVATAR,
+          accent_color: POLARIS_BOT_ACCENT,
+          content: botGreeting(profile.username),
+          attachments: [],
+        });
+      }
+
       // Bot command — fires AFTER the user's message is stored so the bot reply
       // appears in order. Bot messages are inserted with the *user's* user_id
       // (RLS requires auth.uid() = user_id), but flagged via username/avatar.
       if (content && (content.trim().startsWith("#") || content.trim().startsWith("/"))) {
-        const reply = await runBotCommand(content, { isAdmin: isOwner, username: profile.username });
-        if (reply) {
+        const result = await runBotCommand(content, { isAdmin: isOwner, username: profile.username });
+        if (result) {
           await supabase.from("chat_messages").insert({
             channel_id: activeId,
             user_id: user.id, // RLS-compliant — display layer renders as the bot
@@ -380,9 +395,40 @@ export function ChatRoom() {
             avatar_emoji: "🤖",
             avatar_url: POLARIS_BOT_AVATAR,
             accent_color: POLARIS_BOT_ACCENT,
-            content: reply,
+            content: result.reply,
             attachments: [],
           });
+          // Execute side-effect actions (purge/lock/unlock/remind).
+          const action = result.action;
+          if (action?.kind === "purge" && isOwner) {
+            const { data: latest } = await supabase
+              .from("chat_messages")
+              .select("id")
+              .eq("channel_id", activeId)
+              .order("created_at", { ascending: false })
+              .limit(action.count);
+            const ids = (latest || []).map((r) => r.id as string);
+            if (ids.length) await supabase.from("chat_messages").delete().in("id", ids);
+          } else if (action?.kind === "lock" && isOwner) {
+            await supabase.from("chat_channels").update({ allowed_role: "Owner" }).eq("id", activeId);
+          } else if (action?.kind === "unlock" && isOwner) {
+            await supabase.from("chat_channels").update({ allowed_role: null }).eq("id", activeId);
+          } else if (action?.kind === "remind") {
+            const channelId = activeId;
+            const note = action.text;
+            setTimeout(() => {
+              supabase.from("chat_messages").insert({
+                channel_id: channelId,
+                user_id: user.id,
+                username: POLARIS_BOT_USERNAME,
+                avatar_emoji: "⏰",
+                avatar_url: POLARIS_BOT_AVATAR,
+                accent_color: POLARIS_BOT_ACCENT,
+                content: `⏰ Reminder for **@${profile.username}** — *${note}*`,
+                attachments: [],
+              });
+            }, action.seconds * 1000);
+          }
         }
       }
     },
@@ -809,7 +855,11 @@ export function ChatRoom() {
                   prevSame={within(prev, m)}
                   nextSame={within(m, next)}
                   parent={m.reply_to ? messages.find((x) => x.id === m.reply_to) ?? null : null}
-                  onAvatarClick={() => setViewProfileId(m.user_id)}
+                  onAvatarClick={() =>
+                    m.username === POLARIS_BOT_USERNAME
+                      ? setBotProfileOpen(true)
+                      : setViewProfileId(m.user_id)
+                  }
                   onMention={() => insert(`@${m.username} `, "")}
                   onReply={() => { setReplyTo(m); textRef.current?.focus(); }}
                 />
@@ -932,6 +982,7 @@ export function ChatRoom() {
         />
       )}
       <ProfileSheet open={!!viewProfileId} onClose={() => setViewProfileId(null)} viewUserId={viewProfileId} />
+      <BotProfileSheet open={botProfileOpen} onClose={() => setBotProfileOpen(false)} />
     </div>
   );
 }
@@ -1062,6 +1113,64 @@ function MessageBubble({
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function BotProfileSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null;
+  const cmds = [
+    "#help", "#ping", "#flip", "#roll 20", "#8ball", "#choose a | b",
+    "#joke", "#fact", "#poll", "#calc 2*7", "#reverse", "#emojify",
+    "#compliment", "#motivate", "#hug @user", "#pat @user",
+    "#ship a b", "#rate pizza", "#countdown 2026-12-25",
+    "#time", "#base64", "#remind 10m drink water", "#invite",
+  ];
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md overflow-hidden rounded-3xl border border-white/15 shadow-2xl"
+        style={{
+          background: "linear-gradient(160deg, rgba(255,170,90,0.25), rgba(15,10,8,0.92))",
+          backdropFilter: "blur(20px) saturate(160%)",
+        }}
+      >
+        <div className="relative h-24" style={{ background: "linear-gradient(120deg, rgb(255,140,60), rgb(255,200,100))" }}>
+          <button
+            onClick={onClose}
+            className="absolute right-3 top-3 rounded-full bg-black/30 p-1.5 text-white/90 hover:bg-black/50"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="-mt-10 px-5 pb-5">
+          <div className="flex items-end justify-between">
+            <div className="h-20 w-20 overflow-hidden rounded-2xl border-4 border-zinc-900 bg-zinc-800">
+              <img src={POLARIS_BOT_AVATAR} alt="" className="h-full w-full object-cover" />
+            </div>
+            <span className="rounded-md bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[10px] font-black uppercase text-black">
+              Verified Bot
+            </span>
+          </div>
+          <h2 className="mt-3 text-xl font-bold text-white">{POLARIS_BOT_USERNAME}</h2>
+          <p className="text-xs text-white/60">{POLARIS_BOT_TAGLINE}</p>
+          <p className="mt-3 text-sm leading-relaxed text-white/80">{POLARIS_BOT_BIO}</p>
+          <div className="mt-4">
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Quick commands</div>
+            <div className="flex flex-wrap gap-1.5">
+              {cmds.map((c) => (
+                <code key={c} className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] text-white/85">{c}</code>
+              ))}
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] text-white/70">
+            <div className="rounded-lg bg-white/5 p-2"><div className="text-base font-bold text-white">24/7</div>online</div>
+            <div className="rounded-lg bg-white/5 p-2"><div className="text-base font-bold text-white">{Object.keys({}).length || 27}+</div>commands</div>
+            <div className="rounded-lg bg-white/5 p-2"><div className="text-base font-bold text-white">∞</div>vibes</div>
+          </div>
+        </div>
       </div>
     </div>
   );
