@@ -7,6 +7,12 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  adminBanUser, adminUnbanUser, adminKickUser,
+  adminMuteUser, adminUnmuteUser,
+  adminPurgeMessages, adminLockChannel,
+} from "@/lib/admin.functions";
 import { tenorSearch, type TenorGif } from "@/lib/tenor";
 import { DrawingCanvas } from "./DrawingCanvas";
 import { AuthDialog } from "../AuthDialog";
@@ -131,6 +137,19 @@ export function ChatRoom() {
   const dmScrollRef = useRef<HTMLDivElement>(null);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const isOwner = !!(profile as { is_owner?: boolean } | null)?.is_owner;
+  // Server-fn dispatchers for bot-driven admin actions.
+  const banFn = useServerFn(adminBanUser);
+  const unbanFn = useServerFn(adminUnbanUser);
+  const kickFn = useServerFn(adminKickUser);
+  const muteFn = useServerFn(adminMuteUser);
+  const unmuteFn = useServerFn(adminUnmuteUser);
+  const purgeFn = useServerFn(adminPurgeMessages);
+  const lockFn = useServerFn(adminLockChannel);
+
+  // Mute enforcement (client guard — server-side guard via /api or future
+  // trigger can be layered later). Compares `profile.muted_until` to now.
+  const mutedUntil = (profile as { muted_until?: string | null } | null)?.muted_until ?? null;
+  const isMuted = !!(mutedUntil && new Date(mutedUntil).getTime() > Date.now());
 
   // Load channels
   useEffect(() => {
@@ -353,6 +372,13 @@ export function ChatRoom() {
           return;
         }
       }
+      if (isMuted) {
+        const ends = new Date(mutedUntil!).getFullYear() > 9000
+          ? "permanently"
+          : `until ${new Date(mutedUntil!).toLocaleString()}`;
+        setDmWarning(`You're muted ${ends}.`);
+        return;
+      }
       setSending(true);
       const { error } = await supabase.from("chat_messages").insert({
         channel_id: activeId,
@@ -428,11 +454,47 @@ export function ChatRoom() {
                 attachments: [],
               });
             }, action.seconds * 1000);
+          } else if (action?.kind === "admin" && isOwner) {
+            // Dispatch real admin operations via server functions so they
+            // mirror what the admin panel does (ban screen, sign-out, mute,
+            // bulk delete, channel lock). Failures are surfaced as a bot reply.
+            try {
+              const slugToId = (slug?: string) =>
+                slug ? channels.find((c) => c.slug === slug)?.id : undefined;
+              if (action.op === "ban") {
+                await banFn({ data: { username: action.username, reason: action.reason, durationHours: action.durationHours, type: "full_site" } });
+              } else if (action.op === "unban") {
+                await unbanFn({ data: { username: action.username } });
+              } else if (action.op === "kick") {
+                await kickFn({ data: { username: action.username } });
+              } else if (action.op === "mute") {
+                await muteFn({ data: { username: action.username, reason: action.reason, durationMinutes: action.durationMinutes } });
+              } else if (action.op === "unmute") {
+                await unmuteFn({ data: { username: action.username } });
+              } else if (action.op === "purge") {
+                const targetId = action.channelSlug ? slugToId(action.channelSlug) : activeId;
+                if (targetId) await purgeFn({ data: { channelId: targetId, count: action.count } });
+              } else if (action.op === "lock") {
+                const targetId = action.channelSlug ? slugToId(action.channelSlug) : activeId;
+                if (targetId) await lockFn({ data: { channelId: targetId, role: action.role ?? "Owner" } });
+              } else if (action.op === "unlock") {
+                const targetId = action.channelSlug ? slugToId(action.channelSlug) : activeId;
+                if (targetId) await lockFn({ data: { channelId: targetId, role: null } });
+              }
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : "Unknown error";
+              await supabase.from("chat_messages").insert({
+                channel_id: activeId, user_id: user.id,
+                username: POLARIS_BOT_USERNAME, avatar_emoji: "⚠️",
+                avatar_url: POLARIS_BOT_AVATAR, accent_color: POLARIS_BOT_ACCENT,
+                content: `⚠️ Command failed: ${msg}`, attachments: [],
+              });
+            }
           }
         }
       }
     },
-    [user, profile, activeId, channels, replyTo, isOwner],
+    [user, profile, activeId, channels, replyTo, isOwner, isMuted, mutedUntil, banFn, unbanFn, kickFn, muteFn, unmuteFn, purgeFn, lockFn],
   );
 
   const sendGartic = useCallback(async () => {
