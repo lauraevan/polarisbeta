@@ -293,10 +293,14 @@ export const adminKickUser = createServerFn({ method: "POST" })
     const { data: target } = await supabaseAdmin
       .from("profiles").select("id").eq("username", data.username).maybeSingle();
     if (!target) throw new Error("User not found");
-    // Best effort: revoke sessions through admin API
-    try {
-      await supabaseAdmin.auth.admin.signOut(target.id, "global");
-    } catch (e) { console.error("kick signOut", e); }
+    // Force the client to sign out on next realtime tick. The Supabase JS
+    // `auth.admin.signOut(jwt)` API takes a JWT (not a user id), so we can't
+    // remotely revoke from the user id alone — instead we flip a profile
+    // timestamp and the auth-context subscribes to it and signs out.
+    await supabaseAdmin
+      .from("profiles")
+      .update({ force_logout_at: new Date().toISOString() } as never)
+      .eq("id", target.id);
     return { ok: true };
   });
 
