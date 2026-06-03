@@ -168,12 +168,15 @@ export const adminBanUser = createServerFn({ method: "POST" })
 
     // Mirror onto the profile flag (used by simpler UI checks).
     const { error } = await supabaseAdmin.from("profiles")
-      .update({ is_banned: true, ban_reason: data.reason, banned_at: new Date().toISOString() })
+      .update({
+        is_banned: true,
+        ban_reason: data.reason,
+        banned_at: new Date().toISOString(),
+        force_logout_at: new Date().toISOString(),
+      } as never)
       .eq("id", target.id);
     if (error) throw new Error(error.message);
 
-    // Force sign-out so the ban screen is shown on next request.
-    try { await supabaseAdmin.auth.admin.signOut(target.id, "global"); } catch (e) { console.error("ban signOut", e); }
     return { ok: true, ban_id: ban.id, expires_at };
   });
 
