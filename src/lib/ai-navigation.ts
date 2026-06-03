@@ -20,6 +20,7 @@ const ROUTES: Array<{ keys: RegExp; path: string; label: string }> = [
   { keys: /\b(browser|web)\b/i, path: "/browser", label: "Browser" },
   { keys: /\b(my\s*list|watchlist|favorites?)\b/i, path: "/mylist", label: "My List" },
   { keys: /\b(premium|pro|vip|upgrade)\b/i, path: "/premium", label: "Polaris Premium" },
+  { keys: /\b(cloud|drive|files?|storage)\b/i, path: "/cloud", label: "Polaris Cloud" },
 ];
 
 export function parseNavigation(prompt: string): Action {
