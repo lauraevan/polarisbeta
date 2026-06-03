@@ -324,6 +324,61 @@ const ADMIN_COMMANDS: Record<string, BotCommand> = {
     const channelSlug = pickChannelRef(raw);
     return { reply: `🔓 Unlocking ${channelSlug ? `**#${channelSlug}**` : "this channel"}.`, action: { kind: "admin", op: "unlock", channelSlug } };
   }),
+  ipban: adminCommand("ipban", "IP-ban a user — `/ipban @user 7d spamming` (also bans recent devices)", ({ args, isAdmin }): BotResult => {
+    if (!isAdmin) return { reply: "❌ Insufficient permissions." };
+    const target = args[0]?.replace(/^@/, "");
+    if (!target) return { reply: "Usage: `/ipban @user [perm|1h|3d|7d|30d] [reason]`" };
+    const dur = parseDurationToken(args[1]);
+    const reasonStart = dur === null ? 1 : 2;
+    const reason = args.slice(reasonStart).join(" ").trim() || "IP ban";
+    const durHours = minutesToHours(dur ?? "perm");
+    const label = dur === null ? "permanently" : fmtDuration(dur);
+    return {
+      reply: `🛑 IP-banning **${target}** ${label} (recent IPs + devices).\n*Reason: ${reason}*`,
+      action: { kind: "admin", op: "ipban", username: target, reason, durationHours: durHours },
+    };
+  }),
+  fullban: adminCommand("fullban", "Full perm site ban — `/fullban @user reason` (alias for /ipban perm)", ({ args, isAdmin }): BotResult => {
+    if (!isAdmin) return { reply: "❌ Insufficient permissions." };
+    const target = args[0]?.replace(/^@/, "");
+    if (!target) return { reply: "Usage: `/fullban @user [reason]`" };
+    const reason = args.slice(1).join(" ").trim() || "Permanent site ban";
+    return {
+      reply: `🚫 **Full-banning ${target}** permanently — IP + device + account blocked.\n*Reason: ${reason}*`,
+      action: { kind: "admin", op: "ipban", username: target, reason, durationHours: "perm" },
+    };
+  }),
+  clear: adminCommand("clear", "Clear messages — `/clear @user [count]` or `/clear [count]` for channel", ({ raw, args, isAdmin }): BotResult => {
+    if (!isAdmin) return { reply: "❌ Insufficient permissions." };
+    const channelSlug = pickChannelRef(raw);
+    const mentioned = args.find((a) => a.startsWith("@"));
+    const username = mentioned ? mentioned.slice(1) : undefined;
+    const num = args.map((a) => parseInt(a, 10)).find((n) => Number.isFinite(n) && n > 0);
+    const count = num ? Math.min(1000, num) : (username ? 100 : 25);
+    if (username) {
+      return {
+        reply: `🧽 Clearing up to **${count}** messages from **${username}**${channelSlug ? ` in **#${channelSlug}**` : ""}…`,
+        action: { kind: "admin", op: "clear", username, count, channelSlug },
+      };
+    }
+    return {
+      reply: `🧹 Clearing last **${count}** messages${channelSlug ? ` in **#${channelSlug}**` : ""}…`,
+      action: { kind: "admin", op: "purge", count, channelSlug },
+    };
+  }),
+  slowmode: adminCommand("slowmode", "Set channel slow-mode — `/slowmode 5` (seconds, 0 to disable)", ({ raw, args, isAdmin }): BotResult => {
+    if (!isAdmin) return { reply: "❌ Insufficient permissions." };
+    const channelSlug = pickChannelRef(raw);
+    const num = args.map((a) => parseInt(a, 10)).find((n) => Number.isFinite(n) && n >= 0);
+    if (num === undefined) return { reply: "Usage: `/slowmode 5` (seconds, 0 disables, max 21600)" };
+    const seconds = Math.min(21600, Math.max(0, num));
+    return {
+      reply: seconds === 0
+        ? `🟢 Slow-mode **off**${channelSlug ? ` in **#${channelSlug}**` : ""}.`
+        : `🐢 Slow-mode set to **${seconds}s**${channelSlug ? ` in **#${channelSlug}**` : ""}.`,
+      action: { kind: "admin", op: "slowmode", seconds, channelSlug },
+    };
+  }),
 };
 
 /** Returns a bot reply (and optional action) if `text` is a command, or null otherwise. */
