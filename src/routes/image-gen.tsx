@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-// Image Gen 2 now lives inline inside Polaris AI (tap the image icon).
+// Image Gen 2 is now a sub-tab inside /ai.
 export const Route = createFileRoute("/image-gen")({
-  beforeLoad: () => { throw redirect({ to: "/ai" }); },
+  beforeLoad: () => { throw redirect({ to: "/ai", search: { tab: "image" } as never }); },
   component: () => null,
 });
