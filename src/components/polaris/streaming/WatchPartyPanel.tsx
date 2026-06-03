@@ -166,7 +166,27 @@ export function WatchPartyPanel(props: Props) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-black/85 backdrop-blur-xl">
+    <div className="relative flex h-full flex-col bg-black/85 backdrop-blur-xl">
+      {/* Floating reactions overlay */}
+      <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+        {floats.map((r) => (
+          <span
+            key={r.id}
+            className="absolute bottom-24 text-2xl"
+            style={{
+              left: `${r.left}%`,
+              animation: "polaris-react-float 2.3s ease-out forwards",
+            }}
+          >
+            {r.emoji}
+          </span>
+        ))}
+        <style>{`@keyframes polaris-react-float {
+          0% { transform: translateY(0) scale(0.6); opacity: 0; }
+          15% { transform: translateY(-10px) scale(1.15); opacity: 1; }
+          100% { transform: translateY(-180px) scale(0.9); opacity: 0; }
+        }`}</style>
+      </div>
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
         <Users className="h-4 w-4 text-[rgb(var(--polaris-accent))]" />
         <div className="text-sm font-bold text-white">Watch Party</div>
@@ -254,6 +274,25 @@ export function WatchPartyPanel(props: Props) {
           >
             <LogOut className="h-3.5 w-3.5" /> Leave party
           </button>
+
+          {/* Reactions bar */}
+          <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-2">
+            <div className="mb-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-white/50">
+              <Smile className="h-3 w-3" /> React
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {REACTIONS.map((e) => (
+                <button
+                  key={e}
+                  onClick={() => sendReaction(e)}
+                  className="grid h-9 w-9 place-items-center rounded-xl bg-white/5 text-xl transition hover:scale-110 hover:bg-white/15 active:scale-95"
+                  title={`Send ${e}`}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
