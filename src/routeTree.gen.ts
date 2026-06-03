@@ -21,12 +21,12 @@ import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as OsRouteImport } from './routes/os'
 import { Route as MylistRouteImport } from './routes/mylist'
 import { Route as MusicRouteImport } from './routes/music'
+import { Route as MultiAiRouteImport } from './routes/multi-ai'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as ImageGenRouteImport } from './routes/image-gen'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as EmulatorRouteImport } from './routes/emulator'
 import { Route as CustomizeRouteImport } from './routes/customize'
-import { Route as CloudRouteImport } from './routes/cloud'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BrowserRouteImport } from './routes/browser'
 import { Route as AppsRouteImport } from './routes/apps'
@@ -98,6 +98,11 @@ const MusicRoute = MusicRouteImport.update({
   path: '/music',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MultiAiRoute = MultiAiRouteImport.update({
+  id: '/multi-ai',
+  path: '/multi-ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MediaRoute = MediaRouteImport.update({
   id: '/media',
   path: '/media',
@@ -121,11 +126,6 @@ const EmulatorRoute = EmulatorRouteImport.update({
 const CustomizeRoute = CustomizeRouteImport.update({
   id: '/customize',
   path: '/customize',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CloudRoute = CloudRouteImport.update({
-  id: '/cloud',
-  path: '/cloud',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -186,12 +186,12 @@ export interface FileRoutesByFullPath {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
-  '/cloud': typeof CloudRoute
   '/customize': typeof CustomizeRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/image-gen': typeof ImageGenRoute
   '/media': typeof MediaRoute
+  '/multi-ai': typeof MultiAiRoute
   '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/os': typeof OsRoute
@@ -216,12 +216,12 @@ export interface FileRoutesByTo {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
-  '/cloud': typeof CloudRoute
   '/customize': typeof CustomizeRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/image-gen': typeof ImageGenRoute
   '/media': typeof MediaRoute
+  '/multi-ai': typeof MultiAiRoute
   '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/os': typeof OsRoute
@@ -247,12 +247,12 @@ export interface FileRoutesById {
   '/apps': typeof AppsRoute
   '/browser': typeof BrowserRoute
   '/chat': typeof ChatRoute
-  '/cloud': typeof CloudRoute
   '/customize': typeof CustomizeRoute
   '/emulator': typeof EmulatorRoute
   '/games': typeof GamesRoute
   '/image-gen': typeof ImageGenRoute
   '/media': typeof MediaRoute
+  '/multi-ai': typeof MultiAiRoute
   '/music': typeof MusicRoute
   '/mylist': typeof MylistRoute
   '/os': typeof OsRoute
@@ -279,12 +279,12 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
-    | '/cloud'
     | '/customize'
     | '/emulator'
     | '/games'
     | '/image-gen'
     | '/media'
+    | '/multi-ai'
     | '/music'
     | '/mylist'
     | '/os'
@@ -309,12 +309,12 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
-    | '/cloud'
     | '/customize'
     | '/emulator'
     | '/games'
     | '/image-gen'
     | '/media'
+    | '/multi-ai'
     | '/music'
     | '/mylist'
     | '/os'
@@ -339,12 +339,12 @@ export interface FileRouteTypes {
     | '/apps'
     | '/browser'
     | '/chat'
-    | '/cloud'
     | '/customize'
     | '/emulator'
     | '/games'
     | '/image-gen'
     | '/media'
+    | '/multi-ai'
     | '/music'
     | '/mylist'
     | '/os'
@@ -370,12 +370,12 @@ export interface RootRouteChildren {
   AppsRoute: typeof AppsRoute
   BrowserRoute: typeof BrowserRoute
   ChatRoute: typeof ChatRoute
-  CloudRoute: typeof CloudRoute
   CustomizeRoute: typeof CustomizeRoute
   EmulatorRoute: typeof EmulatorRoute
   GamesRoute: typeof GamesRoute
   ImageGenRoute: typeof ImageGenRoute
   MediaRoute: typeof MediaRoute
+  MultiAiRoute: typeof MultiAiRoute
   MusicRoute: typeof MusicRoute
   MylistRoute: typeof MylistRoute
   OsRoute: typeof OsRoute
@@ -480,6 +480,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MusicRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/multi-ai': {
+      id: '/multi-ai'
+      path: '/multi-ai'
+      fullPath: '/multi-ai'
+      preLoaderRoute: typeof MultiAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/media': {
       id: '/media'
       path: '/media'
@@ -513,13 +520,6 @@ declare module '@tanstack/react-router' {
       path: '/customize'
       fullPath: '/customize'
       preLoaderRoute: typeof CustomizeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cloud': {
-      id: '/cloud'
-      path: '/cloud'
-      fullPath: '/cloud'
-      preLoaderRoute: typeof CloudRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -602,12 +602,12 @@ const rootRouteChildren: RootRouteChildren = {
   AppsRoute: AppsRoute,
   BrowserRoute: BrowserRoute,
   ChatRoute: ChatRoute,
-  CloudRoute: CloudRoute,
   CustomizeRoute: CustomizeRoute,
   EmulatorRoute: EmulatorRoute,
   GamesRoute: GamesRoute,
   ImageGenRoute: ImageGenRoute,
   MediaRoute: MediaRoute,
+  MultiAiRoute: MultiAiRoute,
   MusicRoute: MusicRoute,
   MylistRoute: MylistRoute,
   OsRoute: OsRoute,

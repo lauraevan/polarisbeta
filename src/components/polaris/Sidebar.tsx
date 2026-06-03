@@ -26,7 +26,7 @@ import {
   PinOff,
   Wand2,
   Monitor,
-  Cloud,
+  Users,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useSidebarState } from "@/lib/sidebar-context";
@@ -61,11 +61,11 @@ const GROUPS: NavGroup[] = [
       { to: "/browser", label: "Browser", icon: Globe2 },
       { to: "/apps", label: "Apps", icon: LayoutGrid },
       { to: "/ai", label: "AI Tools", icon: Sparkles },
+      { to: "/multi-ai", label: "Multi-Model AI", icon: Users },
       { to: "/image-gen", label: "Image Gen 2", icon: ImageIcon },
       { to: "/remote", label: "Remote PC", icon: Monitor },
       { to: "/vpn", label: "Tunnel", icon: Shield },
       { to: "/os", label: "Polaris OS", icon: HardDrive },
-      { to: "/cloud", label: "Cloud Gaming", icon: Cloud },
     ],
   },
   {
