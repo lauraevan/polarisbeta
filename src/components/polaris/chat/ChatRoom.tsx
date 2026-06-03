@@ -502,6 +502,18 @@ export function ChatRoom() {
               } else if (action.op === "unlock") {
                 const targetId = action.channelSlug ? slugToId(action.channelSlug) : activeId;
                 if (targetId) await lockFn({ data: { channelId: targetId, role: null } });
+              } else if (action.op === "ipban") {
+                await ipBanFn({ data: { username: action.username, reason: action.reason, durationHours: action.durationHours } });
+              } else if (action.op === "clear") {
+                const targetId = action.channelSlug ? slugToId(action.channelSlug) : activeId;
+                if (action.username) {
+                  await clearFn({ data: { username: action.username, channelId: targetId, count: action.count } });
+                } else if (targetId) {
+                  await purgeFn({ data: { channelId: targetId, count: action.count ?? 25 } });
+                }
+              } else if (action.op === "slowmode") {
+                const targetId = action.channelSlug ? slugToId(action.channelSlug) : activeId;
+                if (targetId) await slowmodeFn({ data: { channelId: targetId, seconds: action.seconds } });
               }
             } catch (e) {
               const msg = e instanceof Error ? e.message : "Unknown error";
