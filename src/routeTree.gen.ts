@@ -34,6 +34,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSoundboardRouteImport } from './routes/api/soundboard'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
+import { Route as ApiAiVisionRouteImport } from './routes/api/ai-vision'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
 
 const VpnRoute = VpnRouteImport.update({
@@ -161,6 +162,11 @@ const ApiGenerateImageRoute = ApiGenerateImageRouteImport.update({
   path: '/api/generate-image',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAiVisionRoute = ApiAiVisionRouteImport.update({
+  id: '/api/ai-vision',
+  path: '/api/ai-vision',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAiChatRoute = ApiAiChatRouteImport.update({
   id: '/api/ai-chat',
   path: '/api/ai-chat',
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/soundboard': typeof SoundboardRoute
   '/vpn': typeof VpnRoute
   '/api/ai-chat': typeof ApiAiChatRoute
+  '/api/ai-vision': typeof ApiAiVisionRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/soundboard': typeof ApiSoundboardRoute
 }
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/soundboard': typeof SoundboardRoute
   '/vpn': typeof VpnRoute
   '/api/ai-chat': typeof ApiAiChatRoute
+  '/api/ai-vision': typeof ApiAiVisionRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/soundboard': typeof ApiSoundboardRoute
 }
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/soundboard': typeof SoundboardRoute
   '/vpn': typeof VpnRoute
   '/api/ai-chat': typeof ApiAiChatRoute
+  '/api/ai-vision': typeof ApiAiVisionRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/soundboard': typeof ApiSoundboardRoute
 }
@@ -279,6 +288,7 @@ export interface FileRouteTypes {
     | '/soundboard'
     | '/vpn'
     | '/api/ai-chat'
+    | '/api/ai-vision'
     | '/api/generate-image'
     | '/api/soundboard'
   fileRoutesByTo: FileRoutesByTo
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/soundboard'
     | '/vpn'
     | '/api/ai-chat'
+    | '/api/ai-vision'
     | '/api/generate-image'
     | '/api/soundboard'
   id:
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/soundboard'
     | '/vpn'
     | '/api/ai-chat'
+    | '/api/ai-vision'
     | '/api/generate-image'
     | '/api/soundboard'
   fileRoutesById: FileRoutesById
@@ -364,6 +376,7 @@ export interface RootRouteChildren {
   SoundboardRoute: typeof SoundboardRoute
   VpnRoute: typeof VpnRoute
   ApiAiChatRoute: typeof ApiAiChatRoute
+  ApiAiVisionRoute: typeof ApiAiVisionRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
   ApiSoundboardRoute: typeof ApiSoundboardRoute
 }
@@ -545,6 +558,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGenerateImageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ai-vision': {
+      id: '/api/ai-vision'
+      path: '/api/ai-vision'
+      fullPath: '/api/ai-vision'
+      preLoaderRoute: typeof ApiAiVisionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ai-chat': {
       id: '/api/ai-chat'
       path: '/api/ai-chat'
@@ -580,6 +600,7 @@ const rootRouteChildren: RootRouteChildren = {
   SoundboardRoute: SoundboardRoute,
   VpnRoute: VpnRoute,
   ApiAiChatRoute: ApiAiChatRoute,
+  ApiAiVisionRoute: ApiAiVisionRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
   ApiSoundboardRoute: ApiSoundboardRoute,
 }
