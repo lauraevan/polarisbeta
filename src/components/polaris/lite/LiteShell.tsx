@@ -1,9 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useMemo, type ReactNode } from "react";
+import { Home, Gamepad2, Globe, Compass, PlaySquare, Music, MessageCircle, Settings } from "lucide-react";
 import { usePolarisMode } from "@/lib/polaris-mode";
 import { LiteHome } from "./LiteHome";
 
-// Lazy-load every non-home page so Lite's first paint ships only the home + shell.
 const LiteGames = lazy(() => import("./LiteGames").then((m) => ({ default: m.LiteGames })));
 const LiteAI = lazy(() => import("./LiteAI").then((m) => ({ default: m.LiteAI })));
 const LiteFlix = lazy(() => import("./LiteFlix").then((m) => ({ default: m.LiteFlix })));
@@ -11,14 +11,14 @@ const LiteMusic = lazy(() => import("./LiteMusic").then((m) => ({ default: m.Lit
 const LiteBrowser = lazy(() => import("./LiteBrowser").then((m) => ({ default: m.LiteBrowser })));
 const LiteSettings = lazy(() => import("./LiteSettings").then((m) => ({ default: m.LiteSettings })));
 
-const NAV = [
-  { to: "/", label: "Home" },
-  { to: "/games", label: "Games" },
-  { to: "/media", label: "Flix" },
-  { to: "/music", label: "Music" },
-  { to: "/ai", label: "AI" },
-  { to: "/browser", label: "Browser" },
-  { to: "/settings", label: "Settings" },
+const DOCK = [
+  { to: "/", label: "Home", Icon: Home },
+  { to: "/games", label: "Games", Icon: Gamepad2 },
+  { to: "/browser", label: "Browser", Icon: Globe },
+  { to: "/", label: "T9", Icon: Compass, brand: true },
+  { to: "/media", label: "Flix", Icon: PlaySquare },
+  { to: "/music", label: "Music", Icon: Music },
+  { to: "/ai", label: "AI", Icon: MessageCircle },
 ];
 
 function liteContent(pathname: string): ReactNode {
@@ -30,62 +30,115 @@ function liteContent(pathname: string): ReactNode {
   if (pathname.startsWith("/browser")) return <LiteBrowser />;
   if (pathname.startsWith("/settings")) return <LiteSettings />;
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="mx-auto max-w-3xl px-4 py-10 text-center">
       <h1 className="text-2xl font-bold">Not available in Lite</h1>
-      <p className="mt-2 text-sm text-neutral-400">
-        This page isn't part of the lightweight build. Switch to Heavyweight in Settings to use it.
-      </p>
+      <p className="mt-2 text-sm text-white/50">Switch to Heavy in Settings to use it.</p>
     </div>
   );
+}
+
+// Deterministic starfield (no re-render flicker, no random per-paint)
+function useStars(count = 80) {
+  return useMemo(() => {
+    let seed = 1337;
+    const r = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    return Array.from({ length: count }, () => ({
+      x: r() * 100, y: r() * 100, s: r() * 1.8 + 0.4, o: r() * 0.7 + 0.2,
+    }));
+  }, [count]);
 }
 
 export function LiteShell(_: { children?: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { setMode } = usePolarisMode();
+  const stars = useStars(90);
+  const onHome = pathname === "/" || pathname === "";
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100" style={{ fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif" }}>
-      <header className="sticky top-0 z-30 border-b border-neutral-800 bg-neutral-950/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2 sm:px-4">
-          <Link to="/" className="mr-2 font-black tracking-tight text-white">
-            Polaris<span className="text-neutral-500">·lite</span>
+    <div
+      className="relative min-h-screen overflow-hidden text-white"
+      style={{
+        background: "radial-gradient(ellipse at 50% 60%, #1a2042 0%, #0c1024 55%, #070912 100%)",
+        fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+      }}
+    >
+      {/* Starfield */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        {stars.map((p, i) => (
+          <span
+            key={i}
+            style={{
+              position: "absolute",
+              left: `${p.x}%`,
+              top: `${p.y}%`,
+              width: p.s,
+              height: p.s,
+              borderRadius: "50%",
+              background: "#cfd3e3",
+              opacity: p.o,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Top bar — minimal, only Settings + Heavy switch */}
+      <header className="relative z-20 flex items-center justify-between px-4 py-3">
+        <Link to="/" className="text-xs font-black tracking-[0.3em] text-white/70 hover:text-white">
+          T9·LITE
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/settings"
+            className="rounded-full border border-white/10 bg-white/5 p-2 text-white/70 hover:bg-white/10"
+            aria-label="Settings"
+          >
+            <Settings className="h-4 w-4" />
           </Link>
-          <nav className="flex flex-1 items-center gap-1 overflow-x-auto text-sm">
-            {NAV.map((n) => {
-              const active =
-                n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
-              return (
-                <Link
-                  key={n.to}
-                  to={n.to}
-                  className={`shrink-0 rounded px-2.5 py-1.5 ${
-                    active
-                      ? "bg-neutral-100 text-neutral-900"
-                      : "text-neutral-400 hover:bg-neutral-800 hover:text-white"
-                  }`}
-                >
-                  {n.label}
-                </Link>
-              );
-            })}
-          </nav>
           <button
             onClick={() => setMode("heavy")}
-            title="Switch to Heavyweight mode"
-            className="shrink-0 rounded border border-neutral-700 px-2.5 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800"
+            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-white/70 hover:bg-white/10"
+            title="Switch to Heavy"
           >
             Heavy
           </button>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl">
-        <Suspense fallback={<div className="px-4 py-10 text-center text-xs text-neutral-500">Loading…</div>}>
+
+      {/* Page content. Home gets centered hero treatment. */}
+      <main className={`relative z-10 ${onHome ? "" : "mx-auto max-w-6xl pb-32"}`}>
+        <Suspense fallback={<div className="px-4 py-20 text-center text-xs text-white/40">Loading…</div>}>
           {liteContent(pathname)}
         </Suspense>
       </main>
-      <footer className="mx-auto mt-10 max-w-6xl px-4 pb-10 text-center text-xs text-neutral-600">
-        Polaris Lite · system fonts · no animations · no wallpapers
-      </footer>
+
+      {/* Bottom pill dock */}
+      <nav className="fixed inset-x-0 bottom-5 z-30 flex justify-center px-3">
+        <div
+          className="flex items-center gap-1 rounded-full border border-white/10 px-2 py-2 backdrop-blur-xl"
+          style={{ background: "rgba(15,18,38,0.78)", boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}
+        >
+          {DOCK.map((d, i) => {
+            const active =
+              d.to === "/" && !d.brand ? pathname === "/" : !d.brand && pathname.startsWith(d.to);
+            return (
+              <Link
+                key={i}
+                to={d.to}
+                aria-label={d.label}
+                className={`group flex h-10 w-10 items-center justify-center rounded-full transition ${
+                  d.brand
+                    ? "bg-gradient-to-br from-sky-400 to-indigo-500 text-white shadow-[0_0_18px_rgba(80,140,255,0.55)]"
+                    : active
+                      ? "bg-white/15 text-white"
+                      : "text-white/75 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <d.Icon className="h-5 w-5" />
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }
