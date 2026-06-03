@@ -27,6 +27,8 @@ import logo from "@/assets/polaris-logo.png";
 import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
 import { getAiWallet, exchangeCoinsForCredits, consumeAiCredit } from "@/lib/shop.functions";
+import { useNavigate } from "@tanstack/react-router";
+import { parseNavigation, toNavigateOptions } from "@/lib/ai-navigation";
 
 type Role = "user" | "assistant";
 type ChatMessage = { id: string; role: Role; content: string };
@@ -133,6 +135,7 @@ function saveChats(chats: Chat[]) {
 
 export function PolarisAI() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const isSignedIn = !!profile;
   const DAILY_LIMITS = isSignedIn ? DAILY_LIMITS_USER : DAILY_LIMITS_GUEST;
   const [chats, setChats] = useState<Chat[]>([]);
@@ -232,6 +235,34 @@ export function PolarisAI() {
   async function send(text: string) {
     if (!text.trim() || streaming) return;
     setError(null);
+    // Navigation intent — Polaris AI can take you to pages, movies, games, etc.
+    if (!imageMode) {
+      const nav = parseNavigation(text);
+      if (nav) {
+        let chat = active;
+        if (!chat) {
+          chat = { id: uid(), title: text.slice(0, 40), messages: [], updatedAt: Date.now() };
+          setChats((p) => [chat!, ...p]);
+          setActiveId(chat.id);
+        }
+        const userMsg: ChatMessage = { id: uid(), role: "user", content: text };
+        const reply: ChatMessage = {
+          id: uid(), role: "assistant",
+          content: `🧭 Taking you to **${nav.label}**${nav.query ? ` — searching for *${nav.query}*` : ""}…`,
+        };
+        const chatId = chat.id;
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === chatId
+              ? { ...c, title: c.messages.length ? c.title : text.slice(0, 40), messages: [...c.messages, userMsg, reply], updatedAt: Date.now() }
+              : c,
+          ),
+        );
+        setInput("");
+        setTimeout(() => navigate(toNavigateOptions(nav)), 700);
+        return;
+      }
+    }
     // Image generation path
     if (imageMode) {
       let chat = active;

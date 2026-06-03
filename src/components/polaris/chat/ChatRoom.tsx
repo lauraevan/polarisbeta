@@ -17,7 +17,7 @@ import {
   runBotCommand, POLARIS_BOT_ID, POLARIS_BOT_USERNAME,
   POLARIS_BOT_AVATAR, POLARIS_BOT_ACCENT,
 } from "@/lib/polaris-bot";
-import { Reply, Smile as SmileIcon, MoreHorizontal } from "lucide-react";
+import { Reply } from "lucide-react";
 
 type Tab = "global" | "dms" | "notifs";
 
