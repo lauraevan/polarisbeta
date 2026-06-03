@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Play, Square, Volume2, Music2, Loader2, Flame, Sparkles, Search as SearchIcon } from "lucide-react";
+import { Play, Square, Volume2, Music2, Loader2, Flame, Sparkles, Search as SearchIcon, Disc3, Pause } from "lucide-react";
 
 // soundbuttonsworld.com is the source of truth. Metadata is proxied through
 // /api/soundboard (their JSON is CORS-locked to their own origin), but the
@@ -30,6 +30,7 @@ const COLOR_BG: Record<string, string> = {
 
 export function Soundboard() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const bgmRef = useRef<HTMLAudioElement | null>(null);
   const [activeId, setActiveId] = useState<string | number | null>(null);
   const [vol, setVol] = useState(0.7);
   const [tab, setTab] = useState<Tab>("trending");
@@ -39,6 +40,35 @@ export function Soundboard() {
   const [pads, setPads] = useState<Pad[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // ── Background music (Gojo / custom loop) ─────────────────────────────
+  const DEFAULT_BGM =
+    "https://www.myinstants.com/media/sounds/gojo-theme.mp3";
+  const [bgmOn, setBgmOn] = useState(false);
+  const [bgmUrl, setBgmUrl] = useState<string>(() => {
+    try { return localStorage.getItem("polaris.bgm.url") || DEFAULT_BGM; } catch { return DEFAULT_BGM; }
+  });
+  const [bgmVol, setBgmVol] = useState<number>(() => {
+    try { return Number(localStorage.getItem("polaris.bgm.vol") ?? "0.35"); } catch { return 0.35; }
+  });
+  const [bgmOpen, setBgmOpen] = useState(false);
+
+  useEffect(() => {
+    const a = bgmRef.current;
+    if (!a) return;
+    a.volume = bgmVol;
+    a.loop = true;
+    if (bgmOn) {
+      if (a.src !== bgmUrl) a.src = bgmUrl;
+      a.play().catch(() => setBgmOn(false));
+    } else {
+      a.pause();
+    }
+    try {
+      localStorage.setItem("polaris.bgm.url", bgmUrl);
+      localStorage.setItem("polaris.bgm.vol", String(bgmVol));
+    } catch { /* ignore */ }
+  }, [bgmOn, bgmUrl, bgmVol]);
 
   // Load categories once
   useEffect(() => {
@@ -147,13 +177,66 @@ export function Soundboard() {
         <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600">
           <Music2 className="h-6 w-6" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold">Soundboard</h1>
           <div className="text-sm text-white/60">
             Powered by Sound Buttons World — tap a pad to fire it.
           </div>
         </div>
+        <button
+          onClick={() => setBgmOpen((v) => !v)}
+          className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+            bgmOn
+              ? "border-pink-400/60 bg-pink-500/20 text-pink-100"
+              : "border-white/15 bg-white/5 text-white/70 hover:bg-white/10"
+          }`}
+        >
+          <Disc3 className={`h-4 w-4 ${bgmOn ? "animate-spin" : ""}`} />
+          {bgmOn ? "BGM On" : "BGM Off"}
+        </button>
       </div>
+
+      {bgmOpen && (
+        <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-3">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/60">
+            <Disc3 className="h-3.5 w-3.5" /> Background Music
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setBgmOn((v) => !v)}
+              className="flex items-center gap-1.5 rounded-lg bg-pink-500/80 px-3 py-1.5 text-xs font-bold text-white hover:bg-pink-500"
+            >
+              {bgmOn ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              {bgmOn ? "Pause" : "Play"}
+            </button>
+            <input
+              value={bgmUrl}
+              onChange={(e) => setBgmUrl(e.target.value)}
+              placeholder="Paste any .mp3 / .ogg URL (default: Gojo theme)"
+              className="min-w-0 flex-1 rounded-lg bg-black/40 px-3 py-1.5 text-xs focus:outline-none"
+            />
+            <button
+              onClick={() => setBgmUrl(DEFAULT_BGM)}
+              className="rounded-lg bg-white/10 px-2.5 py-1.5 text-xs hover:bg-white/20"
+            >
+              Default
+            </button>
+            <div className="flex items-center gap-1.5">
+              <Volume2 className="h-3.5 w-3.5 text-white/60" />
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={bgmVol}
+                onChange={(e) => setBgmVol(Number(e.target.value))}
+                className="w-24 accent-pink-400"
+              />
+            </div>
+          </div>
+          <audio ref={bgmRef} />
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl bg-white/5 p-2">
         <TabBtn active={tab === "trending"} onClick={() => setTab("trending")} icon={Flame}>
