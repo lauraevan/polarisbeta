@@ -2,20 +2,30 @@ import { createFileRoute } from "@tanstack/react-router";
 
 type Msg = { role: "system" | "user" | "assistant"; content: string };
 
-// When a paid/premium model hits 402 (credits exhausted) or 429 (rate-limited),
-// fall back to a robust free model so chats like the GN Maths bot don't break.
-const FALLBACK_MODEL = "google/gemini-2.5-flash";
-
 type Provider = "lovable" | "groq" | "openrouter";
+
+const MODEL_ALIASES: Record<string, string> = {
+  "openrouter/x-ai/grok-2-1212": "openrouter/x-ai/grok-4.3",
+  "openrouter/anthropic/claude-3.5-sonnet": "openrouter/anthropic/claude-sonnet-4.5",
+  "openrouter/anthropic/claude-3.7-sonnet": "openrouter/anthropic/claude-sonnet-4.6",
+  "openrouter/mistralai/mistral-large": "openrouter/mistralai/mistral-large-2512",
+};
+
+const PROVIDER_FALLBACK: Record<Provider, { provider: Provider; model: string }> = {
+  groq: { provider: "groq", model: "llama-3.1-8b-instant" },
+  openrouter: { provider: "openrouter", model: "meta-llama/llama-3.3-70b-instruct:free" },
+  lovable: { provider: "lovable", model: "google/gemini-2.5-flash" },
+};
 
 /**
  * Resolve a model id like `groq/llama-3.3-70b-versatile` or `openrouter/anthropic/claude-3.5-sonnet`
  * into a provider + the actual upstream model id.
  */
 function resolveProvider(modelId: string): { provider: Provider; model: string } {
-  if (modelId.startsWith("groq/")) return { provider: "groq", model: modelId.slice("groq/".length) };
-  if (modelId.startsWith("openrouter/")) return { provider: "openrouter", model: modelId.slice("openrouter/".length) };
-  return { provider: "lovable", model: modelId };
+  const normalized = MODEL_ALIASES[modelId] ?? modelId;
+  if (normalized.startsWith("groq/")) return { provider: "groq", model: normalized.slice("groq/".length) };
+  if (normalized.startsWith("openrouter/")) return { provider: "openrouter", model: normalized.slice("openrouter/".length) };
+  return { provider: "lovable", model: normalized };
 }
 
 async function callUpstream(provider: Provider, model: string, messages: Msg[]) {
@@ -65,11 +75,14 @@ export const Route = createFileRoute("/api/ai-chat")({
 
           let upstream = await callUpstream(provider, model, messages);
 
-          // Auto-fallback to a robust Lovable Gateway model when upstream is rate-limited
-          // or out of credits. This keeps premium / third-party models from breaking chats.
-          if ((upstream.status === 402 || upstream.status === 429) && !(provider === "lovable" && model === FALLBACK_MODEL)) {
-            console.warn(`[ai-chat] ${provider}/${model} returned ${upstream.status}; falling back to ${FALLBACK_MODEL}`);
-            upstream = await callUpstream("lovable", FALLBACK_MODEL, messages);
+          // Auto-fallback for removed model IDs, exhausted provider credits, and rate limits.
+          // Third-party models stay on their third-party providers so standard users don't spill into Lovable AI credits.
+          if ([400, 402, 404, 429].includes(upstream.status)) {
+            const fallback = PROVIDER_FALLBACK[provider];
+            if (!(fallback.provider === provider && fallback.model === model)) {
+              console.warn(`[ai-chat] ${provider}/${model} returned ${upstream.status}; falling back to ${fallback.provider}/${fallback.model}`);
+              upstream = await callUpstream(fallback.provider, fallback.model, messages);
+            }
           }
 
           if (!upstream.ok) {
