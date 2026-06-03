@@ -9,6 +9,7 @@ import {
   type FriendEdge,
 } from "@/lib/friends.functions";
 import { ProDashboard } from "@/components/polaris/premium/ProDashboard";
+import { isProActive } from "@/lib/pro-utils";
 
 const PRESET_COLORS: { label: string; rgb: string }[] = [
   { label: "Ember",  rgb: "255 140 80" },
@@ -77,6 +78,7 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
   const accent = merged.accent_color || "255 140 80";
   const banner = merged.banner_color || accent;
   const bannerUrl = merged.banner_url ?? null;
+  const isPro = isProActive(merged as { pro_until?: string | null });
   const dirty = Object.keys(draft).length > 0;
 
   async function save() {
