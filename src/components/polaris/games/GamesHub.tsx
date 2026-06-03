@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
-import { Gamepad2, Globe, Calculator, Cloud, Library, Loader2, Play, Zap, MessageCircle, ExternalLink } from "lucide-react";
+import { Gamepad2, Calculator, Cloud, Library, Loader2, Play, Zap, MessageCircle, ExternalLink } from "lucide-react";
 import { PolarisCollection } from "./PolarisCollection";
 import { EmbedFrame } from "./EmbedFrame";
 import { GnMathCollection } from "./GnMathCollection";
-import { HydraCatalog } from "./HydraCatalog";
 import { HydraNetwork } from "./HydraNetwork";
 import { GameTile } from "./GameTile";
 import { SteamSplash } from "./SteamSplash";
@@ -12,13 +11,12 @@ import { POLARIS_GAMES } from "@/lib/polaris-games";
 import { hydraSearch, hydraFeatured, steamHeader, type HydraEdge, type HydraFeatured } from "@/lib/hydra-api";
 import { useShowDiscord } from "@/lib/ui-prefs";
 
-type TabId = "home" | "polaris" | "cine" | "hydra" | "hydranet" | "gnmath" | "gfn";
+type TabId = "home" | "polaris" | "cine" | "hydra" | "gnmath" | "gfn";
 
 const TABS: { id: TabId; label: string; icon: typeof Gamepad2; desc: string }[] = [
   { id: "home",    label: "Home",              icon: Library,    desc: "Mixed feed" },
   { id: "polaris", label: "Polaris Catalog",   icon: Gamepad2,   desc: "2,685 HTML5 games" },
-  { id: "hydra",   label: "Hydra PC",          icon: Globe,      desc: "180k+ PC titles" },
-  { id: "hydranet",label: "Hydra Network",     icon: Gamepad2,   desc: "GitHub HTML5 vault" },
+  { id: "hydra",   label: "Hydra Network",     icon: Gamepad2,   desc: "HTML5 vault" },
   { id: "gnmath",  label: "Gn-Math",           icon: Calculator, desc: "Unblocked library" },
   { id: "cine",    label: "Cine Cloud",        icon: Cloud,      desc: "Cloud PC games" },
   { id: "gfn",     label: "GeForce Now",       icon: Zap,        desc: "NVIDIA cloud gaming" },
@@ -382,8 +380,7 @@ export function GamesHub() {
         <main className="min-w-0 flex-1">
           {tab === "home" && <HomeFeed onJump={setTab} onPlay={setPlaying} />}
           {tab === "polaris" && <PolarisCollection />}
-          {tab === "hydra" && <HydraCatalog />}
-          {tab === "hydranet" && <HydraNetwork />}
+          {tab === "hydra" && <HydraNetwork />}
           {tab === "gnmath" && <GnMathCollection />}
           {tab === "cine" && <CineLauncher />}
           {tab === "gfn" && <GeForceNowLauncher />}
