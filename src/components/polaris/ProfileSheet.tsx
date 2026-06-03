@@ -583,11 +583,13 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
                       style={{ background: "rgba(0,0,0,0.55)", border: `1px solid ${accentRing}` }}
                     >
                       <div
-                        className="h-16"
+                        className={`h-16 ${isPro && !bannerUrl ? "pro-banner-animated" : ""}`}
                         style={{
                           background: bannerUrl
                             ? `url(${bannerUrl}) center/cover no-repeat`
-                            : `linear-gradient(135deg, rgb(${banner}), rgb(${accent}))`,
+                            : isPro
+                              ? undefined
+                              : `linear-gradient(135deg, rgb(${banner}), rgb(${accent}))`,
                         }}
                       />
                       <div className="relative -mt-7 px-4 pb-4">
@@ -602,7 +604,7 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
                           )}
                         </div>
                         <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                          <span className="text-base font-extrabold text-white">{merged.display_name || merged.username}</span>
+                          <span className={`text-base font-extrabold text-white ${isPro ? "pro-username-glow" : ""}`}>{merged.display_name || merged.username}</span>
                           <span
                             className="rounded-md px-1.5 py-0.5 text-[10px] font-medium"
                             style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)" }}
