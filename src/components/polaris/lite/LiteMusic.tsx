@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { cachedFetchJson, useDebounced } from "@/lib/lite-utils";
 
 type Track = { id: number; name: string; artist_name: string; audio: string; image?: string; duration?: number };
 
@@ -7,16 +8,17 @@ export function LiteMusic() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [current, setCurrent] = useState<Track | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const dq = useDebounced(q, 350);
 
   useEffect(() => {
     const ctrl = new AbortController();
-    const url = `https://api.jamendo.com/v3.0/tracks/?client_id=b6747d04&format=json&limit=40&search=${encodeURIComponent(q)}`;
-    fetch(url, { signal: ctrl.signal })
-      .then((r) => r.json())
+    const term = dq.trim() || "lofi";
+    const url = `https://api.jamendo.com/v3.0/tracks/?client_id=b6747d04&format=json&limit=40&search=${encodeURIComponent(term)}`;
+    cachedFetchJson<{ results?: Track[] }>(url, { signal: ctrl.signal, ttlMs: 10 * 60_000 })
       .then((j) => setTracks(j.results || []))
       .catch(() => {});
     return () => ctrl.abort();
-  }, [q]);
+  }, [dq]);
 
   return (
     <div className="px-4 py-4 pb-32">

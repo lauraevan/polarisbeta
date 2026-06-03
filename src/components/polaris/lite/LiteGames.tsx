@@ -3,11 +3,21 @@ import { POLARIS_GAMES } from "@/lib/polaris-games";
 
 const CDN = "https://cdn.jsdelivr.net/npm/ugs-singlefiles@1.0.6/";
 const PAGE = 60;
+const RECENT_KEY = "lite:games:recent";
+const MAX_RECENT = 8;
+
+function loadRecent(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
+  } catch { return []; }
+}
 
 export function LiteGames() {
   const [q, setQ] = useState("");
   const [count, setCount] = useState(PAGE);
   const [play, setPlay] = useState<{ src: string; title: string } | null>(null);
+  const [recent, setRecent] = useState<string[]>(() => loadRecent());
   const sentinel = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
@@ -17,6 +27,14 @@ export function LiteGames() {
   }, [q]);
 
   useEffect(() => setCount(PAGE), [q]);
+
+  // ESC closes the player.
+  useEffect(() => {
+    if (!play) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPlay(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [play]);
 
   useEffect(() => {
     const el = sentinel.current;
@@ -29,6 +47,13 @@ export function LiteGames() {
     io.observe(el);
     return () => io.disconnect();
   }, [count, filtered.length]);
+
+  function launch(g: { f: string; t: string }) {
+    setPlay({ src: CDN + encodeURI(g.f), title: g.t });
+    const next = [g.f, ...recent.filter((x) => x !== g.f)].slice(0, MAX_RECENT);
+    setRecent(next);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  }
 
   if (play) {
     return (
@@ -62,11 +87,31 @@ export function LiteGames() {
         placeholder={`Search ${POLARIS_GAMES.length} games…`}
         className="mt-3 w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-600"
       />
+      {!q && recent.length > 0 && (
+        <div className="mt-3">
+          <div className="text-[10px] uppercase tracking-wider text-neutral-500">Recent</div>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {recent.map((f) => {
+              const g = POLARIS_GAMES.find((x) => x.f === f);
+              if (!g) return null;
+              return (
+                <button
+                  key={f}
+                  onClick={() => launch(g)}
+                  className="rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs hover:border-neutral-600"
+                >
+                  {g.t}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <ul className="mt-4 divide-y divide-neutral-900">
         {filtered.slice(0, count).map((g) => (
           <li key={g.f}>
             <button
-              onClick={() => setPlay({ src: CDN + encodeURI(g.f), title: g.t })}
+              onClick={() => launch(g)}
               className="flex w-full items-center justify-between gap-2 px-1 py-2 text-left text-sm hover:bg-neutral-900"
             >
               <span className="truncate">{g.t}</span>
