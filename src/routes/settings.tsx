@@ -14,6 +14,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { verifyAdminKey } from "@/lib/admin.functions";
 import { Link } from "@tanstack/react-router";
 import { ProCustomization } from "@/components/polaris/premium/ProCustomization";
+import { ProDashboard } from "@/components/polaris/premium/ProDashboard";
+import { useCustomizer } from "@/lib/customizer-context";
 
 const COLOR_PRESETS: { label: string; rgb: string; hex: string }[] = [
   { label: "Ember",    rgb: "255 140 80",  hex: "#ff8c50" },
