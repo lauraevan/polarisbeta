@@ -15,7 +15,7 @@ import { checkDmSafety } from "@/lib/dm-filter";
 import logo from "@/assets/polaris-logo.png";
 import {
   runBotCommand, POLARIS_BOT_ID, POLARIS_BOT_USERNAME,
-  POLARIS_BOT_AVATAR, POLARIS_BOT_ACCENT,
+  POLARIS_BOT_AVATAR, POLARIS_BOT_ACCENT, POLARIS_BOT_BIO, POLARIS_BOT_TAGLINE, botGreeting,
 } from "@/lib/polaris-bot";
 import { Reply } from "lucide-react";
 
@@ -112,6 +112,7 @@ export function ChatRoom() {
   const [drawOpen, setDrawOpen] = useState(false);
   const [newChannelOpen, setNewChannelOpen] = useState(false);
   const [viewProfileId, setViewProfileId] = useState<string | null>(null);
+  const [botProfileOpen, setBotProfileOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   // DMs
   const [dmPartners, setDmPartners] = useState<DMPartner[]>([]);
@@ -367,12 +368,26 @@ export function ChatRoom() {
       setSending(false);
       if (!error) { setText(""); setReplyTo(null); }
 
+      // Replying directly to Polaris Bot → friendly auto-greeting.
+      if (replyTo && replyTo.username === POLARIS_BOT_USERNAME) {
+        await supabase.from("chat_messages").insert({
+          channel_id: activeId,
+          user_id: user.id,
+          username: POLARIS_BOT_USERNAME,
+          avatar_emoji: "🤖",
+          avatar_url: POLARIS_BOT_AVATAR,
+          accent_color: POLARIS_BOT_ACCENT,
+          content: botGreeting(profile.username),
+          attachments: [],
+        });
+      }
+
       // Bot command — fires AFTER the user's message is stored so the bot reply
       // appears in order. Bot messages are inserted with the *user's* user_id
       // (RLS requires auth.uid() = user_id), but flagged via username/avatar.
       if (content && (content.trim().startsWith("#") || content.trim().startsWith("/"))) {
-        const reply = await runBotCommand(content, { isAdmin: isOwner, username: profile.username });
-        if (reply) {
+        const result = await runBotCommand(content, { isAdmin: isOwner, username: profile.username });
+        if (result) {
           await supabase.from("chat_messages").insert({
             channel_id: activeId,
             user_id: user.id, // RLS-compliant — display layer renders as the bot
@@ -380,9 +395,40 @@ export function ChatRoom() {
             avatar_emoji: "🤖",
             avatar_url: POLARIS_BOT_AVATAR,
             accent_color: POLARIS_BOT_ACCENT,
-            content: reply,
+            content: result.reply,
             attachments: [],
           });
+          // Execute side-effect actions (purge/lock/unlock/remind).
+          const action = result.action;
+          if (action?.kind === "purge" && isOwner) {
+            const { data: latest } = await supabase
+              .from("chat_messages")
+              .select("id")
+              .eq("channel_id", activeId)
+              .order("created_at", { ascending: false })
+              .limit(action.count);
+            const ids = (latest || []).map((r) => r.id as string);
+            if (ids.length) await supabase.from("chat_messages").delete().in("id", ids);
+          } else if (action?.kind === "lock" && isOwner) {
+            await supabase.from("chat_channels").update({ allowed_role: "Owner" }).eq("id", activeId);
+          } else if (action?.kind === "unlock" && isOwner) {
+            await supabase.from("chat_channels").update({ allowed_role: null }).eq("id", activeId);
+          } else if (action?.kind === "remind") {
+            const channelId = activeId;
+            const note = action.text;
+            setTimeout(() => {
+              supabase.from("chat_messages").insert({
+                channel_id: channelId,
+                user_id: user.id,
+                username: POLARIS_BOT_USERNAME,
+                avatar_emoji: "⏰",
+                avatar_url: POLARIS_BOT_AVATAR,
+                accent_color: POLARIS_BOT_ACCENT,
+                content: `⏰ Reminder for **@${profile.username}** — *${note}*`,
+                attachments: [],
+              });
+            }, action.seconds * 1000);
+          }
         }
       }
     },
@@ -809,7 +855,11 @@ export function ChatRoom() {
                   prevSame={within(prev, m)}
                   nextSame={within(m, next)}
                   parent={m.reply_to ? messages.find((x) => x.id === m.reply_to) ?? null : null}
-                  onAvatarClick={() => setViewProfileId(m.user_id)}
+                  onAvatarClick={() =>
+                    m.username === POLARIS_BOT_USERNAME
+                      ? setBotProfileOpen(true)
+                      : setViewProfileId(m.user_id)
+                  }
                   onMention={() => insert(`@${m.username} `, "")}
                   onReply={() => { setReplyTo(m); textRef.current?.focus(); }}
                 />
