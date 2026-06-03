@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info, Radio, Shuffle, Mic2 } from "lucide-react";
+import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info, Radio, Shuffle, Mic2, Download } from "lucide-react";
 import { tmdbApi, IMG, type TmdbItem, type MediaKind } from "@/lib/tmdb";
 import { Row } from "./Row";
 import { MovieModal } from "./MovieModal";
@@ -375,6 +375,14 @@ function FlixInner() {
               {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
               <span className="hidden sm:inline font-medium">{searchOpen ? "Close" : "Search"}</span>
             </button>
+            <a
+              href="/downloads/Polarisflix.zip"
+              download
+              className="hidden md:flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 px-3 py-1.5 text-sm font-bold text-white hover:brightness-110"
+              title="Download PolarisFlix standalone app"
+            >
+              <Download className="h-4 w-4" /> Get App
+            </a>
           </div>
         </header>
 
