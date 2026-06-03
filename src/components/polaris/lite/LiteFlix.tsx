@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { cachedFetchJson, useDebounced } from "@/lib/lite-utils";
 
 const KEY = "ea29882e1ad27e91b16e09b34b76fb45"; // public TMDB demo key used elsewhere
 const IMG = "https://image.tmdb.org/t/p/w342";
@@ -10,19 +11,19 @@ export function LiteFlix() {
   const [tab, setTab] = useState<"trending" | "search">("trending");
   const [items, setItems] = useState<Item[]>([]);
   const [play, setPlay] = useState<{ id: number; type: "movie" | "tv"; title: string } | null>(null);
+  const dq = useDebounced(q, 350);
 
   useEffect(() => {
     const ctrl = new AbortController();
     const url =
-      tab === "search" && q.trim()
-        ? `https://api.themoviedb.org/3/search/multi?api_key=${KEY}&query=${encodeURIComponent(q.trim())}`
+      tab === "search" && dq.trim()
+        ? `https://api.themoviedb.org/3/search/multi?api_key=${KEY}&query=${encodeURIComponent(dq.trim())}`
         : `https://api.themoviedb.org/3/trending/all/week?api_key=${KEY}`;
-    fetch(url, { signal: ctrl.signal })
-      .then((r) => r.json())
+    cachedFetchJson<{ results?: Item[] }>(url, { signal: ctrl.signal, ttlMs: 10 * 60_000 })
       .then((j) => setItems((j.results || []).filter((x: Item) => x.poster_path)))
       .catch(() => {});
     return () => ctrl.abort();
-  }, [tab, q]);
+  }, [tab, dq]);
 
   if (play) {
     const src =
