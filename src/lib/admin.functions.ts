@@ -168,12 +168,15 @@ export const adminBanUser = createServerFn({ method: "POST" })
 
     // Mirror onto the profile flag (used by simpler UI checks).
     const { error } = await supabaseAdmin.from("profiles")
-      .update({ is_banned: true, ban_reason: data.reason, banned_at: new Date().toISOString() })
+      .update({
+        is_banned: true,
+        ban_reason: data.reason,
+        banned_at: new Date().toISOString(),
+        force_logout_at: new Date().toISOString(),
+      } as never)
       .eq("id", target.id);
     if (error) throw new Error(error.message);
 
-    // Force sign-out so the ban screen is shown on next request.
-    try { await supabaseAdmin.auth.admin.signOut(target.id, "global"); } catch (e) { console.error("ban signOut", e); }
     return { ok: true, ban_id: ban.id, expires_at };
   });
 
@@ -293,10 +296,14 @@ export const adminKickUser = createServerFn({ method: "POST" })
     const { data: target } = await supabaseAdmin
       .from("profiles").select("id").eq("username", data.username).maybeSingle();
     if (!target) throw new Error("User not found");
-    // Best effort: revoke sessions through admin API
-    try {
-      await supabaseAdmin.auth.admin.signOut(target.id, "global");
-    } catch (e) { console.error("kick signOut", e); }
+    // Force the client to sign out on next realtime tick. The Supabase JS
+    // `auth.admin.signOut(jwt)` API takes a JWT (not a user id), so we can't
+    // remotely revoke from the user id alone — instead we flip a profile
+    // timestamp and the auth-context subscribes to it and signs out.
+    await supabaseAdmin
+      .from("profiles")
+      .update({ force_logout_at: new Date().toISOString() } as never)
+      .eq("id", target.id);
     return { ok: true };
   });
 
@@ -397,6 +404,112 @@ export const adminUpdateChannel = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("chat_channels").update(patch as never).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/** Set per-channel slow-mode delay in seconds (0 to disable, max 6h). */
+export const adminSetSlowMode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      channelId: z.string().uuid().optional(),
+      channelSlug: z.string().min(1).max(80).optional(),
+      seconds: z.number().int().min(0).max(21600),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await requireOwner(context.userId);
+    let q = supabaseAdmin.from("chat_channels").update({ slow_mode_seconds: data.seconds } as never);
+    q = data.channelId ? q.eq("id", data.channelId) : q.eq("slug", data.channelSlug ?? "");
+    const { error } = await q;
+    if (error) throw new Error(error.message);
+    return { ok: true, seconds: data.seconds };
+  });
+
+/** Delete a user's messages — optionally restricted to one channel and N most recent. */
+export const adminClearUserMessages = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      username: z.string().min(1).max(60),
+      channelId: z.string().uuid().optional(),
+      channelSlug: z.string().min(1).max(80).optional(),
+      count: z.number().int().min(1).max(1000).optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await requireOwner(context.userId);
+    const { data: target } = await supabaseAdmin
+      .from("profiles").select("id").eq("username", data.username).maybeSingle();
+    if (!target) throw new Error("User not found");
+    let channelId = data.channelId ?? null;
+    if (!channelId && data.channelSlug) {
+      const { data: ch } = await supabaseAdmin
+        .from("chat_channels").select("id").eq("slug", data.channelSlug).maybeSingle();
+      channelId = ch?.id ?? null;
+    }
+    let q = supabaseAdmin.from("chat_messages").select("id")
+      .eq("user_id", target.id).order("created_at", { ascending: false }).limit(data.count ?? 500);
+    if (channelId) q = q.eq("channel_id", channelId);
+    const { data: rows } = await q;
+    const ids = (rows ?? []).map((r) => r.id as string);
+    if (!ids.length) return { ok: true, deleted: 0 };
+    const { error } = await supabaseAdmin.from("chat_messages").delete().in("id", ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: ids.length };
+  });
+
+/** IP-ban a user: look up their recent IPs from device_sessions, add ip targets. */
+export const adminIpBanUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      username: z.string().min(1).max(60),
+      reason: z.string().min(1).max(500).default("IP ban"),
+      durationHours: z.union([z.literal("perm"), z.number().int().min(1).max(24 * 365)]).default("perm"),
+      includeDevice: z.boolean().default(true),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await requireOwner(context.userId);
+    const { data: target } = await supabaseAdmin
+      .from("profiles").select("id, username").eq("username", data.username).maybeSingle();
+    if (!target) throw new Error("User not found");
+    const { data: sessions } = await supabaseAdmin
+      .from("device_sessions")
+      .select("ip, device_fingerprint")
+      .eq("user_id", target.id)
+      .order("last_seen_at", { ascending: false })
+      .limit(20);
+    const ips = Array.from(new Set((sessions ?? []).map((s) => s.ip).filter(Boolean) as string[]));
+    const fps = data.includeDevice
+      ? Array.from(new Set((sessions ?? []).map((s) => s.device_fingerprint).filter(Boolean) as string[]))
+      : [];
+    if (ips.length === 0 && fps.length === 0) {
+      throw new Error("No recent IP/device on file for this user — fall back to /ban");
+    }
+    const expires_at =
+      data.durationHours === "perm" ? null
+        : new Date(Date.now() + data.durationHours * 3600_000).toISOString();
+    const { data: ban, error: berr } = await supabaseAdmin
+      .from("bans").insert({
+        type: "full_site", reason: data.reason, issued_by: context.userId,
+        expires_at, status: "active",
+      } as never).select("id").single();
+    if (berr) throw new Error(berr.message);
+    const targets = [
+      { ban_id: ban.id, scope: "user" as const, value: target.id },
+      ...ips.map((ip) => ({ ban_id: ban.id, scope: "ip" as const, value: ip })),
+      ...fps.map((fp) => ({ ban_id: ban.id, scope: "device" as const, value: fp })),
+    ];
+    await supabaseAdmin.from("ban_targets").insert(targets as never);
+    await supabaseAdmin.from("profiles")
+      .update({
+        is_banned: true, ban_reason: data.reason,
+        banned_at: new Date().toISOString(),
+        force_logout_at: new Date().toISOString(),
+      } as never)
+      .eq("id", target.id);
+    return { ok: true, ban_id: ban.id, ips: ips.length, devices: fps.length };
   });
 
 /** Aggregate stats for the admin home: my profile, my coins, my spend, totals across the app. */

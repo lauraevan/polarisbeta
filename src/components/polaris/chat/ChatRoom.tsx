@@ -12,6 +12,7 @@ import {
   adminBanUser, adminUnbanUser, adminKickUser,
   adminMuteUser, adminUnmuteUser,
   adminPurgeMessages, adminLockChannel,
+  adminIpBanUser, adminClearUserMessages, adminSetSlowMode,
 } from "@/lib/admin.functions";
 import { tenorSearch, type TenorGif } from "@/lib/tenor";
 import { DrawingCanvas } from "./DrawingCanvas";
@@ -79,6 +80,7 @@ type Channel = {
   description: string | null; emoji: string | null;
   filter_enabled?: boolean | null;
   allowed_role?: string | null;
+  slow_mode_seconds?: number | null;
   visibility?: "public" | "private" | "role" | null;
   created_by?: string | null;
 };
@@ -145,6 +147,13 @@ export function ChatRoom() {
   const unmuteFn = useServerFn(adminUnmuteUser);
   const purgeFn = useServerFn(adminPurgeMessages);
   const lockFn = useServerFn(adminLockChannel);
+  const ipBanFn = useServerFn(adminIpBanUser);
+  const clearFn = useServerFn(adminClearUserMessages);
+  const slowmodeFn = useServerFn(adminSetSlowMode);
+
+  // Track last-send timestamp per channel id so slow-mode can be enforced
+  // client-side. Owners bypass slow-mode.
+  const lastSendRef = useRef<Record<string, number>>({});
 
   // Mute enforcement (client guard — server-side guard via /api or future
   // trigger can be layered later). Compares `profile.muted_until` to now.
@@ -379,6 +388,16 @@ export function ChatRoom() {
         setDmWarning(`You're muted ${ends}.`);
         return;
       }
+      // Slow-mode (owner bypass).
+      const slow = ch?.slow_mode_seconds ?? 0;
+      if (slow > 0 && !isOwner) {
+        const last = lastSendRef.current[activeId] ?? 0;
+        const waitMs = last + slow * 1000 - Date.now();
+        if (waitMs > 0) {
+          setDmWarning(`Slow-mode: wait ${Math.ceil(waitMs / 1000)}s before sending again.`);
+          return;
+        }
+      }
       setSending(true);
       const { error } = await supabase.from("chat_messages").insert({
         channel_id: activeId,
@@ -392,7 +411,10 @@ export function ChatRoom() {
         reply_to: replyTo?.id ?? null,
       });
       setSending(false);
-      if (!error) { setText(""); setReplyTo(null); }
+      if (!error) {
+        setText(""); setReplyTo(null);
+        lastSendRef.current[activeId] = Date.now();
+      }
 
       // Replying directly to Polaris Bot → friendly auto-greeting.
       if (replyTo && replyTo.username === POLARIS_BOT_USERNAME) {
@@ -480,6 +502,18 @@ export function ChatRoom() {
               } else if (action.op === "unlock") {
                 const targetId = action.channelSlug ? slugToId(action.channelSlug) : activeId;
                 if (targetId) await lockFn({ data: { channelId: targetId, role: null } });
+              } else if (action.op === "ipban") {
+                await ipBanFn({ data: { username: action.username, reason: action.reason, durationHours: action.durationHours } });
+              } else if (action.op === "clear") {
+                const targetId = action.channelSlug ? slugToId(action.channelSlug) : activeId;
+                if (action.username) {
+                  await clearFn({ data: { username: action.username, channelId: targetId, count: action.count } });
+                } else if (targetId) {
+                  await purgeFn({ data: { channelId: targetId, count: action.count ?? 25 } });
+                }
+              } else if (action.op === "slowmode") {
+                const targetId = action.channelSlug ? slugToId(action.channelSlug) : activeId;
+                if (targetId) await slowmodeFn({ data: { channelId: targetId, seconds: action.seconds } });
               }
             } catch (e) {
               const msg = e instanceof Error ? e.message : "Unknown error";
@@ -494,7 +528,7 @@ export function ChatRoom() {
         }
       }
     },
-    [user, profile, activeId, channels, replyTo, isOwner, isMuted, mutedUntil, banFn, unbanFn, kickFn, muteFn, unmuteFn, purgeFn, lockFn],
+    [user, profile, activeId, channels, replyTo, isOwner, isMuted, mutedUntil, banFn, unbanFn, kickFn, muteFn, unmuteFn, purgeFn, lockFn, ipBanFn, clearFn, slowmodeFn],
   );
 
   const sendGartic = useCallback(async () => {

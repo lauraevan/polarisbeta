@@ -249,6 +249,7 @@ export type Database = {
           filter_enabled: boolean
           id: string
           name: string
+          slow_mode_seconds: number
           slug: string
           topic: string | null
           visibility: string
@@ -262,6 +263,7 @@ export type Database = {
           filter_enabled?: boolean
           id?: string
           name: string
+          slow_mode_seconds?: number
           slug: string
           topic?: string | null
           visibility?: string
@@ -275,6 +277,7 @@ export type Database = {
           filter_enabled?: boolean
           id?: string
           name?: string
+          slow_mode_seconds?: number
           slug?: string
           topic?: string | null
           visibility?: string
@@ -681,6 +684,7 @@ export type Database = {
           display_name: string | null
           fav_game_tags: string[]
           fav_genres: number[]
+          force_logout_at: string | null
           id: string
           is_anonymous: boolean
           is_banned: boolean
@@ -712,6 +716,7 @@ export type Database = {
           display_name?: string | null
           fav_game_tags?: string[]
           fav_genres?: number[]
+          force_logout_at?: string | null
           id: string
           is_anonymous?: boolean
           is_banned?: boolean
@@ -743,6 +748,7 @@ export type Database = {
           display_name?: string | null
           fav_game_tags?: string[]
           fav_genres?: number[]
+          force_logout_at?: string | null
           id?: string
           is_anonymous?: boolean
           is_banned?: boolean
