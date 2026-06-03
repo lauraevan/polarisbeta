@@ -20,7 +20,8 @@ const ROUTES: Array<{ keys: RegExp; path: string; label: string }> = [
   { keys: /\b(browser|web)\b/i, path: "/browser", label: "Browser" },
   { keys: /\b(my\s*list|watchlist|favorites?)\b/i, path: "/mylist", label: "My List" },
   { keys: /\b(premium|pro|vip|upgrade)\b/i, path: "/premium", label: "Polaris Premium" },
-  { keys: /\b(cloud|drive|files?|storage)\b/i, path: "/cloud", label: "Polaris Cloud" },
+  { keys: /\b(multi[\s-]?model|multi[\s-]?ai|two ai|2 ai|debate|collaborate)\b/i, path: "/multi-ai", label: "Multi-Model AI" },
+  { keys: /\broblox\b/i, path: "/games?tab=roblox", label: "Roblox Emulator" },
 ];
 
 export function parseNavigation(prompt: string): Action {
