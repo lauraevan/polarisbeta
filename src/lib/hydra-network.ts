@@ -2,14 +2,19 @@
  * Hydra Network — open HTML5 game catalogue hosted on GitHub.
  * Source: https://github.com/Hydra-Network/hydra-assets
  */
-// jsdelivr is primary — it serves with correct MIME types so HTML games render
-// inside an iframe. raw.githubusercontent.com sends text/plain which breaks the
-// iframe boot, and rawcdn.githack.com is rate-limited.
+// githack serves the game HTML with `Content-Type: text/html`, which is
+// required — jsdelivr sends text/plain + nosniff so the browser shows source
+// code instead of running the game. jsdelivr is fine for the thumbs and for
+// the JSON manifest (we use it for those).
 export const HYDRA_BASES = [
-  "https://cdn.jsdelivr.net/gh/Hydra-Network/hydra-assets@main/",
   "https://rawcdn.githack.com/Hydra-Network/hydra-assets/main/",
-  "https://raw.githubusercontent.com/Hydra-Network/hydra-assets/main/",
+  "https://raw.githack.com/Hydra-Network/hydra-assets/main/",
+  "https://cdn.jsdelivr.net/gh/Hydra-Network/hydra-assets@main/",
 ];
+
+// Thumbs are images — any mirror is fine. jsdelivr is the fastest.
+export const HYDRA_THUMB_BASE =
+  "https://cdn.jsdelivr.net/gh/Hydra-Network/hydra-assets@main/";
 
 export const HYDRA_DATA_URLS = [
   "https://cdn.jsdelivr.net/gh/Hydra-Network/hydra-assets@main/gmes.json",
@@ -44,6 +49,9 @@ export async function fetchHydraNetwork(signal?: AbortSignal): Promise<HydraNetG
  *  `thumbs/` prefix in the JSON. */
 export function hydraNetAsset(path: string, baseIdx = 0) {
   const clean = path.replace(/^\/+/, "");
-  const needsGmes = !clean.startsWith("thumbs/") && !clean.startsWith("gmes/");
+  // Thumbs go through jsdelivr (faster); game HTML goes through githack
+  // (correct MIME so the iframe actually runs the game).
+  if (clean.startsWith("thumbs/")) return HYDRA_THUMB_BASE + clean;
+  const needsGmes = !clean.startsWith("gmes/");
   return HYDRA_BASES[baseIdx] + (needsGmes ? `gmes/${clean}` : clean);
 }
