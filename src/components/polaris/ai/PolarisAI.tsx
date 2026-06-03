@@ -22,6 +22,8 @@ import {
   Trash2,
   X,
   Zap,
+  Monitor,
+  ScanEye,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useAuth } from "@/lib/auth-context";
