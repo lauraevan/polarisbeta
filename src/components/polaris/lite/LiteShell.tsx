@@ -21,7 +21,7 @@ const NAV = [
   { to: "/settings", label: "Settings" },
 ];
 
-function liteContent(pathname: string, fallback: ReactNode): ReactNode {
+function liteContent(pathname: string): ReactNode {
   if (pathname === "/" || pathname === "") return <LiteHome />;
   if (pathname.startsWith("/games")) return <LiteGames />;
   if (pathname.startsWith("/media")) return <LiteFlix />;
@@ -35,12 +35,11 @@ function liteContent(pathname: string, fallback: ReactNode): ReactNode {
       <p className="mt-2 text-sm text-neutral-400">
         This page isn't part of the lightweight build. Switch to Heavyweight in Settings to use it.
       </p>
-      <div className="mt-4 hidden">{fallback}</div>
     </div>
   );
 }
 
-export function LiteShell({ children }: { children: ReactNode }) {
+export function LiteShell(_: { children?: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { setMode } = usePolarisMode();
 
@@ -81,7 +80,7 @@ export function LiteShell({ children }: { children: ReactNode }) {
       </header>
       <main className="mx-auto max-w-6xl">
         <Suspense fallback={<div className="px-4 py-10 text-center text-xs text-neutral-500">Loading…</div>}>
-          {liteContent(pathname, children)}
+          {liteContent(pathname)}
         </Suspense>
       </main>
       <footer className="mx-auto mt-10 max-w-6xl px-4 pb-10 text-center text-xs text-neutral-600">
