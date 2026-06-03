@@ -12,6 +12,7 @@ import {
   adminBanUser, adminUnbanUser, adminKickUser,
   adminMuteUser, adminUnmuteUser,
   adminPurgeMessages, adminLockChannel,
+  adminIpBanUser, adminClearUserMessages, adminSetSlowMode,
 } from "@/lib/admin.functions";
 import { tenorSearch, type TenorGif } from "@/lib/tenor";
 import { DrawingCanvas } from "./DrawingCanvas";
@@ -79,6 +80,7 @@ type Channel = {
   description: string | null; emoji: string | null;
   filter_enabled?: boolean | null;
   allowed_role?: string | null;
+  slow_mode_seconds?: number | null;
   visibility?: "public" | "private" | "role" | null;
   created_by?: string | null;
 };
@@ -145,6 +147,13 @@ export function ChatRoom() {
   const unmuteFn = useServerFn(adminUnmuteUser);
   const purgeFn = useServerFn(adminPurgeMessages);
   const lockFn = useServerFn(adminLockChannel);
+  const ipBanFn = useServerFn(adminIpBanUser);
+  const clearFn = useServerFn(adminClearUserMessages);
+  const slowmodeFn = useServerFn(adminSetSlowMode);
+
+  // Track last-send timestamp per channel id so slow-mode can be enforced
+  // client-side. Owners bypass slow-mode.
+  const lastSendRef = useRef<Record<string, number>>({});
 
   // Mute enforcement (client guard — server-side guard via /api or future
   // trigger can be layered later). Compares `profile.muted_until` to now.
