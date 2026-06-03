@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info, Radio, Shuffle } from "lucide-react";
+import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info, Radio, Shuffle, Mic2 } from "lucide-react";
 import { tmdbApi, IMG, type TmdbItem, type MediaKind } from "@/lib/tmdb";
 import { Row } from "./Row";
 import { MovieModal } from "./MovieModal";
@@ -8,10 +8,11 @@ import { Player } from "./Player";
 import { PolarisFlixSplash } from "./Splash";
 import { LiveTV } from "./LiveTV";
 import { Roulette } from "./Roulette";
+import { PodcastsTab } from "./Podcasts";
 import { useMyList } from "@/lib/mylist-context";
 import polarisLogo from "@/assets/polaris-logo.png";
 
-type Tab = "home" | "movies" | "shows" | "anime" | "live" | "roulette";
+type Tab = "home" | "movies" | "shows" | "anime" | "live" | "roulette" | "podcasts";
 
 // TMDB genre IDs. Movie and TV share many but not all.
 const MOVIE_GENRES = [
@@ -300,6 +301,7 @@ function FlixInner() {
     { id: "movies", label: "Movies", icon: Film },
     { id: "shows", label: "Shows", icon: Tv2 },
     { id: "anime", label: "Anime", icon: Sparkles },
+    { id: "podcasts", label: "Podcasts", icon: Mic2 },
     { id: "live", label: "Live TV", icon: Radio },
     { id: "roulette", label: "Roulette", icon: Shuffle },
   ];
@@ -457,6 +459,8 @@ function FlixInner() {
               <LiveTV />
             ) : tab === "roulette" ? (
               <Roulette embedded />
+            ) : tab === "podcasts" ? (
+              <PodcastsTab />
             ) : (
             <>
             {heroItems.length > 0 && (
