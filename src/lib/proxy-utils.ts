@@ -18,6 +18,10 @@ export let POLARIS_WISP_URL: string = WISP_POOL[0];
 const BAREMUX_BUNDLE = "/baremux/index.js";
 const BAREMUX_WORKER = "/baremux/worker.js";
 const EPOXY_TRANSPORT = "/epoxy/index.mjs";
+// Libcurl-WASM transport — loaded from a CDN as the secondary path when
+// the bundled Epoxy transport refuses to negotiate (some networks throttle
+// the QUIC-style framing Epoxy uses; libcurl falls back to plain HTTP/1.1).
+const LIBCURL_TRANSPORT = "https://cdn.jsdelivr.net/npm/@mercuryworkshop/libcurl-transport/dist/index.mjs";
 
 declare global {
   interface Window {
@@ -117,8 +121,17 @@ async function ensureWispTransport() {
     if (!window.BareMux) throw new Error("bare-mux failed to load");
     POLARIS_WISP_URL = await pickWisp();
     const connection = new window.BareMux.BareMuxConnection(BAREMUX_WORKER);
-    await connection.setTransport(EPOXY_TRANSPORT, [{ wisp: POLARIS_WISP_URL }]);
-    console.info("[polaris] wisp transport ready via", POLARIS_WISP_URL);
+    // Try Epoxy first — it ships locally and is faster when it works.
+    // If setTransport throws (the transport module fails to import or the
+    // worker rejects it), fall back to the Libcurl-WASM transport over CDN.
+    try {
+      await connection.setTransport(EPOXY_TRANSPORT, [{ wisp: POLARIS_WISP_URL }]);
+      console.info("[polaris] wisp transport ready via Epoxy →", POLARIS_WISP_URL);
+    } catch (epoxyErr) {
+      console.warn("[polaris] Epoxy transport failed, falling back to Libcurl", epoxyErr);
+      await connection.setTransport(LIBCURL_TRANSPORT, [{ wisp: POLARIS_WISP_URL }]);
+      console.info("[polaris] wisp transport ready via Libcurl →", POLARIS_WISP_URL);
+    }
   })().catch((err) => {
     console.warn("[polaris] wisp transport setup failed", err);
     // allow retry on next call
