@@ -735,6 +735,43 @@ function ModeCard({
   );
 }
 
+function CustomizerToggleSection() {
+  const c = useCustomizer();
+  return (
+    <section className="liquid-glass-themed rounded-2xl p-5">
+      <SectionTitle
+        icon={Wand2}
+        title="Polaris Customizer"
+        subtitle="Move, resize, hide, and decorate the sidebar. Locked surfaces stay safe."
+      />
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button
+          onClick={() => c.setActive(!c.active)}
+          className={`rounded-xl px-4 py-2 text-sm font-bold ${
+            c.active ? "bg-red-500 text-white hover:bg-red-400" : "bg-white text-black hover:bg-white/90"
+          }`}
+        >
+          {c.active ? "Exit edit mode" : "Enter edit mode"}
+        </button>
+        <Link to="/customize" className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20">
+          Open Customizer page
+        </Link>
+        {c.active && (
+          <button
+            onClick={() => { if (confirm("Reset every customization?")) c.resetAll(); }}
+            className="rounded-xl bg-white/5 px-4 py-2 text-sm text-white/70 hover:bg-white/10"
+          >
+            Reset all
+          </button>
+        )}
+      </div>
+      <p className="mt-2 text-[11px] text-white/45">
+        Free: reorder, hide, scale (0.5×–2×), one-step undo. Pro: decals, deeper undo history, 0.25×–4× scale, up to 5 saved layouts.
+      </p>
+    </section>
+  );
+}
+
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Polaris One" }] }),
   component: () => (
