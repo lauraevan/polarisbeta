@@ -136,15 +136,45 @@ export const adminBanUser = createServerFn({ method: "POST" })
     z.object({
       username: z.string().min(1).max(60),
       reason: z.string().min(1).max(500),
+      /** "perm" or a number of hours (e.g. 24 = 1 day, 72 = 3 day, 168 = 7 day). */
+      durationHours: z.union([z.literal("perm"), z.number().int().min(1).max(24 * 365)]).default("perm"),
+      type: z.enum(["full_site", "chat_only", "dm_only", "shadow"]).default("full_site"),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
     await requireOwner(context.userId);
+    const { data: target, error: terr } = await supabaseAdmin
+      .from("profiles").select("id, username").eq("username", data.username).maybeSingle();
+    if (terr) throw new Error(terr.message);
+    if (!target) throw new Error("User not found");
+
+    const expires_at =
+      data.durationHours === "perm"
+        ? null
+        : new Date(Date.now() + data.durationHours * 3600_000).toISOString();
+
+    // Create a proper ban row + user target so BanGate picks it up immediately.
+    const { data: ban, error: berr } = await supabaseAdmin
+      .from("bans")
+      .insert({
+        type: data.type, reason: data.reason, issued_by: context.userId, expires_at,
+        status: "active",
+      } as never)
+      .select("id").single();
+    if (berr) throw new Error(berr.message);
+    await supabaseAdmin.from("ban_targets").insert({
+      ban_id: ban.id, scope: "user", value: target.id,
+    } as never);
+
+    // Mirror onto the profile flag (used by simpler UI checks).
     const { error } = await supabaseAdmin.from("profiles")
       .update({ is_banned: true, ban_reason: data.reason, banned_at: new Date().toISOString() })
-      .eq("username", data.username);
+      .eq("id", target.id);
     if (error) throw new Error(error.message);
-    return { ok: true };
+
+    // Force sign-out so the ban screen is shown on next request.
+    try { await supabaseAdmin.auth.admin.signOut(target.id, "global"); } catch (e) { console.error("ban signOut", e); }
+    return { ok: true, ban_id: ban.id, expires_at };
   });
 
 export const adminUnbanUser = createServerFn({ method: "POST" })
@@ -152,9 +182,105 @@ export const adminUnbanUser = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ username: z.string().min(1).max(60) }).parse(input))
   .handler(async ({ data, context }) => {
     await requireOwner(context.userId);
+    const { data: target } = await supabaseAdmin
+      .from("profiles").select("id").eq("username", data.username).maybeSingle();
+    if (!target) throw new Error("User not found");
+    // Lift any active bans on this user.
+    const { data: targets } = await supabaseAdmin
+      .from("ban_targets").select("ban_id").eq("scope", "user").eq("value", target.id);
+    const banIds = (targets ?? []).map((t) => t.ban_id);
+    if (banIds.length) {
+      await supabaseAdmin.from("bans")
+        .update({ status: "lifted", lifted_at: new Date().toISOString() } as never)
+        .in("id", banIds);
+    }
     await supabaseAdmin.from("profiles")
       .update({ is_banned: false, ban_reason: null, banned_at: null })
+      .eq("id", target.id);
+    return { ok: true };
+  });
+
+/** Mute a user for a duration (or permanently). Enforced client-side in chat. */
+export const adminMuteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      username: z.string().min(1).max(60),
+      reason: z.string().max(500).optional(),
+      durationHours: z.union([z.literal("perm"), z.number().int().min(1).max(24 * 365)]).default(1),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await requireOwner(context.userId);
+    const muted_until =
+      data.durationHours === "perm"
+        ? new Date("9999-12-31T00:00:00Z").toISOString()
+        : new Date(Date.now() + data.durationHours * 3600_000).toISOString();
+    const { error } = await supabaseAdmin.from("profiles")
+      .update({ muted_until, mute_reason: data.reason ?? null } as never)
       .eq("username", data.username);
+    if (error) throw new Error(error.message);
+    return { ok: true, muted_until };
+  });
+
+export const adminUnmuteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ username: z.string().min(1).max(60) }).parse(input))
+  .handler(async ({ data, context }) => {
+    await requireOwner(context.userId);
+    await supabaseAdmin.from("profiles")
+      .update({ muted_until: null, mute_reason: null } as never)
+      .eq("username", data.username);
+    return { ok: true };
+  });
+
+/** Bulk-delete the most recent N messages in a channel (by id or slug). */
+export const adminPurgeMessages = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      channelId: z.string().uuid().optional(),
+      channelSlug: z.string().min(1).max(80).optional(),
+      count: z.number().int().min(1).max(500).default(10),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await requireOwner(context.userId);
+    let channelId = data.channelId ?? null;
+    if (!channelId && data.channelSlug) {
+      const { data: ch } = await supabaseAdmin
+        .from("chat_channels").select("id").eq("slug", data.channelSlug).maybeSingle();
+      channelId = ch?.id ?? null;
+    }
+    if (!channelId) throw new Error("Channel not found");
+    const { data: latest } = await supabaseAdmin
+      .from("chat_messages").select("id")
+      .eq("channel_id", channelId)
+      .order("created_at", { ascending: false })
+      .limit(data.count);
+    const ids = (latest ?? []).map((r) => r.id as string);
+    if (!ids.length) return { ok: true, deleted: 0 };
+    const { error } = await supabaseAdmin.from("chat_messages").delete().in("id", ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: ids.length };
+  });
+
+/** Lock or unlock a channel for a role (by slug or id). Pass role=null to unlock. */
+export const adminLockChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      channelId: z.string().uuid().optional(),
+      channelSlug: z.string().min(1).max(80).optional(),
+      role: z.string().max(40).nullable().default("Owner"),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await requireOwner(context.userId);
+    let q = supabaseAdmin.from("chat_channels").update({ allowed_role: data.role } as never);
+    q = data.channelId ? q.eq("id", data.channelId) : q.eq("slug", data.channelSlug ?? "");
+    const { error } = await q;
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 
