@@ -170,7 +170,13 @@ function FlixInner() {
   const [tab, setTab] = useState<Tab>("home");
   // Viewer selection ("who's watching") removed — go straight into Polaris.
   const [selected, setSelected] = useState<{ item: TmdbItem; kind: MediaKind } | null>(null);
-  const [playing, setPlaying] = useState<{ item: TmdbItem; kind: MediaKind } | null>(null);
+  const [playing, setPlaying] = useState<{ item: TmdbItem; kind: MediaKind; season?: number; episode?: number } | null>(null);
+  const [bleed, setBleed] = useState<boolean>(() => {
+    try { return localStorage.getItem("polaris-flix-bleed") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("polaris-flix-bleed", bleed ? "1" : "0"); } catch {}
+  }, [bleed]);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchType, setSearchType] = useState<"all" | "movie" | "tv">("all");
@@ -311,15 +317,18 @@ function FlixInner() {
       {splash && <PolarisFlixSplash onDone={() => setSplash(false)} />}
 
       <div className="relative min-h-screen pb-32">
-        {/* Warm autumn overlay so the wallpaper feels cinematic */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background:
-              "radial-gradient(120% 60% at 50% 0%, rgba(255,150,55,0.26) 0%, rgba(200,70,25,0.14) 38%, rgba(0,0,0,0) 72%), radial-gradient(80% 50% at 100% 100%, rgba(255,90,40,0.18) 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg, rgba(24,10,4,0.6) 0%, rgba(10,4,2,0.9) 100%)",
-          }}
-        />
+        {/* Warm autumn overlay — fully solid by default, but when "wallpaper
+            bleed" is on we let the desktop wallpaper show through. */}
+        {!bleed && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10"
+            style={{
+              background:
+                "radial-gradient(120% 60% at 50% 0%, rgba(255,150,55,0.26) 0%, rgba(200,70,25,0.14) 38%, rgba(0,0,0,0) 72%), radial-gradient(80% 50% at 100% 100%, rgba(255,90,40,0.18) 0%, rgba(0,0,0,0) 60%), linear-gradient(180deg, rgba(24,10,4,0.6) 0%, rgba(10,4,2,0.9) 100%)",
+            }}
+          />
+        )}
         {/* Top bar */}
         <header className="sticky top-0 z-30 flex items-center gap-3 px-3 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-3">
           <div className="liquid-glass-themed flex w-full min-w-0 items-center gap-2 rounded-2xl px-2 py-2 sm:px-3">
@@ -383,6 +392,15 @@ function FlixInner() {
             >
               <Download className="h-4 w-4" /> Get App
             </a>
+            <button
+              onClick={() => setBleed((v) => !v)}
+              className={`hidden md:flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
+                bleed ? "bg-white text-black" : "liquid-glass text-white/80 hover:text-white"
+              }`}
+              title="Let the Polaris wallpaper bleed through"
+            >
+              Wallpaper: {bleed ? "On" : "Off"}
+            </button>
           </div>
         </header>
 
@@ -682,8 +700,8 @@ function FlixInner() {
           item={selected.item}
           kind={selected.kind}
           onClose={() => setSelected(null)}
-          onPlay={() => {
-            setPlaying(selected);
+          onPlay={(s, e) => {
+            setPlaying({ ...selected, season: s, episode: e });
             setSelected(null);
           }}
         />
@@ -695,6 +713,8 @@ function FlixInner() {
           id={playing.item.id}
           title={playing.item.title || playing.item.name || "Now Playing"}
           onClose={() => setPlaying(null)}
+          initialSeason={playing.season}
+          initialEpisode={playing.episode}
         />
       )}
     </>
