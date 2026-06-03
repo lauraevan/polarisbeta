@@ -24,6 +24,10 @@ import {
   Zap,
   Monitor,
   ScanEye,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useAuth } from "@/lib/auth-context";
@@ -192,6 +196,12 @@ export function PolarisAI() {
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [screenAnalyzing, setScreenAnalyzing] = useState(false);
   const screenVideoRef = useRef<HTMLVideoElement | null>(null);
+  // Voice mode — mic input (Web Speech) + auto-TTS playback of replies.
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceAuto, setVoiceAuto] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  const recognitionRef = useRef<unknown>(null);
+  const lastSpokenIdRef = useRef<string | null>(null);
   const [wallet, setWallet] = useState<{ coins: number; basic_credits: number; premium_credits: number } | null>(null);
   const [exchanging, setExchanging] = useState<"basic" | "premium" | null>(null);
   const [search, setSearch] = useState("");
