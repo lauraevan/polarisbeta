@@ -4,14 +4,17 @@ export function LiteHome() {
       <h1
         className="select-none text-center font-black tracking-tight"
         style={{
-          fontSize: "clamp(64px, 14vw, 180px)",
-          color: "#3aa0ff",
-          textShadow:
-            "0 0 30px rgba(58,160,255,0.55), 0 0 80px rgba(58,160,255,0.35), 0 0 140px rgba(58,160,255,0.25)",
+          fontSize: "clamp(56px, 13vw, 170px)",
+          backgroundImage:
+            "linear-gradient(135deg, #ffb347 0%, #ff7a59 40%, #ff4d8d 75%, #c84bd8 100%)",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          color: "transparent",
+          textShadow: "0 0 60px rgba(255,122,89,0.35), 0 0 120px rgba(255,77,141,0.25)",
           letterSpacing: "-0.02em",
         }}
       >
-        T9 LITE
+        POLARIS LITE
       </h1>
     </div>
   );
