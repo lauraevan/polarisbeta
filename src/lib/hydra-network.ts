@@ -2,14 +2,19 @@
  * Hydra Network — open HTML5 game catalogue hosted on GitHub.
  * Source: https://github.com/Hydra-Network/hydra-assets
  */
+// jsdelivr is primary — it serves with correct MIME types so HTML games render
+// inside an iframe. raw.githubusercontent.com sends text/plain which breaks the
+// iframe boot, and rawcdn.githack.com is rate-limited.
 export const HYDRA_BASES = [
-  "https://raw.githubusercontent.com/Hydra-Network/hydra-assets/main/",
+  "https://cdn.jsdelivr.net/gh/Hydra-Network/hydra-assets@main/",
   "https://rawcdn.githack.com/Hydra-Network/hydra-assets/main/",
+  "https://raw.githubusercontent.com/Hydra-Network/hydra-assets/main/",
 ];
 
 export const HYDRA_DATA_URLS = [
-  "https://raw.githubusercontent.com/Hydra-Network/hydra-assets/main/gmes.json",
+  "https://cdn.jsdelivr.net/gh/Hydra-Network/hydra-assets@main/gmes.json",
   "https://rawcdn.githack.com/Hydra-Network/hydra-assets/main/gmes.json",
+  "https://raw.githubusercontent.com/Hydra-Network/hydra-assets/main/gmes.json",
 ];
 
 export type HydraNetGame = {
@@ -34,7 +39,11 @@ export async function fetchHydraNetwork(signal?: AbortSignal): Promise<HydraNetG
   throw lastErr ?? new Error("Hydra Network unreachable");
 }
 
-/** Resolve a relative path (file_name or thumb) against the first working base. */
+/** Resolve a relative path (file_name or thumb) against the first working base.
+ *  Game HTML files live under the `gmes/` folder; thumbs already include their
+ *  `thumbs/` prefix in the JSON. */
 export function hydraNetAsset(path: string, baseIdx = 0) {
-  return HYDRA_BASES[baseIdx] + path;
+  const clean = path.replace(/^\/+/, "");
+  const needsGmes = !clean.startsWith("thumbs/") && !clean.startsWith("gmes/");
+  return HYDRA_BASES[baseIdx] + (needsGmes ? `gmes/${clean}` : clean);
 }
