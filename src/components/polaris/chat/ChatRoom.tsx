@@ -13,6 +13,11 @@ import { AuthDialog } from "../AuthDialog";
 import { ProfileSheet } from "../ProfileSheet";
 import { checkDmSafety } from "@/lib/dm-filter";
 import logo from "@/assets/polaris-logo.png";
+import {
+  runBotCommand, POLARIS_BOT_ID, POLARIS_BOT_USERNAME,
+  POLARIS_BOT_AVATAR, POLARIS_BOT_ACCENT,
+} from "@/lib/polaris-bot";
+import { Reply, Smile as SmileIcon, MoreHorizontal } from "lucide-react";
 
 type Tab = "global" | "dms" | "notifs";
 
@@ -83,6 +88,7 @@ type Message = {
   content: string | null;
   attachments: Attachment[];
   created_at: string;
+  reply_to?: string | null;
 };
 
 const EMOJI_SHORTCUTS = ["😂","❤️","🔥","✨","🎮","🎬","🌙","🍂","☕️","🦊","💎","🌊","😎","🤔","😭","👀","🥲","🫶","🙌","🤝"];
@@ -122,6 +128,8 @@ export function ChatRoom() {
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dmScrollRef = useRef<HTMLDivElement>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const isOwner = !!(profile as { is_owner?: boolean } | null)?.is_owner;
 
   // Load channels
   useEffect(() => {
@@ -354,11 +362,31 @@ export function ChatRoom() {
         accent_color: profile.accent_color,
         content: content?.trim() || null,
         attachments: attachments as unknown as Attachment[],
+        reply_to: replyTo?.id ?? null,
       });
       setSending(false);
-      if (!error) setText("");
+      if (!error) { setText(""); setReplyTo(null); }
+
+      // Bot command — fires AFTER the user's message is stored so the bot reply
+      // appears in order. Bot messages are inserted with the *user's* user_id
+      // (RLS requires auth.uid() = user_id), but flagged via username/avatar.
+      if (content && (content.trim().startsWith("#") || content.trim().startsWith("/"))) {
+        const reply = await runBotCommand(content, { isAdmin: isOwner, username: profile.username });
+        if (reply) {
+          await supabase.from("chat_messages").insert({
+            channel_id: activeId,
+            user_id: user.id, // RLS-compliant — display layer renders as the bot
+            username: POLARIS_BOT_USERNAME,
+            avatar_emoji: "🤖",
+            avatar_url: POLARIS_BOT_AVATAR,
+            accent_color: POLARIS_BOT_ACCENT,
+            content: reply,
+            attachments: [],
+          });
+        }
+      }
     },
-    [user, profile, activeId, channels],
+    [user, profile, activeId, channels, replyTo, isOwner],
   );
 
   const sendGartic = useCallback(async () => {
@@ -771,6 +799,7 @@ export function ChatRoom() {
               const next = messages[i + 1];
               const within = (a?: Message, b?: Message) =>
                 !!a && !!b && a.user_id === b.user_id &&
+                a.username === b.username &&
                 Math.abs(new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) < 5 * 60 * 1000;
               return (
                 <MessageBubble
@@ -779,8 +808,10 @@ export function ChatRoom() {
                   mine={m.user_id === user.id}
                   prevSame={within(prev, m)}
                   nextSame={within(m, next)}
+                  parent={m.reply_to ? messages.find((x) => x.id === m.reply_to) ?? null : null}
                   onAvatarClick={() => setViewProfileId(m.user_id)}
                   onMention={() => insert(`@${m.username} `, "")}
+                  onReply={() => { setReplyTo(m); textRef.current?.focus(); }}
                 />
               );
             })}
@@ -798,6 +829,17 @@ export function ChatRoom() {
           style={{ background: "rgba(15,10,8,0.55)", backdropFilter: "blur(18px) saturate(160%)" }}
         >
           <div className="mx-auto max-w-3xl space-y-2">
+          {replyTo && (
+            <div className="flex items-center gap-2 rounded-lg border-l-2 border-[rgb(var(--polaris-accent))] bg-white/5 px-2.5 py-1.5 text-[11px] text-white/70">
+              <Reply className="h-3 w-3 text-[rgb(var(--polaris-accent))]" />
+              <span className="truncate">
+                Replying to <b className="text-white">{replyTo.username}</b>: {replyTo.content?.slice(0, 60) || "(attachment)"}
+              </span>
+              <button onClick={() => setReplyTo(null)} className="ml-auto rounded p-0.5 text-white/55 hover:bg-white/10 hover:text-white">
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
           {/* Formatting toolbar */}
           <div className="flex flex-wrap items-center gap-1 px-1 text-white/55">
             <ToolbarBtn label="Bold (markdown)" onClick={() => insert("**")}><Bold className="h-3.5 w-3.5" /></ToolbarBtn>
