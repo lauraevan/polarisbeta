@@ -24,6 +24,10 @@ import {
   Zap,
   Monitor,
   ScanEye,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import logo from "@/assets/polaris-logo.png";
 import { useAuth } from "@/lib/auth-context";
@@ -192,6 +196,12 @@ export function PolarisAI() {
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [screenAnalyzing, setScreenAnalyzing] = useState(false);
   const screenVideoRef = useRef<HTMLVideoElement | null>(null);
+  // Voice mode — mic input (Web Speech) + auto-TTS playback of replies.
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceAuto, setVoiceAuto] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  const recognitionRef = useRef<unknown>(null);
+  const lastSpokenIdRef = useRef<string | null>(null);
   const [wallet, setWallet] = useState<{ coins: number; basic_credits: number; premium_credits: number } | null>(null);
   const [exchanging, setExchanging] = useState<"basic" | "premium" | null>(null);
   const [search, setSearch] = useState("");
@@ -256,6 +266,17 @@ export function PolarisAI() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [active?.messages.length, streaming]);
+
+  // Auto-TTS: when a reply finishes streaming and voiceAuto is on, speak it.
+  useEffect(() => {
+    if (!voiceAuto || streaming) return;
+    const last = active?.messages[active.messages.length - 1];
+    if (!last || last.role !== "assistant" || !last.content) return;
+    if (lastSpokenIdRef.current === last.id) return;
+    lastSpokenIdRef.current = last.id;
+    speak(last.content);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streaming, voiceAuto, active?.messages.length]);
 
   function newChat() {
     const c: Chat = { id: uid(), title: "New Chat", messages: [], updatedAt: Date.now() };
@@ -326,6 +347,97 @@ export function PolarisAI() {
     if (!ctx) return null;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL("image/jpeg", 0.8);
+  }
+
+  // ---------- Voice mode ----------
+  function speak(text: string) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    // Strip markdown noise so TTS sounds natural
+    const clean = text
+      .replace(/```[\s\S]*?```/g, " (code block) ")
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+      .replace(/\[[^\]]*\]\([^)]*\)/g, "")
+      .replace(/[*_`#>]/g, "")
+      .trim();
+    if (!clean) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(clean);
+      u.rate = 1.05;
+      u.pitch = 1;
+      window.speechSynthesis.speak(u);
+    } catch { /* noop */ }
+  }
+
+  function stopSpeaking() {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  }
+
+  function toggleListening() {
+    if (typeof window === "undefined") return;
+    const Ctor =
+      (window as unknown as { SpeechRecognition?: new () => unknown }).SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: new () => unknown }).webkitSpeechRecognition;
+    if (!Ctor) {
+      setVoiceSupported(false);
+      setError("Voice input isn't supported in this browser. Try Chrome or Edge.");
+      return;
+    }
+    if (voiceListening) {
+      try {
+        (recognitionRef.current as { stop?: () => void } | null)?.stop?.();
+      } catch { /* noop */ }
+      setVoiceListening(false);
+      return;
+    }
+    const rec = new Ctor() as {
+      lang: string;
+      interimResults: boolean;
+      continuous: boolean;
+      onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void;
+      onend: () => void;
+      onerror: (e: { error?: string }) => void;
+      start: () => void;
+      stop: () => void;
+    };
+    rec.lang = "en-US";
+    rec.interimResults = true;
+    rec.continuous = false;
+    let finalText = "";
+    rec.onresult = (e) => {
+      let interim = "";
+      for (let i = 0; i < e.results.length; i++) {
+        const r = e.results[i];
+        const t = r[0]?.transcript ?? "";
+        if (r.isFinal) finalText += t;
+        else interim += t;
+      }
+      setInput((finalText + interim).trim());
+    };
+    rec.onerror = (e) => {
+      if (e.error && !/aborted|no-speech/.test(e.error)) {
+        setError(`Mic error: ${e.error}`);
+      }
+    };
+    rec.onend = () => {
+      setVoiceListening(false);
+      const text = finalText.trim();
+      if (text) {
+        setInput("");
+        if (screenStream) analyzeScreen(text);
+        else send(text);
+      }
+    };
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+      setVoiceListening(true);
+      stopSpeaking();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't start mic");
+    }
   }
 
   async function analyzeScreen(promptText: string) {
@@ -1072,6 +1184,48 @@ export function PolarisAI() {
                   title={screenStream ? "Stop screen share" : "Share your screen for AI vision"}
                 >
                   <Monitor className="h-2.5 w-2.5" /> {screenStream ? "Sharing" : "Screen"}
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  disabled={!voiceSupported}
+                  className="flex items-center gap-1 rounded-full border px-2 py-0.5 transition disabled:opacity-40"
+                  style={
+                    voiceListening
+                      ? {
+                          borderColor: "rgba(239,68,68,0.7)",
+                          background: "rgba(239,68,68,0.22)",
+                          color: "#fff",
+                        }
+                      : { borderColor: "rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.7)" }
+                  }
+                  title={voiceListening ? "Stop listening" : "Talk to Polaris AI"}
+                >
+                  {voiceListening ? <MicOff className="h-2.5 w-2.5" /> : <Mic className="h-2.5 w-2.5" />}
+                  {voiceListening ? "Listening" : "Voice"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVoiceAuto((v) => {
+                      if (v) stopSpeaking();
+                      return !v;
+                    });
+                  }}
+                  className="flex items-center gap-1 rounded-full border px-2 py-0.5 transition"
+                  style={
+                    voiceAuto
+                      ? {
+                          borderColor: "rgba(var(--polaris-accent)/0.6)",
+                          background: "rgba(var(--polaris-accent)/0.2)",
+                          color: "#fff",
+                        }
+                      : { borderColor: "rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.7)" }
+                  }
+                  title={voiceAuto ? "Stop reading replies aloud" : "Read replies aloud"}
+                >
+                  {voiceAuto ? <Volume2 className="h-2.5 w-2.5" /> : <VolumeX className="h-2.5 w-2.5" />}
+                  Speak
                 </button>
                 <span className="hidden sm:inline text-white/30">·  Enter ↵ to send</span>
               </div>

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Users, X, Copy, LogOut, Crown, Play, Pause, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Users, X, Copy, LogOut, Crown, Play, Pause, Sparkles, Smile } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -12,6 +12,9 @@ import {
   type WatchParty,
   type WatchPartyMember,
 } from "@/lib/watch-party";
+
+const REACTIONS = ["❤️", "🔥", "😂", "😱", "👏", "🎉", "🤯", "😴"] as const;
+type FloatReaction = { id: string; emoji: string; left: number };
 
 type Props = {
   kind: "movie" | "tv";
@@ -34,6 +37,8 @@ export function WatchPartyPanel(props: Props) {
   const [joinCode, setJoinCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [floats, setFloats] = useState<FloatReaction[]>([]);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const isHost = party && user && party.host_id === user.id;
 
@@ -59,12 +64,43 @@ export function WatchPartyPanel(props: Props) {
       .on("postgres_changes", { event: "*", schema: "public", table: "watch_party_members", filter: `party_id=eq.${party.id}` }, () => {
         listMembers(party.id).then(setMembers);
       })
+      .on("broadcast", { event: "reaction" }, (msg) => {
+        const emoji = (msg.payload as { emoji?: string })?.emoji;
+        if (!emoji) return;
+        const r: FloatReaction = {
+          id: Math.random().toString(36).slice(2),
+          emoji,
+          left: 10 + Math.random() * 75,
+        };
+        setFloats((prev) => [...prev, r]);
+        window.setTimeout(() => {
+          setFloats((prev) => prev.filter((x) => x.id !== r.id));
+        }, 2400);
+      })
       .subscribe();
+    channelRef.current = ch;
     return () => {
+      channelRef.current = null;
       supabase.removeChannel(ch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [party?.id, user?.id]);
+
+  function sendReaction(emoji: string) {
+    const ch = channelRef.current;
+    if (!ch) return;
+    ch.send({ type: "broadcast", event: "reaction", payload: { emoji } });
+    // Mirror locally so the sender also sees their reaction
+    const r: FloatReaction = {
+      id: Math.random().toString(36).slice(2),
+      emoji,
+      left: 10 + Math.random() * 75,
+    };
+    setFloats((prev) => [...prev, r]);
+    window.setTimeout(() => {
+      setFloats((prev) => prev.filter((x) => x.id !== r.id));
+    }, 2400);
+  }
 
   // Host: push local state changes to the room
   useEffect(() => {
@@ -130,7 +166,27 @@ export function WatchPartyPanel(props: Props) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-black/85 backdrop-blur-xl">
+    <div className="relative flex h-full flex-col bg-black/85 backdrop-blur-xl">
+      {/* Floating reactions overlay */}
+      <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+        {floats.map((r) => (
+          <span
+            key={r.id}
+            className="absolute bottom-24 text-2xl"
+            style={{
+              left: `${r.left}%`,
+              animation: "polaris-react-float 2.3s ease-out forwards",
+            }}
+          >
+            {r.emoji}
+          </span>
+        ))}
+        <style>{`@keyframes polaris-react-float {
+          0% { transform: translateY(0) scale(0.6); opacity: 0; }
+          15% { transform: translateY(-10px) scale(1.15); opacity: 1; }
+          100% { transform: translateY(-180px) scale(0.9); opacity: 0; }
+        }`}</style>
+      </div>
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
         <Users className="h-4 w-4 text-[rgb(var(--polaris-accent))]" />
         <div className="text-sm font-bold text-white">Watch Party</div>
@@ -218,6 +274,25 @@ export function WatchPartyPanel(props: Props) {
           >
             <LogOut className="h-3.5 w-3.5" /> Leave party
           </button>
+
+          {/* Reactions bar */}
+          <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-2">
+            <div className="mb-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-white/50">
+              <Smile className="h-3 w-3" /> React
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {REACTIONS.map((e) => (
+                <button
+                  key={e}
+                  onClick={() => sendReaction(e)}
+                  className="grid h-9 w-9 place-items-center rounded-xl bg-white/5 text-xl transition hover:scale-110 hover:bg-white/15 active:scale-95"
+                  title={`Send ${e}`}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
