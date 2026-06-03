@@ -1,60 +1,78 @@
 import { useEffect, useRef, useState } from "react";
-import { cachedFetchJson, useDebounced } from "@/lib/lite-utils";
-
-type Track = { id: number; name: string; artist_name: string; audio: string; image?: string; duration?: number };
+import { useDebounced } from "@/lib/lite-utils";
+import { vaporSearch, vaporPlayback, type VaporItem } from "@/lib/vapor";
 
 export function LiteMusic() {
-  const [q, setQ] = useState("lofi");
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [current, setCurrent] = useState<Track | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const [q, setQ] = useState("trending");
   const dq = useDebounced(q, 350);
+  const [items, setItems] = useState<VaporItem[]>([]);
+  const [current, setCurrent] = useState<VaporItem | null>(null);
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    const ctrl = new AbortController();
-    const term = dq.trim() || "lofi";
-    const url = `https://api.jamendo.com/v3.0/tracks/?client_id=b6747d04&format=json&limit=40&search=${encodeURIComponent(term)}`;
-    cachedFetchJson<{ results?: Track[] }>(url, { signal: ctrl.signal, ttlMs: 10 * 60_000 })
-      .then((j) => setTracks(j.results || []))
-      .catch(() => {});
-    return () => ctrl.abort();
+    let cancelled = false;
+    setLoading(true);
+    vaporSearch(dq.trim() || "trending", "song")
+      .then((r) => { if (!cancelled) setItems(r.filter((x) => x.type === "song")); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [dq]);
 
+  async function play(t: VaporItem) {
+    setCurrent(t);
+    setStreamUrl(null);
+    const u = await vaporPlayback(t.id);
+    if (u) {
+      setStreamUrl(u);
+      setTimeout(() => audioRef.current?.play().catch(() => {}), 50);
+    }
+  }
+
   return (
-    <div className="px-4 py-4 pb-32">
+    <div className="px-4 pt-2 pb-32">
       <h1 className="text-xl font-bold">Music</h1>
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search Jamendo…"
-        className="mt-3 w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-600"
+        placeholder="Search songs, artists…"
+        className="mt-3 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none focus:border-white/30"
       />
-      <ul className="mt-4 divide-y divide-neutral-900">
-        {tracks.map((t) => (
+      {loading && items.length === 0 && <div className="mt-6 text-xs text-white/40">Loading…</div>}
+      <ul className="mt-4 divide-y divide-white/5">
+        {items.map((t) => (
           <li key={t.id}>
             <button
-              onClick={() => { setCurrent(t); setTimeout(() => audioRef.current?.play(), 50); }}
-              className={`flex w-full items-center justify-between gap-3 px-1 py-2 text-left text-sm hover:bg-neutral-900 ${
-                current?.id === t.id ? "bg-neutral-900" : ""
-              }`}
+              onClick={() => play(t)}
+              className={`flex w-full items-center gap-3 px-1 py-2 text-left text-sm hover:bg-white/5 ${current?.id === t.id ? "bg-white/5" : ""}`}
             >
+              {t.image ? (
+                <img src={t.image} alt="" width={40} height={40} loading="lazy" className="h-10 w-10 rounded border border-white/10 object-cover" />
+              ) : <div className="h-10 w-10 rounded bg-white/10" />}
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">{t.name}</span>
-                <span className="block truncate text-xs text-neutral-500">{t.artist_name}</span>
+                <span className="block truncate font-medium">{t.title}</span>
+                <span className="block truncate text-xs text-white/45">{t.artist}</span>
               </span>
-              <span className="text-xs text-neutral-500">Play</span>
+              <span className="text-xs text-white/40">Play</span>
             </button>
           </li>
         ))}
       </ul>
       {current && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-800 bg-neutral-950 px-3 py-2">
-          <div className="mx-auto flex max-w-6xl items-center gap-3">
+        <div className="fixed inset-x-0 bottom-20 z-30 mx-auto max-w-3xl rounded-2xl border border-white/10 bg-zinc-950/90 px-3 py-2 backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            {current.image && <img src={current.image} alt="" width={36} height={36} className="h-9 w-9 rounded border border-white/10" />}
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-bold">{current.name}</div>
-              <div className="truncate text-xs text-neutral-500">{current.artist_name}</div>
+              <div className="truncate text-sm font-bold">{current.title}</div>
+              <div className="truncate text-xs text-white/50">{current.artist}</div>
             </div>
-            <audio ref={audioRef} src={current.audio} controls className="h-8 w-72 max-w-[50vw]" />
+            {streamUrl ? (
+              <audio ref={audioRef} src={streamUrl} controls className="h-8 w-56 max-w-[45vw]" />
+            ) : (
+              <span className="text-xs text-white/40">Loading stream…</span>
+            )}
           </div>
         </div>
       )}
