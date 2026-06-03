@@ -209,55 +209,7 @@ export const COMMANDS: Record<string, BotCommand> = {
   },
   invite: { name: "invite", description: "Invite link to Polaris",
     run: () => `✨ Share Polaris: ${typeof window !== "undefined" ? window.location.origin : "https://polarisbeta.lovable.app"}` },
-  // ADMIN
-  ban:    { name: "ban",    description: "Ban a user (admin)", adminOnly: true,
-    run: ({ args, isAdmin }) => {
-      if (!isAdmin) return "❌ Insufficient permissions.";
-      const target = args[0]?.replace(/^@/, "");
-      if (!target) return "Usage: `#ban @user [reason]`";
-      const reason = args.slice(1).join(" ") || "No reason provided";
-      return `🔨 Successfully banned **${target}**.\n*Reason: ${reason}*`;
-    },
-  },
-  kick:   { name: "kick",   description: "Kick a user (admin)", adminOnly: true,
-    run: ({ args, isAdmin }) => {
-      if (!isAdmin) return "❌ Insufficient permissions.";
-      const target = args[0]?.replace(/^@/, "");
-      return target ? `👢 **${target}** was kicked.` : "Usage: `#kick @user`";
-    },
-  },
-  mute:   { name: "mute",   description: "Mute a user (admin)", adminOnly: true,
-    run: ({ args, isAdmin }) => {
-      if (!isAdmin) return "❌ Insufficient permissions.";
-      const target = args[0]?.replace(/^@/, "");
-      const dur = args[1] || "10m";
-      return target ? `🔇 **${target}** muted for ${dur}.` : "Usage: `#mute @user 10m`";
-    },
-  },
-  warn:   { name: "warn",   description: "Warn a user (admin)", adminOnly: true,
-    run: ({ args, isAdmin }) => {
-      if (!isAdmin) return "❌ Insufficient permissions.";
-      const target = args[0]?.replace(/^@/, "");
-      return target ? `⚠️ **${target}** has been warned.` : "Usage: `#warn @user`";
-    },
-  },
-  purge:  { name: "purge",  description: "Bulk-clear N messages (admin)", adminOnly: true,
-    run: ({ args, isAdmin }): BotResult => {
-      if (!isAdmin) return { reply: "❌ Insufficient permissions." };
-      const n = Math.min(100, Math.max(1, parseInt(args[0] || "10", 10) || 10));
-      return { reply: `🧹 Purging the last **${n}** messages…`, action: { kind: "purge", count: n } };
-    },
-  },
-  lock:   { name: "lock",   description: "Lock the channel (admin)", adminOnly: true,
-    run: ({ isAdmin }): BotResult => isAdmin
-      ? { reply: "🔒 Channel locked. Only admins can post now.", action: { kind: "lock" } }
-      : { reply: "❌ Insufficient permissions." },
-  },
-  unlock: { name: "unlock", description: "Unlock the channel (admin)", adminOnly: true,
-    run: ({ isAdmin }): BotResult => isAdmin
-      ? { reply: "🔓 Channel unlocked. Everyone can post again.", action: { kind: "unlock" } }
-      : { reply: "❌ Insufficient permissions." },
-  },
+  // Admin commands live in ADMIN_COMMANDS below and are wired to server functions.
 };
 
 /** Parse a duration token like "perm", "30m", "1h", "3d", "7d". Returns minutes (or "perm"). */
