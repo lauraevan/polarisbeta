@@ -1118,6 +1118,64 @@ function MessageBubble({
   );
 }
 
+function BotProfileSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null;
+  const cmds = [
+    "#help", "#ping", "#flip", "#roll 20", "#8ball", "#choose a | b",
+    "#joke", "#fact", "#poll", "#calc 2*7", "#reverse", "#emojify",
+    "#compliment", "#motivate", "#hug @user", "#pat @user",
+    "#ship a b", "#rate pizza", "#countdown 2026-12-25",
+    "#time", "#base64", "#remind 10m drink water", "#invite",
+  ];
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md overflow-hidden rounded-3xl border border-white/15 shadow-2xl"
+        style={{
+          background: "linear-gradient(160deg, rgba(255,170,90,0.25), rgba(15,10,8,0.92))",
+          backdropFilter: "blur(20px) saturate(160%)",
+        }}
+      >
+        <div className="relative h-24" style={{ background: "linear-gradient(120deg, rgb(255,140,60), rgb(255,200,100))" }}>
+          <button
+            onClick={onClose}
+            className="absolute right-3 top-3 rounded-full bg-black/30 p-1.5 text-white/90 hover:bg-black/50"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="-mt-10 px-5 pb-5">
+          <div className="flex items-end justify-between">
+            <div className="h-20 w-20 overflow-hidden rounded-2xl border-4 border-zinc-900 bg-zinc-800">
+              <img src={POLARIS_BOT_AVATAR} alt="" className="h-full w-full object-cover" />
+            </div>
+            <span className="rounded-md bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-[10px] font-black uppercase text-black">
+              Verified Bot
+            </span>
+          </div>
+          <h2 className="mt-3 text-xl font-bold text-white">{POLARIS_BOT_USERNAME}</h2>
+          <p className="text-xs text-white/60">{POLARIS_BOT_TAGLINE}</p>
+          <p className="mt-3 text-sm leading-relaxed text-white/80">{POLARIS_BOT_BIO}</p>
+          <div className="mt-4">
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Quick commands</div>
+            <div className="flex flex-wrap gap-1.5">
+              {cmds.map((c) => (
+                <code key={c} className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] text-white/85">{c}</code>
+              ))}
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] text-white/70">
+            <div className="rounded-lg bg-white/5 p-2"><div className="text-base font-bold text-white">24/7</div>online</div>
+            <div className="rounded-lg bg-white/5 p-2"><div className="text-base font-bold text-white">{Object.keys({}).length || 27}+</div>commands</div>
+            <div className="rounded-lg bg-white/5 p-2"><div className="text-base font-bold text-white">∞</div>vibes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GifPicker({ onPick, onClose }: { onPick: (g: TenorGif) => void; onClose: () => void }) {
   const [q, setQ] = useState("");
   const [gifs, setGifs] = useState<TenorGif[]>([]);
