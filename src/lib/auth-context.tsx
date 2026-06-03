@@ -40,6 +40,7 @@ export type Profile = {
   spent_coins?: number;
   pro_until?: string | null;
   pro_tier?: string | null;
+  is_anonymous?: boolean;
 };
 
 type Ctx = {

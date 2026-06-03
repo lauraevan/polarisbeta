@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Save, LogOut, Loader2, Camera, Trash2, Sparkles, ImagePlus, UserPlus, UserCheck, UserX, Users, Check } from "lucide-react";
+import { X, Save, LogOut, Loader2, Camera, Trash2, Sparkles, ImagePlus, UserPlus, UserCheck, UserX, Users, Check, VenetianMask, Crown } from "lucide-react";
 import { useAuth, type Profile } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,6 +8,7 @@ import {
   sendFriendRequest, acceptFriendRequest, removeFriend, listFriends, getFriendStatus,
   type FriendEdge,
 } from "@/lib/friends.functions";
+import { ProDashboard } from "@/components/polaris/premium/ProDashboard";
 
 const PRESET_COLORS: { label: string; rgb: string }[] = [
   { label: "Ember",  rgb: "255 140 80" },
@@ -33,7 +34,7 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [ownedThemes, setOwnedThemes] = useState<Array<{ id: string; name: string; accent: string; banner: string }>>([]);
-  const [tab, setTab] = useState<"profile" | "chat">("profile");
+  const [tab, setTab] = useState<"profile" | "chat" | "pro">("profile");
 
   useEffect(() => {
     if (open && profile) setDraft({});
@@ -157,18 +158,18 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
                     className="flex rounded-full p-1 backdrop-blur-xl"
                     style={{ background: "rgba(0,0,0,0.45)", border: `1px solid ${accentRing}` }}
                   >
-                    {(["profile", "chat"] as const).map((t) => (
+                    {(["profile", "chat", "pro"] as const).map((t) => (
                       <button
                         key={t}
                         onClick={() => setTab(t)}
-                        className="rounded-full px-5 py-1.5 text-sm font-semibold transition"
+                        className="rounded-full px-4 py-1.5 text-sm font-semibold transition"
                         style={
                           tab === t
                             ? { background: accentRgb, color: "#0a0a0a" }
                             : { color: `rgba(${accent} / 0.75)` }
                         }
                       >
-                        {t === "profile" ? "Profile" : "Chat Style"}
+                        {t === "profile" ? "Profile" : t === "chat" ? "Chat Style" : "Pro"}
                       </button>
                     ))}
                   </div>
