@@ -267,6 +267,17 @@ export function PolarisAI() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [active?.messages.length, streaming]);
 
+  // Auto-TTS: when a reply finishes streaming and voiceAuto is on, speak it.
+  useEffect(() => {
+    if (!voiceAuto || streaming) return;
+    const last = active?.messages[active.messages.length - 1];
+    if (!last || last.role !== "assistant" || !last.content) return;
+    if (lastSpokenIdRef.current === last.id) return;
+    lastSpokenIdRef.current = last.id;
+    speak(last.content);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streaming, voiceAuto, active?.messages.length]);
+
   function newChat() {
     const c: Chat = { id: uid(), title: "New Chat", messages: [], updatedAt: Date.now() };
     setChats((prev) => [c, ...prev]);
