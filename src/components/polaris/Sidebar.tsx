@@ -31,6 +31,8 @@ import { useSidebarState } from "@/lib/sidebar-context";
 import { useShowDiscord } from "@/lib/ui-prefs";
 import { safeGetItem, safeSetItem } from "@/lib/safe-storage";
 import { ProfileButton } from "./ProfileButton";
+import { useCustomizer } from "@/lib/customizer-context";
+import { DecalIcon } from "@/components/customizer/decals";
 
 type NavItem = { to: string; label: string; icon: typeof Home };
 type NavGroup = { id: string; label: string; items: NavItem[] };
@@ -83,6 +85,14 @@ const GROUPS: NavGroup[] = [
 ];
 
 const ALL_ITEMS: NavItem[] = [HOME_ITEM, ...GROUPS.flatMap((g) => g.items)];
+
+function sortByCustomOrder<T extends { to: string }>(items: T[], orderOf: (to: string) => number | undefined): T[] {
+  return [...items].sort((a, b) => {
+    const oa = orderOf(a.to) ?? 0;
+    const ob = orderOf(b.to) ?? 0;
+    return oa - ob;
+  });
+}
 const PINS_KEY = "polaris-sidebar-pins";
 const COLLAPSED_GROUPS_KEY = "polaris-sidebar-collapsed-groups";
 
