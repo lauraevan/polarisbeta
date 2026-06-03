@@ -4,24 +4,19 @@ import type { ReactNode, CSSProperties } from "react";
 
 /**
  * Wrap any element to make it customizable when the editor overlay is active.
- * - Applies persisted scale/color/decal/hidden state.
- * - When the editor is on, clicking the element selects it for the Inspector.
- * - Locked surfaces (Player, modals, etc.) simply don't use this wrapper.
+ * Applies persisted scale/color/decal/hidden state and selects on click.
  */
 export function Editable({
   id,
   children,
-  as: As = "div",
   className = "",
   style,
   selectable = true,
 }: {
   id: string;
   children: ReactNode;
-  as?: keyof React.JSX.IntrinsicElements;
   className?: string;
   style?: CSSProperties;
-  /** Setting false means it still renders the transform but can't be selected. */
   selectable?: boolean;
 }) {
   const { active, selected, setSelected, getItem } = useCustomizer();
@@ -40,10 +35,8 @@ export function Editable({
     ...style,
   };
 
-  // We type to any here just for the dynamic tag.
-  const Tag = As as unknown as "div";
   return (
-    <Tag
+    <div
       data-polaris-edit-id={id}
       className={`${className} ${active && selectable ? "cursor-grab ring-1 ring-white/0 hover:ring-white/30" : ""}`}
       style={transform}
@@ -56,6 +49,6 @@ export function Editable({
     >
       {children}
       {t.decal && <DecalIcon id={t.decal} />}
-    </Tag>
+    </div>
   );
 }
