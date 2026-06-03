@@ -22,19 +22,10 @@ export type Episode = {
 const ITUNES = "https://itunes.apple.com";
 // Try several CORS proxies — if one is down podcasts still load.
 const RSS_PROXIES = [
-  "https://corsproxy.io/?url=",
   "https://api.allorigins.win/raw?url=",
+  "https://corsproxy.io/?",
   "https://api.codetabs.com/v1/proxy?quest=",
-  "https://thingproxy.freeboard.io/fetch/",
-  "https://cors.eu.org/",
 ];
-
-function fetchWithTimeout(url: string, ms = 8000): Promise<Response> {
-  return Promise.race([
-    fetch(url),
-    new Promise<Response>((_, rej) => setTimeout(() => rej(new Error("timeout")), ms)),
-  ]);
-}
 
 function mapPodcast(r: Record<string, unknown>): Podcast {
   const art = (r.artworkUrl600 as string) || (r.artworkUrl100 as string) || "";
@@ -51,44 +42,36 @@ function mapPodcast(r: Record<string, unknown>): Podcast {
 export async function searchPodcasts(q: string, limit = 24): Promise<Podcast[]> {
   if (!q.trim()) return [];
   const url = `${ITUNES}/search?media=podcast&limit=${limit}&term=${encodeURIComponent(q)}`;
-  let r: Response;
-  try { r = await fetchWithTimeout(url, 6000); } catch { return []; }
+  const r = await fetch(url);
   if (!r.ok) return [];
   const j = (await r.json()) as { results: Record<string, unknown>[] };
   return (j.results || []).map(mapPodcast).filter((p) => p.feedUrl && p.artwork);
 }
 
-// Top podcasts: aggregate iTunes search across popular topics, but in small
-// concurrent batches so a single slow request can't lock up the whole page.
-// First batch returns fast for an immediate paint; remaining batches stream
-// in via the optional onMore callback.
+// Top podcasts: aggregate iTunes search across popular topics. Each call returns
+// rich entries with feedUrl baked in, so we never get stuck on a lookup step.
 const TOP_TERMS = [
-  "joe rogan", "lex fridman", "huberman lab", "theo von", "shawn ryan",
-  "smartless", "this american life", "the daily", "crime junkie", "serial",
+  "joe rogan", "lex fridman", "huberman", "npr news", "this american life",
+  "the daily", "smartless", "crime junkie", "stuff you should know", "serial",
   "tim ferriss", "freakonomics", "ted talks daily", "armchair expert",
-  "morbid", "call her daddy", "rotten mango", "my favorite murder",
-  "radiolab", "planet money", "hardcore history", "up first", "fresh air",
-  "99 percent invisible", "ezra klein", "sam harris", "bill simmons",
-  "pat mcafee", "my first million", "all in podcast", "acquired",
-  "how i built this", "modern wisdom", "jordan peterson", "ben shapiro",
-  "tucker carlson", "candace owens", "piers morgan", "megyn kelly",
-  "diary of a ceo", "stuff you should know", "conan o brien", "dax shepard",
-  "true crime", "science", "comedy", "history", "business", "technology",
+  "morbid", "call her daddy", "comedy", "technology", "history", "business",
+  "theo von", "shawn ryan", "this past weekend", "conan o brien", "dax shepard",
+  "my favorite murder", "radiolab", "planet money", "hardcore history",
+  "rotten mango", "up first", "wait wait", "fresh air", "99 percent invisible",
+  "reply all", "economist", "wall street journal", "new york times", "ezra klein",
+  "sam harris", "bill simmons", "pat mcafee", "my first million", "all in podcast",
+  "acquired", "masters of scale", "how i built this", "huberman lab",
+  "modern wisdom", "jordan peterson", "ben shapiro", "tucker carlson",
+  "candace owens", "piers morgan", "megyn kelly", "political gabfest", "science",
+  "sports", "true crime", "music", "education",
 ];
-async function batched<T, R>(items: T[], size: number, fn: (t: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = [];
-  for (let i = 0; i < items.length; i += size) {
-    const chunk = items.slice(i, i + size);
-    out.push(...(await Promise.all(chunk.map(fn))));
-  }
-  return out;
-}
 export async function topPodcasts(_limit = 50): Promise<Podcast[]> {
-  // Run searches in chunks of 6 — fast first paint, no thundering herd.
-  const arrays = await batched(TOP_TERMS, 6, (t) => searchPodcasts(t, 3).catch(() => [] as Podcast[]));
+  const results = await Promise.all(
+    TOP_TERMS.map((t) => searchPodcasts(t, 4).catch(() => [] as Podcast[])),
+  );
   const seen = new Set<number>();
   const out: Podcast[] = [];
-  for (const arr of arrays) for (const p of arr) {
+  for (const arr of results) for (const p of arr) {
     if (seen.has(p.id)) continue;
     seen.add(p.id);
     out.push(p);
@@ -98,33 +81,11 @@ export async function topPodcasts(_limit = 50): Promise<Podcast[]> {
 
 export async function fetchEpisodes(feedUrl: string, limit = 50): Promise<Episode[]> {
   if (!feedUrl) return [];
-  // 1. Try rss2json first — it returns clean JSON so we skip XML parsing.
-  try {
-    const r = await fetchWithTimeout(
-      `https://api.rss2json.com/v1/api.json?count=${limit}&rss_url=${encodeURIComponent(feedUrl)}`,
-      8000,
-    );
-    if (r.ok) {
-      const j = await r.json() as { items?: Array<Record<string, any>> };
-      const eps: Episode[] = (j.items || []).map((it) => ({
-        guid: it.guid || it.link || String(Math.random()),
-        title: it.title || "Episode",
-        description: (it.description || it.content || "").replace(/<[^>]+>/g, "").slice(0, 400),
-        pubDate: it.pubDate || "",
-        duration: it.enclosure?.duration || "",
-        audioUrl: it.enclosure?.link || it.enclosure?.url || "",
-        image: it.thumbnail || it.enclosure?.thumbnail || "",
-      })).filter((e) => e.audioUrl);
-      if (eps.length) return eps;
-    }
-  } catch { /* fall through */ }
-
-  // 2. Fall back to raw RSS via rotating proxies.
   let text = "";
   for (const proxy of RSS_PROXIES) {
     try {
-      const r = await fetchWithTimeout(proxy + encodeURIComponent(feedUrl), 7000);
-      if (r.ok) { text = await r.text(); if (text && text.length > 100) break; }
+      const r = await fetch(proxy + encodeURIComponent(feedUrl));
+      if (r.ok) { text = await r.text(); if (text) break; }
     } catch { /* try next */ }
   }
   if (!text) return [];
