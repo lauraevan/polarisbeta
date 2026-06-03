@@ -188,6 +188,10 @@ export function PolarisAI() {
   const [modeOpen, setModeOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
   const [imageMode, setImageMode] = useState(false);
+  // Screen-share / AI vision state
+  const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
+  const [screenAnalyzing, setScreenAnalyzing] = useState(false);
+  const screenVideoRef = useRef<HTMLVideoElement | null>(null);
   const [wallet, setWallet] = useState<{ coins: number; basic_credits: number; premium_credits: number } | null>(null);
   const [exchanging, setExchanging] = useState<"basic" | "premium" | null>(null);
   const [search, setSearch] = useState("");
