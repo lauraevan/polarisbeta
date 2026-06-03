@@ -5,8 +5,8 @@ import { PolarisCloud } from "@/components/polaris/cloud/PolarisCloud";
 export const Route = createFileRoute("/cloud")({
   head: () => ({
     meta: [
-      { title: "Polaris Cloud — Your files, powered by Cine" },
-      { name: "description", content: "Polaris Cloud: store, share, and stream your files across devices. Choose Polaris Cloud (Cine API) or bring your own custom S3-compatible cloud." },
+      { title: "Polaris Cloud Gaming — Stream AAA games in your browser" },
+      { name: "description", content: "Polaris Cloud Gaming streams modern PC and console titles straight to your browser. No downloads, no installs — pick a game and play." },
     ],
   }),
   component: () => (

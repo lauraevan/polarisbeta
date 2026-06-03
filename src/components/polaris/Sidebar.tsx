@@ -65,7 +65,7 @@ const GROUPS: NavGroup[] = [
       { to: "/remote", label: "Remote PC", icon: Monitor },
       { to: "/vpn", label: "Tunnel", icon: Shield },
       { to: "/os", label: "Polaris OS", icon: HardDrive },
-      { to: "/cloud", label: "Cloud", icon: Cloud },
+      { to: "/cloud", label: "Cloud Gaming", icon: Cloud },
     ],
   },
   {
