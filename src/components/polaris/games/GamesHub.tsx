@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
-import { Gamepad2, Calculator, Cloud, Library, Loader2, Play, Zap, MessageCircle, ExternalLink, Blocks } from "lucide-react";
+import { Gamepad2, Calculator, Cloud, Library, Loader2, Play, Zap, MessageCircle, ExternalLink } from "lucide-react";
 import { PolarisCollection } from "./PolarisCollection";
 import { EmbedFrame } from "./EmbedFrame";
 import { GnMathCollection } from "./GnMathCollection";
@@ -11,7 +11,7 @@ import { POLARIS_GAMES } from "@/lib/polaris-games";
 import { hydraSearch, hydraFeatured, steamHeader, type HydraEdge, type HydraFeatured } from "@/lib/hydra-api";
 import { useShowDiscord } from "@/lib/ui-prefs";
 
-type TabId = "home" | "polaris" | "cine" | "hydra" | "gnmath" | "gfn" | "roblox";
+type TabId = "home" | "polaris" | "cine" | "hydra" | "gnmath" | "gfn";
 
 const TABS: { id: TabId; label: string; icon: typeof Gamepad2; desc: string }[] = [
   { id: "home",    label: "Home",              icon: Library,    desc: "Mixed feed" },
@@ -20,7 +20,6 @@ const TABS: { id: TabId; label: string; icon: typeof Gamepad2; desc: string }[] 
   { id: "gnmath",  label: "Gn-Math",           icon: Calculator, desc: "Unblocked library" },
   { id: "cine",    label: "Cine Cloud",        icon: Cloud,      desc: "Cloud PC games" },
   { id: "gfn",     label: "GeForce Now",       icon: Zap,        desc: "NVIDIA cloud gaming" },
-  { id: "roblox",  label: "Roblox Emulator",   icon: Blocks,     desc: "Play Roblox in browser" },
 ];
 
 const POLARIS_CDN = "https://cdn.jsdelivr.net/npm/ugs-singlefiles@1.0.6/";
@@ -369,14 +368,12 @@ export function GamesHub() {
   const search = useSearch({ strict: false }) as { tab?: string };
   const initialTab: TabId =
     search.tab === "gfn" ? "gfn" :
-    search.tab === "roblox" ? "roblox" :
     "home";
   const [tab, setTab] = useState<TabId>(initialTab);
   const [playing, setPlaying] = useState<Play | null>(null);
 
   useEffect(() => {
     if (search.tab === "gfn") setTab("gfn");
-    if (search.tab === "roblox") setTab("roblox");
   }, [search.tab]);
 
   return (
@@ -451,7 +448,6 @@ export function GamesHub() {
           {tab === "gnmath" && <GnMathCollection />}
           {tab === "cine" && <CineLauncher />}
           {tab === "gfn" && <GeForceNowLauncher />}
-          {tab === "roblox" && <RobloxEmulator />}
         </main>
       </div>
 
