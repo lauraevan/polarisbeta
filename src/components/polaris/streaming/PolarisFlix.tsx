@@ -835,7 +835,7 @@ function AiMatch({ onSelect }: { onSelect: (item: TmdbItem, kind: MediaKind) => 
         }),
       );
       const final = resolved.filter(
-        (x): x is { item: TmdbItem; kind: MediaKind; reason?: string } => Boolean(x),
+        (x): x is { item: TmdbItem; kind: MediaKind; reason: string | undefined } => x !== null,
       );
       setResults(final);
       const reasons: Record<string, string> = {};
