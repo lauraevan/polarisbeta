@@ -52,7 +52,8 @@ function fmtSize(n: number | null) {
 }
 
 export function PolarisCloud() {
-  const { user, isSignedIn } = useAuth();
+  const { user } = useAuth();
+  const isSignedIn = !!user;
   const [provider, setProvider] = useState<Provider>("cine");
   const [files, setFiles] = useState<CloudFile[]>([]);
   const [loading, setLoading] = useState(false);
