@@ -232,6 +232,7 @@ function DesktopSide({
 
         {GROUPS.map((g) => {
           const open = !groupCollapsed[g.id];
+          const items = sortByCustomOrder(g.items, orderOf);
           return (
             <Section
               key={g.id}
@@ -240,7 +241,7 @@ function DesktopSide({
               open={open}
               onToggle={() => toggleGroup(g.id)}
             >
-              {g.items.map((item) => (
+              {items.map((item) => (
                 <NavRow
                   key={item.to}
                   item={item}
