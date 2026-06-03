@@ -20,7 +20,12 @@ export type Episode = {
 };
 
 const ITUNES = "https://itunes.apple.com";
-const RSS_PROXY = "https://api.allorigins.win/raw?url=";
+// Try several CORS proxies — if one is down podcasts still load.
+const RSS_PROXIES = [
+  "https://api.allorigins.win/raw?url=",
+  "https://corsproxy.io/?",
+  "https://api.codetabs.com/v1/proxy?quest=",
+];
 
 function mapPodcast(r: Record<string, unknown>): Podcast {
   const art = (r.artworkUrl600 as string) || (r.artworkUrl100 as string) || "";
@@ -43,35 +48,38 @@ export async function searchPodcasts(q: string, limit = 24): Promise<Podcast[]> 
   return (j.results || []).map(mapPodcast).filter((p) => p.feedUrl && p.artwork);
 }
 
-// Top podcasts via Apple's marketing RSS.
-export async function topPodcasts(limit = 50): Promise<Podcast[]> {
-  const url = `https://rss.applemarketingtools.com/api/v2/us/podcasts/top/${limit}/podcasts.json`;
-  const r = await fetch(url);
-  if (!r.ok) return [];
-  const j = (await r.json()) as { feed: { results: Array<{ id: string; name: string; artistName: string; artworkUrl100: string; genres: { name: string }[] }> } };
-  // Hydrate feedUrl via lookup batch
-  const ids = j.feed.results.map((x) => x.id).join(",");
-  let feeds: Record<string, string> = {};
-  try {
-    const lr = await fetch(`${ITUNES}/lookup?id=${ids}&entity=podcast`);
-    const lj = (await lr.json()) as { results: Array<{ collectionId: number; feedUrl?: string }> };
-    feeds = Object.fromEntries(lj.results.map((x) => [String(x.collectionId), x.feedUrl || ""]));
-  } catch { /* ignore */ }
-  return j.feed.results.map((x) => ({
-    id: Number(x.id),
-    title: x.name,
-    artist: x.artistName,
-    artwork: x.artworkUrl100.replace("100x100", "600x600"),
-    feedUrl: feeds[x.id] || "",
-    genre: x.genres?.[0]?.name || "",
-  })).filter((p) => p.feedUrl);
+// Top podcasts: aggregate iTunes search across popular topics. Each call returns
+// rich entries with feedUrl baked in, so we never get stuck on a lookup step.
+const TOP_TERMS = [
+  "joe rogan", "lex fridman", "huberman", "npr news", "this american life",
+  "the daily", "smartless", "crime junkie", "stuff you should know", "serial",
+  "tim ferriss", "freakonomics", "ted talks daily", "armchair expert",
+  "morbid", "call her daddy", "comedy", "technology", "history", "business",
+];
+export async function topPodcasts(_limit = 50): Promise<Podcast[]> {
+  const results = await Promise.all(
+    TOP_TERMS.map((t) => searchPodcasts(t, 3).catch(() => [] as Podcast[])),
+  );
+  const seen = new Set<number>();
+  const out: Podcast[] = [];
+  for (const arr of results) for (const p of arr) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    out.push(p);
+  }
+  return out;
 }
 
 export async function fetchEpisodes(feedUrl: string, limit = 50): Promise<Episode[]> {
   if (!feedUrl) return [];
-  const r = await fetch(RSS_PROXY + encodeURIComponent(feedUrl));
-  if (!r.ok) return [];
-  const text = await r.text();
+  let text = "";
+  for (const proxy of RSS_PROXIES) {
+    try {
+      const r = await fetch(proxy + encodeURIComponent(feedUrl));
+      if (r.ok) { text = await r.text(); if (text) break; }
+    } catch { /* try next */ }
+  }
+  if (!text) return [];
   const doc = new DOMParser().parseFromString(text, "application/xml");
   const items = Array.from(doc.querySelectorAll("item")).slice(0, limit);
   return items.map((it) => {

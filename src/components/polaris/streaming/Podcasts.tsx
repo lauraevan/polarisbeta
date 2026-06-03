@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Search, Play, Pause, X, Mic2 } from "lucide-react";
+import { Search, Play, Pause, X, Mic2, RotateCw } from "lucide-react";
 import { searchPodcasts, topPodcasts, fetchEpisodes, type Podcast, type Episode } from "@/lib/podcasts";
 
 export function PodcastsTab() {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Podcast[]>([]);
   const [top, setTop] = useState<Podcast[]>([]);
+  const [topLoading, setTopLoading] = useState(true);
+  const [topErr, setTopErr] = useState<string | null>(null);
   const [open, setOpen] = useState<Podcast | null>(null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loadingEps, setLoadingEps] = useState(false);
@@ -13,7 +15,14 @@ export function PodcastsTab() {
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => { topPodcasts(40).then(setTop).catch(() => {}); }, []);
+  const loadTop = () => {
+    setTopLoading(true); setTopErr(null);
+    topPodcasts(40)
+      .then((r) => { setTop(r); if (r.length === 0) setTopErr("No podcasts returned. Try search."); })
+      .catch((e) => setTopErr(String(e?.message ?? e)))
+      .finally(() => setTopLoading(false));
+  };
+  useEffect(loadTop, []);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -87,6 +96,14 @@ export function PodcastsTab() {
         ))}
       </div>
       {shown.length === 0 && <div className="mt-10 text-center text-sm text-white/40">Loading…</div>}
+      {!q.trim() && top.length === 0 && !topLoading && (
+        <div className="mt-10 flex flex-col items-center gap-3 text-center">
+          <div className="text-sm text-white/55">{topErr ?? "Couldn't reach Apple Podcasts."}</div>
+          <button onClick={loadTop} className="flex items-center gap-2 rounded-full bg-purple-600 px-4 py-2 text-sm font-bold">
+            <RotateCw className="h-4 w-4" /> Retry
+          </button>
+        </div>
+      )}
 
       {/* Podcast detail drawer */}
       {open && (
