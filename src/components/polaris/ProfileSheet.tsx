@@ -202,11 +202,13 @@ export function ProfileSheet({ open, onClose, viewUserId }: { open: boolean; onC
                   <Section label="Photo" accent={accent}>
                     <div className="relative">
                       <div
-                        className="h-32 w-full rounded-2xl"
+                        className={`h-32 w-full rounded-2xl ${isPro && !bannerUrl ? "pro-banner-animated" : ""}`}
                         style={{
                           background: bannerUrl
                             ? `url(${bannerUrl}) center/cover no-repeat`
-                            : `linear-gradient(135deg, rgb(${banner}), rgb(${accent}))`,
+                            : isPro
+                              ? undefined
+                              : `linear-gradient(135deg, rgb(${banner}), rgb(${accent}))`,
                           boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.08)",
                         }}
                       >
