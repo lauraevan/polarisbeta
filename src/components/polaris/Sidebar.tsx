@@ -333,6 +333,11 @@ function NavRow({
   onTogglePin: () => void;
 }) {
   const Icon = item.icon;
+  const c = useCustomizer();
+  const editId = `nav:${item.to}`;
+  const t = c.getItem(editId);
+  if (t.hidden && !c.active) return null;
+  const isSelected = c.active && c.selected === editId;
   return (
     <Link
       to={item.to}
@@ -340,6 +345,18 @@ function NavRow({
       className={`group relative flex items-center rounded-xl text-sm transition-all ${
         collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2"
       } ${active ? "text-white" : "text-white/65 hover:bg-white/5 hover:text-white"}`}
+      style={{
+        transform: t.scale ? `scale(${t.scale})` : undefined,
+        transformOrigin: "left center",
+        outline: isSelected ? "2px solid rgb(var(--polaris-accent))" : undefined,
+        opacity: t.hidden ? 0.4 : 1,
+      }}
+      onClickCapture={(e) => {
+        if (!c.active) return;
+        e.preventDefault();
+        e.stopPropagation();
+        c.setSelected(editId);
+      }}
     >
       {active && (
         <span
@@ -350,7 +367,10 @@ function NavRow({
           }}
         />
       )}
-      <Icon className="relative h-[18px] w-[18px] shrink-0" />
+      <span className="relative shrink-0">
+        <Icon className="h-[18px] w-[18px]" style={t.color ? { color: `rgb(${t.color})` } : undefined} />
+        {t.decal && <DecalIcon id={t.decal} size={10} />}
+      </span>
       {!collapsed && (
         <>
           <span className="relative flex-1 truncate font-medium">{item.label}</span>
