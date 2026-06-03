@@ -35,7 +35,7 @@ async function callUpstream(provider: Provider, model: string, messages: Msg[]) 
     return fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, messages, stream: true, max_tokens: 1024 }),
+      body: JSON.stringify({ model, messages, stream: true }),
     });
   }
   if (provider === "openrouter") {
@@ -49,7 +49,7 @@ async function callUpstream(provider: Provider, model: string, messages: Msg[]) 
         "HTTP-Referer": "https://polarisbeta.lovable.app",
         "X-Title": "Polaris One",
       },
-      body: JSON.stringify({ model, messages, stream: true, max_tokens: 1024 }),
+      body: JSON.stringify({ model, messages, stream: true }),
     });
   }
   const key = process.env.LOVABLE_API_KEY;
@@ -57,7 +57,7 @@ async function callUpstream(provider: Provider, model: string, messages: Msg[]) 
   return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages, stream: true, max_tokens: 1024 }),
+    body: JSON.stringify({ model, messages, stream: true }),
   });
 }
 

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/polaris/AppShell";
-import { Download, HardDrive, Cpu, Shield, Sparkles } from "lucide-react";
+import { Download, HardDrive, Cpu, Shield, Sparkles, Lock } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/os")({
   head: () => ({
@@ -13,6 +14,20 @@ export const Route = createFileRoute("/os")({
 });
 
 function OsPage() {
+  const { profile, loading } = useAuth();
+  const allowed = !!(profile as { is_owner?: boolean } | null)?.is_owner;
+  if (loading) return <AppShell><div className="p-10 text-white/60">Loading…</div></AppShell>;
+  if (!allowed) {
+    return (
+      <AppShell>
+        <div className="mx-auto mt-24 max-w-md rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center text-white">
+          <Lock className="mx-auto mb-3 h-8 w-8 text-white/60" />
+          <h1 className="text-xl font-black">Restricted</h1>
+          <p className="mt-2 text-sm text-white/60">Polaris OS is currently in private development. Only owners can view this page.</p>
+        </div>
+      </AppShell>
+    );
+  }
   return (
     <AppShell>
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14 text-white">
