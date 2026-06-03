@@ -15,8 +15,9 @@ function CustomizePage() {
   const c = useCustomizer();
   useEffect(() => {
     c.setActive(true);
-    return () => c.setActive(false);
-  }, [c]);
+    // Do not auto-deactivate on unmount — user controls via Exit button.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <AppShell wallpaperButton>

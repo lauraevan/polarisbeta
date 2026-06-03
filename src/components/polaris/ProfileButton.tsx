@@ -25,10 +25,14 @@ export function ProfileButton({ collapsed }: { collapsed: boolean }) {
         {profile ? (
           <span className="relative shrink-0">
             <span
-              className="grid h-[22px] w-[22px] place-items-center rounded-md text-[13px]"
+              className="grid h-[22px] w-[22px] place-items-center overflow-hidden rounded-md text-[13px]"
               style={{ background: `rgba(${profile.accent_color}/0.95)` }}
             >
-              {profile.avatar_emoji ?? "✨"}
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span>{profile.avatar_emoji ?? "✨"}</span>
+              )}
             </span>
             {isPro && (
               <span

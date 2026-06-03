@@ -14,7 +14,7 @@ export type ItemTransform = {
 
 export type CustomizerDocument = {
   version: 1;
-  tokens: { accent?: string; radius?: number; buttonScale?: number };
+  tokens: { accent?: string; radius?: number; buttonScale?: number; homeFontScale?: number };
   items: Record<string, ItemTransform>;
 };
 
@@ -48,7 +48,6 @@ type Ctx = {
 
 const CustomizerCtx = createContext<Ctx | null>(null);
 const LOCAL_KEY = "polaris:customizer:doc";
-const ACTIVE_KEY = "polaris:customizer:active";
 
 export function CustomizerProvider({ children }: { children: ReactNode }) {
   const [doc, setDoc] = useState<CustomizerDocument>(EMPTY_DOC);
@@ -68,12 +67,12 @@ export function CustomizerProvider({ children }: { children: ReactNode }) {
       const raw = safeGetItem("localStorage", LOCAL_KEY);
       if (raw) setDoc(JSON.parse(raw) as CustomizerDocument);
     } catch { /* ignore */ }
-    if (safeGetItem("localStorage", ACTIVE_KEY) === "1") setActive(true);
+    // Never auto-open the editor on load — it's opt-in via /customize or Settings.
   }, []);
 
   // Persist
   useEffect(() => { safeSetItem("localStorage", LOCAL_KEY, JSON.stringify(doc)); }, [doc]);
-  useEffect(() => { safeSetItem("localStorage", ACTIVE_KEY, active ? "1" : "0"); }, [active]);
+  // `active` is intentionally session-only — do not persist.
 
   // Apply token side-effects (accent / button scale / radius)
   useEffect(() => {
@@ -83,6 +82,11 @@ export function CustomizerProvider({ children }: { children: ReactNode }) {
       document.documentElement.style.setProperty("--polaris-button-scale", String(doc.tokens.buttonScale));
     } else {
       document.documentElement.style.removeProperty("--polaris-button-scale");
+    }
+    if (typeof doc.tokens.homeFontScale === "number") {
+      document.documentElement.style.setProperty("--polaris-home-font-scale", String(doc.tokens.homeFontScale));
+    } else {
+      document.documentElement.style.removeProperty("--polaris-home-font-scale");
     }
   }, [doc.tokens]);
 

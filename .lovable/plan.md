@@ -1,100 +1,67 @@
-# Phase 5 — Wallpapers, Customizer, Pro Dashboard
+# Polaris One — Phase 6
 
-Three coordinated systems. Customizer is the heavy lift; wallpapers/Pro dashboard are smaller.
+## 1. Customizer fixes (priority)
+- **Exit broken**: `setActive(false)` not propagating because `/customize` route forces it back on via `useEffect`. Fix: clicking Exit navigates to `/` AND sets `active=false`; remove the route-level force-on (only activate when entering route fresh, not on every render).
+- **Pops up randomly**: `ACTIVE_KEY` persists `active=1` to localStorage, so every reload re-opens it. Stop persisting `active`; it must be opt-in per session via `/customize` or a Settings toggle.
+- **Default state**: never auto-on. Hard reset the stored flag on this deploy.
+- **Text size on homescreen**: extend Inspector with a `fontScale` token applied as `--polaris-home-font-scale` on `Home.tsx` headings/labels. Wrap key home text nodes in `<Editable>` so they get scale + new font-size control.
 
----
+## 2. Boot screen → 2s
+- `Boot.tsx`: reduce splash duration to 2000ms (currently ~5s).
 
-## 1. Custom & community wallpapers
+## 3. Profile config rework
+- **Anonymous mode**: add `is_anonymous boolean` to profiles. When true, username displays as "Anonymous" + generic avatar everywhere (chat, leaderboards, friend lists). Toggle in ProfileSheet.
+- **Move Pro Dashboard**: render `<ProDashboard />` inside ProfileSheet (new "Pro" tab). Remove from `/settings`.
+- **Custom avatar save fix**: upload selected image to `avatars` bucket, store URL in `profiles.avatar_url`, render `<img src=...>` in `ProfileButton` instead of falling back to emoji.
 
-**Backend (one migration):**
-- `community_wallpapers` table: `id, uploader_id, uploader_username, name, image_url, accent (rgb triplet), type ('static'|'animated'), is_animated, downloads, hearts, status ('active'|'hidden'), created_at`. Auto-publish; owner can hide.
-- `wallpaper_reports` table: `id, wallpaper_id, reporter_id, reason, created_at`. Owner reads, anyone signed-in can insert (1 per user per wallpaper unique).
-- Public storage bucket `wallpapers` (already-public-allowed; falls back to private + signed URLs if blocked).
-- RPC `hide_reported_wallpaper(_id)` owner-only for moderation.
+## 4. Chat upgrades
+- **Channel config panel** (gear icon → sheet): rename, topic, slowmode, members list, leave/delete (owner only).
+- **Reply with Discord-style buttons**: hover/long-press a message → row of pill buttons (Reply, React 👍 ❤️ 😂, Copy, Delete-own). Replies render quoted parent above the new message.
+- **Polaris Bot** (`@polaris-bot` virtual user, id `00000000-0000-0000-0000-000000000bot`):
+  - Commands start with `#` or `/`.
+  - **Member**: `#ping`, `#roll [sides]`, `#flip`, `#8ball <q>`, `#choose a|b|c`, `#avatar @user`, `#meme`, `#say <text>`, `#poll <q> | a | b | c`, `#cat`, `#dog`, `#joke`, `#define <word>`, `#serverinfo`, `#userinfo @user`.
+  - **Admin only** (owner/mod): `#ban @user [reason]`, `#kick @user`, `#mute @user 10m`, `#warn @user`, `#purge 50`, `#lock`, `#unlock`.
+  - Non-admin trying admin cmd → bot responds "❌ Insufficient permissions".
+  - Bot uses uploaded Polaris logo as avatar (asset via lovable-assets).
+  - Commands parsed client-side, bot replies inserted as system messages (sender_id = bot uuid, special render style: gradient name + bot badge).
+  - Admin commands actually call existing ban infrastructure via `admin.functions.ts`.
 
-**Frontend:**
-- Extend `WallpaperPicker.tsx` with tabs: **Built-in / My uploads / Community / Upload**.
-- "My uploads" stored in `localStorage` as `polaris:wallpapers:custom` (file → object URL, persisted as base64 for small images, or upload-to-cloud for big ones).
-- Upload flow: pick file → name it → auto-extract dominant color (canvas sample) → optional "share to community" checkbox → upload to bucket → insert row.
-- Community grid sorted by hearts/recency, with heart + report buttons.
-- Owner sees a "Hide" button inline.
+## 5. AI Tools page changes
+- **Inline Image Gen 2**: replace standalone `/image-gen` route with an "Image" tab inside PolarisAI. Same streaming flow, embedded in chat as inline tool.
+- **Polaris AI navigation**: add tool-calling layer. AI returns structured `{action: "navigate", path: "/media", query?: "Super Mario Galaxy"}`. Client parses and `router.navigate(...)` + (for media) opens the matching item from the search query. Supported: /media, /games, /music, /apps, /shop, /chat, /settings, /profile, plus deep-link into PolarisFlix movie modal by TMDB search.
 
----
+## 6. Polaris Bot extras
+- Welcome message on join, daily affirmation command `#daily`, `#weather <city>` (free open-meteo), `#translate <lang> <text>` (Lovable AI), `#summarize <link>`, `#remind <time> <text>`.
+- AI-powered `#ask <q>` routes to Lovable AI Gateway for natural answers.
 
-## 2. Polaris Customizer
+## 7. Files
 
-A **separate `/customize` route** with a top-bar editor overlay that wraps the existing app. Toggle on/off from Settings *and* from a new "Customize" entry in Sidebar > Account.
+**New**:
+- `src/components/polaris/chat/PolarisBot.ts` — command registry + handlers
+- `src/components/polaris/chat/MessageActions.tsx` — Discord-style reply buttons
+- `src/components/polaris/chat/ChannelConfig.tsx` — gear-icon sheet
+- `src/components/polaris/ai/AiImageGen.tsx` — inline image tab
+- `src/lib/ai-navigation.ts` — parse + execute AI navigation actions
+- `src/assets/polaris-bot.png.asset.json` — bot logo (uploaded from user-uploads)
 
-**State model (`src/lib/customizer-context.tsx`):**
-- One JSON document per saved layout: `{ id, name, version, tokens: {accent, radius, glassOpacity, fontScale}, items: { [elementId]: { x?, y?, scale?, rotation?, hidden?, color?, decal?, categoryId? } }, categories: [...] }`.
-- Persisted to `localStorage` (free tier: 1 layout). Pro: up to 5 layouts in `user_layouts` table.
-- **History stack** (undo/redo) — capped at 50 steps; "Reset all" wipes the document.
+**Edited**:
+- `src/lib/customizer-context.tsx` — remove active persistence, fix defaults
+- `src/components/customizer/CustomizerOverlay.tsx` — Exit also navigates home
+- `src/routes/customize.tsx` — don't force-active on every render
+- `src/components/polaris/Home.tsx` — add font-scale token, Editable text nodes
+- `src/components/polaris/Boot.tsx` — 2s
+- `src/components/polaris/ProfileSheet.tsx` — anon toggle, Pro tab, avatar upload save
+- `src/components/polaris/ProfileButton.tsx` — render avatar_url image
+- `src/components/polaris/chat/ChatRoom.tsx` — bot integration, replies, config gear
+- `src/components/polaris/ai/PolarisAI.tsx` — image tab + nav actions
+- `src/routes/settings.tsx` — remove Pro Dashboard (now in profile)
+- `src/routes/image-gen.tsx` — redirect to /ai
 
-**Editor chrome (`src/components/customizer/CustomizerOverlay.tsx`):**
-- Floating top toolbar: Save / Undo / Redo / Reset / Grid-snap toggle (8/16/24 px) / Smooth toggle / Exit.
-- Right inspector panel: when an element is selected → color picker, scale slider, decal picker, hide toggle, "send to category" dropdown.
-- ESC deselects; Delete hides the element.
+**Migration**: `profiles.is_anonymous boolean default false`; chat: `message_replies (parent_id)` column + `chat_channel_config` fields (topic, slowmode).
 
-**Edit-mode mechanics:**
-- Any DOM node with `data-polaris-edit-id="xxx"` becomes editable when overlay is active.
-- Wrap targets with a lightweight `<Editable id="...">` helper that applies transforms from context and adds a hover outline + drag handle in edit mode.
-- Drag = pointer events on the wrapper; grid-snap rounds delta to grid size; free mode does not.
-- Resize via corner handle (uniform scale 0.5x–2x).
-- **Locked surfaces:** Player iframe, Shop, Admin, Security, Auth dialog, Watch Party panel, modals — these wrappers do not opt into `<Editable>` so they can never be moved or decal'd.
+## 8. Risk / scope notes
+- Polaris AI navigation requires the model to emit a strict JSON action when intent matches; system prompt updated, with regex fallback.
+- Avatar upload uses existing `avatars` bucket — already public.
+- Reply UI works on existing messages without backfill.
 
-**Categories (Pro):**
-- Create a named category in the inspector → drag any sidebar item into it.
-- Categories render as new collapsible groups in `Sidebar.tsx`, reading from customizer context.
-
-**Decals (Pro, client-only):**
-- 24 built-in SVG decals (stars, flames, sparkles, gradients, ribbons) shipped as inline SVG sprites.
-- Decal renders as absolutely-positioned overlay on the editable element with adjustable opacity/scale.
-- Note in the UI: "Decals are visible only to you." Enforced naturally because state lives in `localStorage` / per-user `user_layouts`.
-
-**Pro gating (matches your pick):**
-- Free: change `--polaris-accent`, reorder sidebar items, hide/show items, button-scale slider, reset.
-- Pro lock badges over: free-form drag (vs grid-snap reorder), decals, custom categories, undo *history* (free gets single-level undo only), multiple saved layouts.
-
----
-
-## 3. Pro Dashboard
-
-New section inside `src/routes/settings.tsx` (`ProDashboard.tsx`), only visible if `is_pro`:
-- **Status card:** plan tier, days remaining, key history (last 5 redeemed `pro_keys` for `redeemed_by = auth.uid()`).
-- **VIP visibility toggle:** writes `polaris:pro:hide_vip` to localStorage; `ProfileButton.tsx` and any "Pro" / "VIP" badges respect it.
-- **Saved layouts manager:** list, rename, switch, delete (calls layout server fns).
-
-A small `is_pro_active(profile)` helper centralizes the check; reused everywhere we currently inline `pro_until > now()`.
-
----
-
-## Technical notes
-
-```text
-src/lib/
-  customizer-context.tsx     # state, history, persist
-  customizer-decals.tsx      # SVG sprite + picker
-  customizer.functions.ts    # save/load/delete user_layouts (Pro)
-  wallpaper-custom.ts        # local custom WP storage + upload helper
-src/components/
-  customizer/
-    CustomizerOverlay.tsx
-    Editable.tsx
-    Inspector.tsx
-    Toolbar.tsx
-    LockedNotice.tsx
-  polaris/
-    WallpaperPicker.tsx      # extended with tabs
-    premium/ProDashboard.tsx
-src/routes/
-  customize.tsx              # editor mode
-  settings.tsx               # add Pro Dashboard section
-```
-
-Migration adds: `community_wallpapers`, `wallpaper_reports`, `user_layouts` (Pro: `{ id, user_id, name, document jsonb, updated_at }`, unique per user up to 5 enforced by trigger). All three get explicit GRANTs + RLS scoped to `auth.uid()` or public-read where appropriate.
-
-`wallpapers` storage bucket created via `supabase--storage_create_bucket` (public). RLS on `storage.objects` lets authenticated users upload to `wallpapers/{auth.uid()}/...` and read anything in the bucket.
-
-No edits to locked files (`client.ts`, `types.ts`, etc.). All server-side work uses `createServerFn`.
-
-Approve and I'll start with the migration + storage bucket, then ship in order: wallpapers → customizer core → Pro dashboard.
+Ready to ship — I'll do customizer fixes + boot first (highest pain), then bot + chat, then AI/profile.

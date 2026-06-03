@@ -682,6 +682,7 @@ export type Database = {
           fav_game_tags: string[]
           fav_genres: number[]
           id: string
+          is_anonymous: boolean
           is_banned: boolean
           is_owner: boolean
           play_history: Json
@@ -710,6 +711,7 @@ export type Database = {
           fav_game_tags?: string[]
           fav_genres?: number[]
           id: string
+          is_anonymous?: boolean
           is_banned?: boolean
           is_owner?: boolean
           play_history?: Json
@@ -738,6 +740,7 @@ export type Database = {
           fav_game_tags?: string[]
           fav_genres?: number[]
           id?: string
+          is_anonymous?: boolean
           is_banned?: boolean
           is_owner?: boolean
           play_history?: Json
