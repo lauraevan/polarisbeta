@@ -97,6 +97,8 @@ const MODELS: Model[] = [
   { id: "openai/gpt-5.4-pro", label: "GPT-5.4 Pro", blurb: "Premium · Pro", tier: "premium", badge: "5", color: "bg-zinc-950" },
   { id: "openai/gpt-5.5", label: "GPT-5.5", blurb: "State of the art · Pro", tier: "premium", badge: "5", color: "bg-zinc-950" },
   { id: "openai/gpt-5.5-pro", label: "GPT-5.5 Pro", blurb: "Hardest problems · Pro", tier: "premium", badge: "5", color: "bg-black" },
+  // DeepSeek V4 Pro — premium-only frontier reasoning model.
+  { id: "openrouter/deepseek/deepseek-v4-pro", label: "DeepSeek V4 Pro", blurb: "Frontier reasoning · Pro only", tier: "premium", badge: "D", color: "bg-blue-800" },
 ];
 
 type Mode = { id: string; label: string; system: string };
