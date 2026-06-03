@@ -29,6 +29,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getAiWallet, exchangeCoinsForCredits, consumeAiCredit } from "@/lib/shop.functions";
 import { useNavigate } from "@tanstack/react-router";
 import { parseNavigation, toNavigateOptions } from "@/lib/ai-navigation";
+import { isProActive } from "@/lib/pro-utils";
 
 type Role = "user" | "assistant";
 type ChatMessage = { id: string; role: Role; content: string };
@@ -149,6 +150,7 @@ export function PolarisAI() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const isSignedIn = !!profile;
+  const isPro = isProActive(profile);
   const DAILY_LIMITS = isSignedIn ? DAILY_LIMITS_USER : DAILY_LIMITS_GUEST;
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -247,6 +249,11 @@ export function PolarisAI() {
   async function send(text: string) {
     if (!text.trim() || streaming) return;
     setError(null);
+    // Pro-gated third-party models (Groq / OpenRouter).
+    if (!imageMode && (model.id.startsWith("groq/") || model.id.startsWith("openrouter/")) && !isPro) {
+      setError("This model is part of Polaris Pro. Upgrade in Premium to unlock Groq + OpenRouter models.");
+      return;
+    }
     // Navigation intent — Polaris AI can take you to pages, movies, games, etc.
     if (!imageMode) {
       const nav = parseNavigation(text);
