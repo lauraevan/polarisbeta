@@ -20,8 +20,9 @@ const ROUTES: Array<{ keys: RegExp; path: string; label: string }> = [
   { keys: /\b(browser|web)\b/i, path: "/browser", label: "Browser" },
   { keys: /\b(my\s*list|watchlist|favorites?)\b/i, path: "/mylist", label: "My List" },
   { keys: /\b(premium|pro|vip|upgrade)\b/i, path: "/premium", label: "Polaris Premium" },
-  { keys: /\b(multi[\s-]?model|multi[\s-]?ai|two ai|2 ai|debate|collaborate)\b/i, path: "/multi-ai", label: "Multi-Model AI" },
-  { keys: /\broblox\b/i, path: "/games?tab=roblox", label: "Roblox Emulator" },
+  { keys: /\b(multi[\s-]?model|multi[\s-]?ai|two ai|2 ai|debate|collaborate)\b/i, path: "/ai?tab=multi", label: "Multi-Model AI" },
+  { keys: /\b(image gen|generate image|make.*image|imagegen|image generation)\b/i, path: "/ai?tab=image", label: "Image Gen" },
+  { keys: /\b(match[\s-]?maker|recommend.*(show|movie|anime)|find.*(show|movie|anime).*like)\b/i, path: "/ai?tab=match", label: "AI Match Maker" },
 ];
 
 export function parseNavigation(prompt: string): Action {
