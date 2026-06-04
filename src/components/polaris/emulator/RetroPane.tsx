@@ -25,12 +25,28 @@ declare global {
   }
 }
 
-export function RetroPane() {
-  const [core, setCore] = useState<Homebrew["core"]>("gb");
-  const [loaded, setLoaded] = useState<Loaded | null>(null);
+export function RetroPane({
+  preloaded,
+}: {
+  /** Auto-boot this ROM when the pane mounts (from the Catalog tab). */
+  preloaded?: { core: Homebrew["core"]; url: string; name: string } | null;
+} = {}) {
+  const [core, setCore] = useState<Homebrew["core"]>(preloaded?.core ?? "gb");
+  const [loaded, setLoaded] = useState<Loaded | null>(
+    preloaded
+      ? { core: preloaded.core, gameUrl: preloaded.url, name: preloaded.name, ownsUrl: false }
+      : null,
+  );
   const [booting, setBooting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mountRef = useRef<HTMLDivElement>(null);
+
+  // When parent passes a new preloaded ROM (Catalog → Retro), boot it.
+  useEffect(() => {
+    if (!preloaded) return;
+    setCore(preloaded.core);
+    setLoaded({ core: preloaded.core, gameUrl: preloaded.url, name: preloaded.name, ownsUrl: false });
+  }, [preloaded?.url, preloaded?.core, preloaded?.name]);
 
   // Mount EmulatorJS into our React DOM (no iframe) whenever a game is picked.
   useEffect(() => {
