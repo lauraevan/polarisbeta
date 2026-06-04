@@ -104,6 +104,7 @@ function SettingsPage() {
   const { refreshProfile, user, profile, updateProfile } = useAuth();
   const verify = useServerFn(verifyAdminKey);
   const [adminKey, setAdminKey] = useState("");
+  const [adminKey2, setAdminKey2] = useState("");
   const [adminMsg, setAdminMsg] = useState<string | null>(null);
   const [adminLoading, setAdminLoading] = useState(false);
   type OwnedTheme = { id: string; name: string; kind: string; accent: string; banner: string; bundle?: string | null };
@@ -145,13 +146,14 @@ function SettingsPage() {
     setAdminMsg(null);
     setAdminLoading(true);
     try {
-      await verify({ data: { key: adminKey } });
+      await verify({ data: { key: adminKey, key2: adminKey2 } });
       unlock();
       await refreshProfile();
       setAdminKey("");
+      setAdminKey2("");
       setAdminMsg("Access granted. Open the admin panel above.");
     } catch (e) {
-      setAdminMsg((e as Error).message || "Invalid key");
+      setAdminMsg((e as Error).message || "Invalid credentials");
     } finally {
       setAdminLoading(false);
     }
@@ -217,18 +219,27 @@ function SettingsPage() {
               </button>
             </div>
           ) : (
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <div className="mt-3 flex flex-col gap-2">
               <input
                 type="password"
+                autoComplete="off"
                 value={adminKey}
                 onChange={(e) => setAdminKey(e.target.value)}
+                placeholder="Primary key…"
+                className="flex-1 rounded-xl bg-white/5 px-3 py-2 text-sm outline-none ring-1 ring-white/10 focus:ring-white/30"
+              />
+              <input
+                type="password"
+                autoComplete="off"
+                value={adminKey2}
+                onChange={(e) => setAdminKey2(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") submitAdmin(); }}
-                placeholder="Enter Polaris admin key…"
+                placeholder="Secondary verification…"
                 className="flex-1 rounded-xl bg-white/5 px-3 py-2 text-sm outline-none ring-1 ring-white/10 focus:ring-white/30"
               />
               <button
                 onClick={submitAdmin}
-                disabled={adminLoading || !adminKey}
+                disabled={adminLoading || !adminKey || !adminKey2}
                 className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-black hover:bg-white/90 disabled:opacity-50"
               >
                 {adminLoading ? "Verifying…" : "Unlock"}
