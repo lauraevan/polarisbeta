@@ -10,19 +10,21 @@ type Msg = { id: string; role: Role; agent?: AgentId; modelLabel?: string; conte
 type ModelOpt = { id: string; label: string };
 
 const MODELS: ModelOpt[] = [
+  // Lovable Gateway (always reachable — uses LOVABLE_API_KEY)
+  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+  { id: "google/gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite" },
+  { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (Preview)" },
+  { id: "openai/gpt-5-mini", label: "GPT-5 Mini" },
+  { id: "openai/gpt-5-nano", label: "GPT-5 Nano" },
+  { id: "openai/gpt-5", label: "GPT-5" },
+  // OpenRouter (needs OPENROUTER_API_KEY)
+  { id: "openrouter/meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3 70B (free)" },
+  { id: "openrouter/deepseek/deepseek-chat", label: "DeepSeek Chat" },
+  { id: "openrouter/anthropic/claude-sonnet-4.5", label: "Claude Sonnet 4.5" },
+  // Groq (needs GROQ_API_KEY)
   { id: "groq/llama-3.3-70b-versatile", label: "Llama 3.3 70B (Groq)" },
   { id: "groq/llama-3.1-8b-instant", label: "Llama 3.1 8B (Groq)" },
-  { id: "groq/deepseek-r1-distill-llama-70b", label: "DeepSeek R1 70B (Groq)" },
-  { id: "groq/openai/gpt-oss-120b", label: "GPT OSS 120B (Groq)" },
-  { id: "groq/qwen/qwen3-32b", label: "Qwen 3 32B (Groq)" },
-  { id: "openrouter/x-ai/grok-4.3", label: "Grok 4.3" },
-  { id: "openrouter/anthropic/claude-sonnet-4.6", label: "Claude Sonnet 4.6" },
-  { id: "openrouter/anthropic/claude-haiku-4.5", label: "Claude Haiku 4.5" },
-  { id: "openrouter/deepseek/deepseek-r1", label: "DeepSeek R1" },
-  { id: "openrouter/meta-llama/llama-4-maverick:free", label: "Llama 4 Maverick" },
-  { id: "google/gemini-3-flash-preview", label: "Gemini 3 Flash (Pro)" },
-  { id: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro (Pro)" },
-  { id: "openai/gpt-5-mini", label: "GPT-5 Mini (Pro)" },
 ];
 
 const AGENT_META: Record<AgentId, { name: string; tint: string; ring: string }> = {
@@ -85,7 +87,7 @@ async function streamOnce({
 
 export function MultiModelAI() {
   const [modelA, setModelA] = useState(MODELS[0].id);
-  const [modelB, setModelB] = useState(MODELS[5].id);
+  const [modelB, setModelB] = useState(MODELS[4].id);
   const [rounds, setRounds] = useState(2);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
