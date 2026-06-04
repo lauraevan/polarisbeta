@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info, Radio, Shuffle, Mic2, Download } from "lucide-react";
 import { tmdbApi, IMG, type TmdbItem, type MediaKind } from "@/lib/tmdb";
 import { Row } from "./Row";
+import { BillboardRow } from "./BillboardRow";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { MovieModal } from "./MovieModal";
 import { Player } from "./Player";
 import { PolarisFlixSplash } from "./Splash";
