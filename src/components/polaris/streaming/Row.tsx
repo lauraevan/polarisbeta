@@ -27,7 +27,7 @@ export function Row({ title, items, onSelect, ranked, loading, size = "md" }: Pr
 
   return (
     <section
-      className="group/row relative mb-8"
+      className="group/row relative mb-8 flix-row-in"
       style={{ contentVisibility: "auto", containIntrinsicSize: "380px" } as React.CSSProperties}
     >
       <h2 className="mb-3 px-4 text-lg font-bold text-white sm:px-6 md:text-xl">{title}</h2>
@@ -52,7 +52,11 @@ export function Row({ title, items, onSelect, ranked, loading, size = "md" }: Pr
                 />
               ))
             : list.map((item, idx) => (
-            <div key={item.id} className="shrink-0" style={{ width: w }}>
+            <div
+              key={item.id}
+              className="shrink-0 flix-card-in"
+              style={{ width: w, ["--i" as any]: Math.min(idx, 12) } as React.CSSProperties}
+            >
               <button
                 onClick={() => onSelect(item)}
                 className={`group/card relative block w-full overflow-hidden rounded-xl liquid-glass transition-all duration-300 hover:scale-[1.05] hover:z-10 hover:shadow-[0_18px_50px_-12px_rgba(var(--polaris-accent)/0.55)] ring-1 ring-amber-100/10 hover:ring-[rgb(var(--polaris-accent))]/60 ${

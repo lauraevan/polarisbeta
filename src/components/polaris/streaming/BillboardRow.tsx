@@ -28,7 +28,7 @@ export function BillboardRow({ title, items, onSelect, loading, variant = "wide"
 
   return (
     <section
-      className="group/row relative mb-8"
+      className="group/row relative mb-8 flix-row-in"
       style={{ contentVisibility: "auto", containIntrinsicSize: "320px" } as React.CSSProperties}
     >
       <h2 className="mb-3 px-4 text-lg font-bold text-white sm:px-6 md:text-xl">{title}</h2>
@@ -52,12 +52,12 @@ export function BillboardRow({ title, items, onSelect, loading, variant = "wide"
                   style={{ width: w, height: h }}
                 />
               ))
-            : list.map((item) => (
+            : list.map((item, idx) => (
                 <button
                   key={item.id}
                   onClick={() => onSelect(item)}
-                  className="group/card relative shrink-0 overflow-hidden rounded-xl liquid-glass ring-1 ring-amber-100/10 transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.02] hover:ring-[rgb(var(--polaris-accent))]/60 hover:shadow-[0_18px_50px_-12px_rgba(var(--polaris-accent)/0.55)]"
-                  style={{ width: w, height: h }}
+                  className="group/card relative shrink-0 overflow-hidden rounded-xl liquid-glass ring-1 ring-amber-100/10 transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.02] hover:ring-[rgb(var(--polaris-accent))]/60 hover:shadow-[0_18px_50px_-12px_rgba(var(--polaris-accent)/0.55)] flix-card-in"
+                  style={{ width: w, height: h, ["--i" as any]: Math.min(idx, 10) } as React.CSSProperties}
                 >
                   {item.backdrop_path ? (
                     <img

@@ -514,8 +514,20 @@ function FlixInner() {
                   loading={trendingAll.isLoading}
                   onSelect={(item) => setSelected({ item, kind: inferKind(item) })}
                 />
+                <BillboardRow
+                  title="Trending Now · In Widescreen"
+                  items={trendingAll.data ?? []}
+                  loading={trendingAll.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: inferKind(item) })}
+                />
                 <Row
                   title="Just Added"
+                  items={latestMovies.data ?? []}
+                  loading={latestMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <BillboardRow
+                  title="Fresh Releases · Backdrop View"
                   items={latestMovies.data ?? []}
                   loading={latestMovies.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
@@ -532,6 +544,12 @@ function FlixInner() {
                   items={homeMovies.data ?? []}
                   loading={homeMovies.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <BillboardRow
+                  title="Popular Shows · Wide Cuts"
+                  items={homeShows.data ?? []}
+                  loading={homeShows.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "tv" })}
                 />
                 <Row
                   title="Popular Shows"
@@ -553,6 +571,12 @@ function FlixInner() {
                 />
                 <Row
                   title="Hidden Gems"
+                  items={hiddenGemsMovies.data ?? []}
+                  loading={hiddenGemsMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <BillboardRow
+                  title="Hidden Gems · Director's View"
                   items={hiddenGemsMovies.data ?? []}
                   loading={hiddenGemsMovies.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
@@ -583,6 +607,12 @@ function FlixInner() {
                 />
                 <Row
                   title={`New in ${new Date().getFullYear()}`}
+                  items={thisYearMovies.data ?? []}
+                  loading={thisYearMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
+                <BillboardRow
+                  title={`New in ${new Date().getFullYear()} · Wide`}
                   items={thisYearMovies.data ?? []}
                   loading={thisYearMovies.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
