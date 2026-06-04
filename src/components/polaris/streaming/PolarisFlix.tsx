@@ -635,7 +635,7 @@ function FlixInner() {
             />
             {tab === "movies" && (
               <>
-                <Row
+                <BillboardRow
                   title="Blockbuster Hits"
                   items={blockbustersMovies.data ?? []}
                   loading={blockbustersMovies.isLoading}
@@ -647,7 +647,7 @@ function FlixInner() {
                   loading={acclaimedMovies.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
                 />
-                <Row
+                <BillboardRow
                   title="Family Night"
                   items={familyMovies.data ?? []}
                   loading={familyMovies.isLoading}
