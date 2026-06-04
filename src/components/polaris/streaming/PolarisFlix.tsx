@@ -177,6 +177,15 @@ function FlixInner() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchType, setSearchType] = useState<"all" | "movie" | "tv">("all");
   const [searchLang, setSearchLang] = useState<string>("");
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [fullscreen]);
   const { list } = useMyList();
 
   const kind: MediaKind = tab === "movies" ? "movie" : "tv";
