@@ -545,6 +545,12 @@ function FlixInner() {
                   loading={homeAnime.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "tv" })}
                 />
+                <BillboardRow
+                  title="Spotlight · Cinematic Picks"
+                  items={blockbustersMovies.data ?? []}
+                  loading={blockbustersMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
                 <Row
                   title="Hidden Gems"
                   items={hiddenGemsMovies.data ?? []}
@@ -557,16 +563,10 @@ function FlixInner() {
                   loading={indieCult.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
                 />
-                <Row
-                  title="A24 Picks"
+                <BillboardRow
+                  title="A24 · Auteur Cinema"
                   items={a24.data ?? []}
                   loading={a24.isLoading}
-                  onSelect={(item) => setSelected({ item, kind: "movie" })}
-                />
-                <Row
-                  title="Blockbuster Hits"
-                  items={blockbustersMovies.data ?? []}
-                  loading={blockbustersMovies.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
                 />
                 <Row
@@ -575,7 +575,7 @@ function FlixInner() {
                   loading={acclaimedMovies.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
                 />
-                <Row
+                <BillboardRow
                   title="Family Night"
                   items={familyMovies.data ?? []}
                   loading={familyMovies.isLoading}
