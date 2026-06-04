@@ -392,6 +392,15 @@ function FlixInner() {
               {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
               <span className="hidden sm:inline font-medium">{searchOpen ? "Close" : "Search"}</span>
             </button>
+            <button
+              onClick={() => setFullscreen((f) => !f)}
+              className="hidden sm:flex items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20"
+              title={fullscreen ? "Exit theater mode" : "Theater mode"}
+              aria-label="Toggle theater mode"
+            >
+              {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              <span className="hidden md:inline font-medium">{fullscreen ? "Exit" : "Theater"}</span>
+            </button>
             <a
               href="/downloads/Polarisflix.zip"
               download
