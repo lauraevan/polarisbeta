@@ -38,6 +38,7 @@ import { Route as ApiRomRouteImport } from './routes/api/rom'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 import { Route as ApiAiVisionRouteImport } from './routes/api/ai-vision'
 import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
+import { Route as ApiPublicCorsRouteImport } from './routes/api/public/cors'
 import { Route as ApiPublicTmdbSplatRouteImport } from './routes/api/public/tmdb.$'
 
 const VpnRoute = VpnRouteImport.update({
@@ -185,6 +186,11 @@ const ApiAiChatRoute = ApiAiChatRouteImport.update({
   path: '/api/ai-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCorsRoute = ApiPublicCorsRouteImport.update({
+  id: '/api/public/cors',
+  path: '/api/public/cors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTmdbSplatRoute = ApiPublicTmdbSplatRouteImport.update({
   id: '/api/public/tmdb/$',
   path: '/api/public/tmdb/$',
@@ -221,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/rom': typeof ApiRomRoute
   '/api/soundboard': typeof ApiSoundboardRoute
+  '/api/public/cors': typeof ApiPublicCorsRoute
   '/api/public/tmdb/$': typeof ApiPublicTmdbSplatRoute
 }
 export interface FileRoutesByTo {
@@ -253,6 +260,7 @@ export interface FileRoutesByTo {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/rom': typeof ApiRomRoute
   '/api/soundboard': typeof ApiSoundboardRoute
+  '/api/public/cors': typeof ApiPublicCorsRoute
   '/api/public/tmdb/$': typeof ApiPublicTmdbSplatRoute
 }
 export interface FileRoutesById {
@@ -286,6 +294,7 @@ export interface FileRoutesById {
   '/api/generate-image': typeof ApiGenerateImageRoute
   '/api/rom': typeof ApiRomRoute
   '/api/soundboard': typeof ApiSoundboardRoute
+  '/api/public/cors': typeof ApiPublicCorsRoute
   '/api/public/tmdb/$': typeof ApiPublicTmdbSplatRoute
 }
 export interface FileRouteTypes {
@@ -320,6 +329,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/rom'
     | '/api/soundboard'
+    | '/api/public/cors'
     | '/api/public/tmdb/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -352,6 +362,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/rom'
     | '/api/soundboard'
+    | '/api/public/cors'
     | '/api/public/tmdb/$'
   id:
     | '__root__'
@@ -384,6 +395,7 @@ export interface FileRouteTypes {
     | '/api/generate-image'
     | '/api/rom'
     | '/api/soundboard'
+    | '/api/public/cors'
     | '/api/public/tmdb/$'
   fileRoutesById: FileRoutesById
 }
@@ -417,6 +429,7 @@ export interface RootRouteChildren {
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
   ApiRomRoute: typeof ApiRomRoute
   ApiSoundboardRoute: typeof ApiSoundboardRoute
+  ApiPublicCorsRoute: typeof ApiPublicCorsRoute
   ApiPublicTmdbSplatRoute: typeof ApiPublicTmdbSplatRoute
 }
 
@@ -625,6 +638,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cors': {
+      id: '/api/public/cors'
+      path: '/api/public/cors'
+      fullPath: '/api/public/cors'
+      preLoaderRoute: typeof ApiPublicCorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/tmdb/$': {
       id: '/api/public/tmdb/$'
       path: '/api/public/tmdb/$'
@@ -665,18 +685,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGenerateImageRoute: ApiGenerateImageRoute,
   ApiRomRoute: ApiRomRoute,
   ApiSoundboardRoute: ApiSoundboardRoute,
+  ApiPublicCorsRoute: ApiPublicCorsRoute,
   ApiPublicTmdbSplatRoute: ApiPublicTmdbSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
