@@ -4,7 +4,8 @@ import { safeGetItem, safeRemoveItem, safeSetItem } from "./safe-storage";
 
 // Device-local key — admin panel re-appears on this device until user logs out
 // of the admin panel explicitly. Profile.is_owner is the server source of truth.
-const LS_KEY = "polaris.admin.unlocked.v1";
+// Name is intentionally innocuous so source-diving doesn't reveal an admin flag.
+const LS_KEY = "p.ui.pref.f7";
 
 type Ctx = {
   /** True when this device has been unlocked AND the user's profile says is_owner. */
@@ -23,6 +24,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Clear any legacy flag so a previously compromised device loses local trust.
+    try {
+      window.localStorage.removeItem("polaris.admin.unlocked.v1");
+    } catch { /* ignore */ }
     setDeviceUnlocked(safeGetItem("localStorage", LS_KEY) === "1");
   }, []);
 
