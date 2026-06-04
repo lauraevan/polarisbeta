@@ -8,26 +8,33 @@ export type Homebrew = {
   blurb: string;
 };
 
-// Verified free homebrew / public-domain ROMs hosted by their authors or
-// EmulatorJS's own CDN. Each link is the canonical source — no random forks.
+/** Wrap a remote ROM URL so it streams through our same-origin proxy.
+ *  EmulatorJS reads ROMs from the browser; most homebrew hosts don't send
+ *  CORS headers, so a direct fetch fails with "Network error". The proxy
+ *  re-serves the bytes with `Access-Control-Allow-Origin: *`. */
+export function proxied(url: string): string {
+  return `/api/rom?url=${encodeURIComponent(url)}`;
+}
+
+// Verified free homebrew / public-domain ROMs that load through the proxy.
 export const HOMEBREW: Homebrew[] = [
   {
     name: "Tobu Tobu Girl",
     core: "gb",
-    url: "https://tangramgames.dk/files/tobutobugirl.gb",
+    url: proxied("https://tangramgames.dk/files/tobutobugirl.gb"),
     blurb: "Cute platformer · Game Boy · by Tangram Games",
-  },
-  {
-    name: "Twin Dragons (Demo)",
-    core: "nes",
-    url: "https://www.nesworld.com/games/homebrew/twindragons_demo.nes",
-    blurb: "Action platformer · NES homebrew",
   },
   {
     name: "EmulatorJS Demo · 2048",
     core: "gba",
-    url: "https://demo.emulatorjs.org/data/games/2048.gba",
+    url: proxied("https://demo.emulatorjs.org/data/games/2048.gba"),
     blurb: "Puzzle · official EmulatorJS demo ROM",
+  },
+  {
+    name: "Anguna (GBA)",
+    core: "gba",
+    url: proxied("https://www.nathanstang.com/anguna/anguna-gba.gba"),
+    blurb: "Zelda-style adventure · GBA homebrew",
   },
 ];
 
@@ -44,30 +51,37 @@ export type CatalogRom = Homebrew & {
   genre: "Action" | "Puzzle" | "Platformer" | "Arcade" | "RPG" | "Shoot 'em up" | "Adventure";
 };
 
+// Catalog of curated, working free titles. Every URL streams through the
+// same-origin /api/rom proxy so EmulatorJS doesn't trip on CORS.
 export const ROM_CATALOG: CatalogRom[] = [
-  // ---- Game Boy / GBC ----
-  { name: "Tobu Tobu Girl", core: "gb", genre: "Platformer", url: "https://tangramgames.dk/files/tobutobugirl.gb", blurb: "Cute platformer by Tangram Games" },
-  { name: "Sheep It Up!", core: "gb", genre: "Arcade", url: "https://drludos.itch.io/sheep-it-up-game-boy", blurb: "One-button arcade climber" },
-  { name: "Petris", core: "gb", genre: "Puzzle", url: "https://gbdev.gg8.se/files/roms/homebrew/Petris.gb", blurb: "Tetris-style puzzler" },
-  { name: "Adjustris", core: "gb", genre: "Puzzle", url: "https://gbdev.gg8.se/files/roms/homebrew/Adjustris.gb", blurb: "Customizable falling-block puzzler" },
+  // GB / GBC
+  { name: "Tobu Tobu Girl", core: "gb", genre: "Platformer", url: proxied("https://tangramgames.dk/files/tobutobugirl.gb"), blurb: "Cute platformer by Tangram Games" },
 
-  // ---- GBA ----
-  { name: "2048", core: "gba", genre: "Puzzle", url: "https://demo.emulatorjs.org/data/games/2048.gba", blurb: "Official EmulatorJS demo ROM" },
-  { name: "Anguna: Warriors of Virtue", core: "gba", genre: "Adventure", url: "https://www.nathanstang.com/anguna/anguna-gba.gba", blurb: "Zelda-style action-adventure" },
-  { name: "Goodboy Galaxy (Demo)", core: "gba", genre: "Platformer", url: "https://rikkles.itch.io/goodboy-galaxy", blurb: "Award-winning GBA platformer" },
+  // GBA
+  { name: "2048", core: "gba", genre: "Puzzle", url: proxied("https://demo.emulatorjs.org/data/games/2048.gba"), blurb: "Official EmulatorJS demo ROM" },
+  { name: "Anguna: Warriors of Virtue", core: "gba", genre: "Adventure", url: proxied("https://www.nathanstang.com/anguna/anguna-gba.gba"), blurb: "Zelda-style action-adventure" },
+];
 
-  // ---- NES ----
-  { name: "Twin Dragons (Demo)", core: "nes", genre: "Platformer", url: "https://www.nesworld.com/games/homebrew/twindragons_demo.nes", blurb: "Action platformer · NES homebrew" },
-  { name: "Battle Kid: Fortress of Peril (Demo)", core: "nes", genre: "Platformer", url: "https://www.nesworld.com/games/homebrew/battlekid_demo.nes", blurb: "Brutally hard platformer" },
-  { name: "Alter Ego", core: "nes", genre: "Puzzle", url: "https://www.nesworld.com/games/homebrew/alterego.nes", blurb: "Cult favorite puzzle game" },
-  { name: "From Below", core: "nes", genre: "Puzzle", url: "https://www.nesworld.com/games/homebrew/frombelow.nes", blurb: "Block-falling puzzler" },
+/** Featured Monoxide library — these are popular GBA romhacks you can drop
+ *  in once and we'll cache the file locally (IndexedDB) so Play boots
+ *  instantly the next time. We don't host the ROMs, so each entry tells
+ *  the UI to prompt for the .gba file the first time it's launched. */
+export type FeaturedRom = {
+  id: string;
+  name: string;
+  core: Homebrew["core"];
+  cover?: string;
+  ext: string;
+  size?: string;
+};
 
-  // ---- SNES ----
-  { name: "Super Boss Gaiden (Demo)", core: "snes", genre: "Action", url: "https://www.romhacking.net/homebrew/2/", blurb: "SNES homebrew · open source" },
-
-  // ---- Genesis / Mega Drive ----
-  { name: "Tanglewood (Demo)", core: "segaMD", genre: "Platformer", url: "https://tanglewoodgame.com/demo.bin", blurb: "Modern Mega Drive platformer" },
-  { name: "Old Towers", core: "segaMD", genre: "Puzzle", url: "https://retrosouls.itch.io/old-towers-mega-drive-genesis", blurb: "Cubic dungeon puzzler" },
+export const MONOXIDE_LIBRARY: FeaturedRom[] = [
+  { id: "quetzal", name: "Pokémon Quetzal", core: "gba", ext: ".gba", size: "32 MB",
+    cover: "https://upload.wikimedia.org/wikipedia/en/8/85/Pok%C3%A9mon_Emerald_box_art.png" },
+  { id: "unbound", name: "Pokémon Unbound", core: "gba", ext: ".gba", size: "32 MB",
+    cover: "https://upload.wikimedia.org/wikipedia/en/d/de/Pokemon_FireRed_boxart.jpg" },
+  { id: "radicalred", name: "Pokémon Radical Red", core: "gba", ext: ".gba", size: "32 MB",
+    cover: "https://upload.wikimedia.org/wikipedia/en/d/de/Pokemon_FireRed_boxart.jpg" },
 ];
 
 export const GENRES = ["All", "Action", "Platformer", "Puzzle", "Arcade", "Adventure", "RPG", "Shoot 'em up"] as const;
