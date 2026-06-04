@@ -17,15 +17,46 @@ async function requireOwner(userId: string) {
 /** Verify the admin key. On success, marks the calling user as owner. */
 export const verifyAdminKey = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ key: z.string().min(1).max(200) }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        key: z.string().min(1).max(200),
+        key2: z.string().min(1).max(200),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const expected = process.env.POLARIS_ADMIN_KEY;
-    if (!expected) throw new Error("Admin key not configured");
-    if (data.key !== expected) {
-      // Tiny delay to discourage brute force.
-      await new Promise((r) => setTimeout(r, 600));
-      throw new Error("Invalid key");
-    }
+    const expected2 = process.env.POLARIS_ADMIN_KEY_2;
+    const allowlist = (process.env.POLARIS_OWNER_USERNAMES ?? "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    if (!expected || !expected2) throw new Error("Admin not configured");
+
+    // Constant-time compare to avoid timing leaks.
+    const eq = (a: string, b: string) => {
+      if (a.length !== b.length) return false;
+      let r = 0;
+      for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+      return r === 0;
+    };
+
+    // Always pay the latency cost so failures don't leak which factor failed.
+    await new Promise((r) => setTimeout(r, 800));
+
+    // Username allowlist gate.
+    const { data: me } = await supabaseAdmin
+      .from("profiles")
+      .select("username")
+      .eq("id", context.userId)
+      .maybeSingle();
+    const uname = (me?.username ?? "").toLowerCase();
+    const usernameOk = allowlist.length === 0 ? true : allowlist.includes(uname);
+
+    const ok = usernameOk && eq(data.key, expected) && eq(data.key2, expected2);
+    if (!ok) throw new Error("Invalid credentials");
+
     await supabaseAdmin
       .from("profiles")
       .update({ is_owner: true, custom_role: "Owner" })
