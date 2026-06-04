@@ -321,7 +321,13 @@ function FlixInner() {
     <>
       {splash && <PolarisFlixSplash onDone={() => setSplash(false)} />}
 
-      <div className="relative min-h-screen pb-32">
+      <div
+        className={
+          fullscreen
+            ? "fixed inset-0 z-[120] overflow-y-auto bg-black pb-32"
+            : "relative min-h-screen pb-32"
+        }
+      >
         {/* Warm autumn overlay so the wallpaper feels cinematic */}
         <div
           aria-hidden
