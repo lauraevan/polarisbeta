@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Film, Tv2, Sparkles, X, Home as HomeIcon, Play, Info, Radio, Shuffle, Mic2, Download } from "lucide-react";
 import { tmdbApi, IMG, type TmdbItem, type MediaKind } from "@/lib/tmdb";
 import { Row } from "./Row";
+import { BillboardRow } from "./BillboardRow";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { MovieModal } from "./MovieModal";
 import { Player } from "./Player";
 import { PolarisFlixSplash } from "./Splash";
@@ -175,6 +177,15 @@ function FlixInner() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchType, setSearchType] = useState<"all" | "movie" | "tv">("all");
   const [searchLang, setSearchLang] = useState<string>("");
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [fullscreen]);
   const { list } = useMyList();
 
   const kind: MediaKind = tab === "movies" ? "movie" : "tv";
@@ -310,7 +321,13 @@ function FlixInner() {
     <>
       {splash && <PolarisFlixSplash onDone={() => setSplash(false)} />}
 
-      <div className="relative min-h-screen pb-32">
+      <div
+        className={
+          fullscreen
+            ? "fixed inset-0 z-[120] overflow-y-auto bg-black pb-32"
+            : "relative min-h-screen pb-32"
+        }
+      >
         {/* Warm autumn overlay so the wallpaper feels cinematic */}
         <div
           aria-hidden
@@ -374,6 +391,15 @@ function FlixInner() {
             >
               {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
               <span className="hidden sm:inline font-medium">{searchOpen ? "Close" : "Search"}</span>
+            </button>
+            <button
+              onClick={() => setFullscreen((f) => !f)}
+              className="hidden sm:flex items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20"
+              title={fullscreen ? "Exit theater mode" : "Theater mode"}
+              aria-label="Toggle theater mode"
+            >
+              {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              <span className="hidden md:inline font-medium">{fullscreen ? "Exit" : "Theater"}</span>
             </button>
             <a
               href="/downloads/Polarisflix.zip"
@@ -519,6 +545,12 @@ function FlixInner() {
                   loading={homeAnime.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "tv" })}
                 />
+                <BillboardRow
+                  title="Spotlight · Cinematic Picks"
+                  items={blockbustersMovies.data ?? []}
+                  loading={blockbustersMovies.isLoading}
+                  onSelect={(item) => setSelected({ item, kind: "movie" })}
+                />
                 <Row
                   title="Hidden Gems"
                   items={hiddenGemsMovies.data ?? []}
@@ -531,16 +563,10 @@ function FlixInner() {
                   loading={indieCult.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
                 />
-                <Row
-                  title="A24 Picks"
+                <BillboardRow
+                  title="A24 · Auteur Cinema"
                   items={a24.data ?? []}
                   loading={a24.isLoading}
-                  onSelect={(item) => setSelected({ item, kind: "movie" })}
-                />
-                <Row
-                  title="Blockbuster Hits"
-                  items={blockbustersMovies.data ?? []}
-                  loading={blockbustersMovies.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
                 />
                 <Row
@@ -549,7 +575,7 @@ function FlixInner() {
                   loading={acclaimedMovies.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
                 />
-                <Row
+                <BillboardRow
                   title="Family Night"
                   items={familyMovies.data ?? []}
                   loading={familyMovies.isLoading}
@@ -609,7 +635,7 @@ function FlixInner() {
             />
             {tab === "movies" && (
               <>
-                <Row
+                <BillboardRow
                   title="Blockbuster Hits"
                   items={blockbustersMovies.data ?? []}
                   loading={blockbustersMovies.isLoading}
@@ -621,7 +647,7 @@ function FlixInner() {
                   loading={acclaimedMovies.isLoading}
                   onSelect={(item) => setSelected({ item, kind: "movie" })}
                 />
-                <Row
+                <BillboardRow
                   title="Family Night"
                   items={familyMovies.data ?? []}
                   loading={familyMovies.isLoading}

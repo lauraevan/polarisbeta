@@ -1,18 +1,24 @@
 import { useState } from "react";
-import { Gamepad2, Cloud, Zap } from "lucide-react";
+import { Gamepad2, Cloud, Zap, Library } from "lucide-react";
 import { RetroPane } from "./RetroPane";
 import { SwitchCloudPane } from "./SwitchCloudPane";
 import { StratusCloudPane } from "./StratusCloudPane";
+import { CatalogPane } from "./CatalogPane";
+import type { Homebrew } from "@/lib/homebrew-roms";
 
-type Tab = "retro" | "cloud" | "stratus";
+type Tab = "catalog" | "retro" | "cloud" | "stratus";
 const TABS: { id: Tab; label: string; icon: typeof Gamepad2; sub: string }[] = [
-  { id: "retro", label: "Retro", icon: Gamepad2, sub: "NES · SNES · GBA · N64 · PS1" },
+  { id: "catalog", label: "Catalog", icon: Library, sub: "Browse free homebrew" },
+  { id: "retro", label: "Player", icon: Gamepad2, sub: "Upload or boot a ROM" },
   { id: "cloud", label: "Switch · Cloud", icon: Cloud, sub: "Streamed via Afterplay" },
   { id: "stratus", label: "Stratus Cloud", icon: Zap, sub: "Cherri's backend · modern titles" },
 ];
 
+type Preloaded = { core: Homebrew["core"]; url: string; name: string };
+
 export function Emulator() {
-  const [tab, setTab] = useState<Tab>("retro");
+  const [tab, setTab] = useState<Tab>("catalog");
+  const [preloaded, setPreloaded] = useState<Preloaded | null>(null);
 
   return (
     <div className="mx-auto flex h-[calc(100vh-110px)] max-w-6xl flex-col px-3 pt-4 pb-2 text-white sm:px-4">
@@ -50,7 +56,15 @@ export function Emulator() {
       </header>
 
       <div className="min-h-0 flex-1">
-        {tab === "retro" && <RetroPane />}
+        {tab === "catalog" && (
+          <CatalogPane
+            onLaunch={(rom) => {
+              setPreloaded({ core: rom.core, url: rom.url, name: rom.name });
+              setTab("retro");
+            }}
+          />
+        )}
+        {tab === "retro" && <RetroPane preloaded={preloaded} />}
         {tab === "cloud" && <SwitchCloudPane />}
         {tab === "stratus" && <StratusCloudPane />}
       </div>

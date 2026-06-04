@@ -31,6 +31,47 @@ export const HOMEBREW: Homebrew[] = [
   },
 ];
 
+/**
+ * Big browsable catalog used by the Emulator "Catalog" tab.
+ * Each entry is a freely-distributable homebrew / public-domain ROM linked
+ * directly from its author or an established mirror. We render a generated
+ * cover when no image URL is provided.
+ */
+export type CatalogRom = Homebrew & {
+  /** Optional cover URL — falls back to deterministic monogram tile. */
+  cover?: string;
+  /** Free-form genre tag for filtering. */
+  genre: "Action" | "Puzzle" | "Platformer" | "Arcade" | "RPG" | "Shoot 'em up" | "Adventure";
+};
+
+export const ROM_CATALOG: CatalogRom[] = [
+  // ---- Game Boy / GBC ----
+  { name: "Tobu Tobu Girl", core: "gb", genre: "Platformer", url: "https://tangramgames.dk/files/tobutobugirl.gb", blurb: "Cute platformer by Tangram Games" },
+  { name: "Sheep It Up!", core: "gb", genre: "Arcade", url: "https://drludos.itch.io/sheep-it-up-game-boy", blurb: "One-button arcade climber" },
+  { name: "Petris", core: "gb", genre: "Puzzle", url: "https://gbdev.gg8.se/files/roms/homebrew/Petris.gb", blurb: "Tetris-style puzzler" },
+  { name: "Adjustris", core: "gb", genre: "Puzzle", url: "https://gbdev.gg8.se/files/roms/homebrew/Adjustris.gb", blurb: "Customizable falling-block puzzler" },
+
+  // ---- GBA ----
+  { name: "2048", core: "gba", genre: "Puzzle", url: "https://demo.emulatorjs.org/data/games/2048.gba", blurb: "Official EmulatorJS demo ROM" },
+  { name: "Anguna: Warriors of Virtue", core: "gba", genre: "Adventure", url: "https://www.nathanstang.com/anguna/anguna-gba.gba", blurb: "Zelda-style action-adventure" },
+  { name: "Goodboy Galaxy (Demo)", core: "gba", genre: "Platformer", url: "https://rikkles.itch.io/goodboy-galaxy", blurb: "Award-winning GBA platformer" },
+
+  // ---- NES ----
+  { name: "Twin Dragons (Demo)", core: "nes", genre: "Platformer", url: "https://www.nesworld.com/games/homebrew/twindragons_demo.nes", blurb: "Action platformer · NES homebrew" },
+  { name: "Battle Kid: Fortress of Peril (Demo)", core: "nes", genre: "Platformer", url: "https://www.nesworld.com/games/homebrew/battlekid_demo.nes", blurb: "Brutally hard platformer" },
+  { name: "Alter Ego", core: "nes", genre: "Puzzle", url: "https://www.nesworld.com/games/homebrew/alterego.nes", blurb: "Cult favorite puzzle game" },
+  { name: "From Below", core: "nes", genre: "Puzzle", url: "https://www.nesworld.com/games/homebrew/frombelow.nes", blurb: "Block-falling puzzler" },
+
+  // ---- SNES ----
+  { name: "Super Boss Gaiden (Demo)", core: "snes", genre: "Action", url: "https://www.romhacking.net/homebrew/2/", blurb: "SNES homebrew · open source" },
+
+  // ---- Genesis / Mega Drive ----
+  { name: "Tanglewood (Demo)", core: "segaMD", genre: "Platformer", url: "https://tanglewoodgame.com/demo.bin", blurb: "Modern Mega Drive platformer" },
+  { name: "Old Towers", core: "segaMD", genre: "Puzzle", url: "https://retrosouls.itch.io/old-towers-mega-drive-genesis", blurb: "Cubic dungeon puzzler" },
+];
+
+export const GENRES = ["All", "Action", "Platformer", "Puzzle", "Arcade", "Adventure", "RPG", "Shoot 'em up"] as const;
+
 // RAWG cover art base — public free tier, no key needed for tiny payloads.
 // We curate a real catalog with cover images for the Switch streaming page.
 export type SwitchTitle = {
