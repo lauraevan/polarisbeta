@@ -15,6 +15,8 @@ export function AdsLoader() {
   const [provider] = useAdProvider();
 
   useEffect(() => {
+    // Ads globally disabled. Leaving the switcher in Settings for later.
+    return;
     if (!enabled || provider === "off") return;
     if (typeof window === "undefined") return;
 
