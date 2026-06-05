@@ -45,3 +45,37 @@ export const useShowDiscord = () => useLocalToggle(SHOW_DISCORD_KEY, true);
 
 export const SHOW_ADS_KEY = "polaris-show-ads";
 export const useShowAds = () => useLocalToggle(SHOW_ADS_KEY, true);
+
+// Ad provider: "monetag" | "adsterra" | "off"
+export type AdProvider = "monetag" | "adsterra" | "off";
+export const AD_PROVIDER_KEY = "polaris-ad-provider";
+
+export function useAdProvider() {
+  const [v, setV] = useState<AdProvider>("monetag");
+
+  useEffect(() => {
+    const sync = () => {
+      const raw = safeGetItem("localStorage", AD_PROVIDER_KEY);
+      if (raw === "monetag" || raw === "adsterra" || raw === "off") setV(raw);
+      else setV("monetag");
+    };
+    sync();
+    const onCustom = (e: Event) => {
+      if ((e as CustomEvent).detail?.key === AD_PROVIDER_KEY) sync();
+    };
+    window.addEventListener("storage", sync);
+    window.addEventListener(EVT, onCustom as EventListener);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener(EVT, onCustom as EventListener);
+    };
+  }, []);
+
+  const set = useCallback((next: AdProvider) => {
+    safeSetItem("localStorage", AD_PROVIDER_KEY, next);
+    setV(next);
+    window.dispatchEvent(new CustomEvent(EVT, { detail: { key: AD_PROVIDER_KEY } }));
+  }, []);
+
+  return [v, set] as const;
+}
