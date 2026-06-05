@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Loader2, Play, MessageCircle, ExternalLink, ChevronLeft, ChevronRight,
-  Clock, Sparkles, Gamepad2, Globe2, Cloud, Layers, Flame,
+  Sparkles, Gamepad2, Globe2, Cloud, Layers, Flame,
 } from "lucide-react";
 import { EmbedFrame } from "./EmbedFrame";
 import { GameTile } from "./GameTile";
@@ -24,13 +24,10 @@ const GNMATH_ZONES = "https://cdn.jsdelivr.net/gh/freebuisness/assets@latest/zon
 type GnZone = { id: number; name: string; cover: string; url: string };
 type PlayItem = { src: string; title: string; mode: "src" | "srcdoc" };
 type LaunchItem = PlayItem & { id?: string; cover?: string; source?: string };
-type Filter = "all" | "continue" | "gnmath" | "hydra" | "lumin" | "polaris" | "cloud";
-
-const SPOTLIGHT_SLUGS = ["hollow-knight", "silksong", "celeste", "undertale", "minecraft"];
+type Filter = "all" | "gnmath" | "hydra" | "lumin" | "polaris" | "cloud";
 
 const FILTERS: { id: Filter; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "all", label: "Home", Icon: Sparkles },
-  { id: "continue", label: "Continue Playing", Icon: Clock },
+  { id: "all", label: "All Games", Icon: Sparkles },
   { id: "gnmath", label: "Gn-Math", Icon: Flame },
   { id: "hydra", label: "Hydra Network", Icon: Globe2 },
   { id: "lumin", label: "LuminSDK", Icon: Layers },
