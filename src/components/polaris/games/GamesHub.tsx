@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Loader2, Play, MessageCircle, ExternalLink, ChevronLeft, ChevronRight, Crown,
-  Sparkles, Gamepad2, Globe2, Cloud, Layers, Flame,
+  Sparkles, Gamepad2, Globe2, Cloud, Layers,
 } from "lucide-react";
 import { EmbedFrame } from "./EmbedFrame";
 import { GameTile } from "./GameTile";
 import { PolarisPlaySplash } from "./PolarisPlaySplash";
 import { POLARIS_GAMES } from "@/lib/polaris-games";
 import {
-  hydraSearch, hydraFeatured, steamHeader,
-  type HydraEdge, type HydraFeatured,
+  hydraSearch, steamHeader,
+  type HydraEdge,
 } from "@/lib/hydra-api";
 import { fetchHydraNetwork, hydraNetAsset, type HydraNetGame } from "@/lib/hydra-network";
 import { lumin, luminImage, type LuminGame } from "@/lib/lumin";
@@ -221,7 +221,6 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [hydra, setHydra] = useState<HydraEdge[] | null>(null);
   const [gn, setGn] = useState<GnZone[] | null>(null);
-  const [popular, setPopular] = useState<HydraFeatured[] | null>(null);
   const [hydraNet, setHydraNet] = useState<HydraNetGame[] | null>(null);
   const [luminGames, setLuminGames] = useState<LuminGame[] | null>(null);
   const [luminRandom, setLuminRandom] = useState<LuminGame[] | null>(null);
@@ -235,9 +234,6 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
     hydraSearch({ title: "", take: 30, signal: ctrl.signal })
       .then((r) => setHydra(r.edges))
       .catch(() => setHydra([]));
-    hydraFeatured(ctrl.signal)
-      .then((f) => setPopular(f.slice(0, 8)))
-      .catch(() => setPopular([]));
     fetch(GNMATH_ZONES, { signal: ctrl.signal })
       .then((r) => r.json())
       .then((z: GnZone[]) => setGn(z.filter((g) => g.id >= 0 && g.url?.startsWith("{HTML_URL}"))))
