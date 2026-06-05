@@ -23,6 +23,7 @@ import { CustomizerProvider } from "../lib/customizer-context";
 import { CustomizerOverlay } from "../components/customizer/CustomizerOverlay";
 import { PolarisModeProvider } from "../lib/polaris-mode";
 import { ModePicker } from "../components/polaris/ModePicker";
+import { AdsterraPopunder } from "../components/polaris/ads/AdsterraPopunder";
 
 function NotFoundComponent() {
   return (
@@ -165,6 +166,7 @@ function RootComponent() {
                     <PremiumStyleMount />
                     <CustomizerOverlay />
                     <ModePicker />
+                    <AdsterraPopunder />
                   </PolarisModeProvider>
                 </CustomizerProvider>
               </AdminProvider>
