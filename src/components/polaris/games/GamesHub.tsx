@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Loader2, Play, MessageCircle, ExternalLink, ChevronLeft, ChevronRight,
+  Loader2, Play, MessageCircle, ExternalLink, ChevronLeft, ChevronRight, Crown,
   Sparkles, Gamepad2, Globe2, Cloud, Layers, Flame,
 } from "lucide-react";
 import { EmbedFrame } from "./EmbedFrame";
@@ -8,8 +8,8 @@ import { GameTile } from "./GameTile";
 import { PolarisPlaySplash } from "./PolarisPlaySplash";
 import { POLARIS_GAMES } from "@/lib/polaris-games";
 import {
-  hydraSearch, hydraFeatured, steamHeader,
-  type HydraEdge, type HydraFeatured,
+  hydraSearch, steamHeader,
+  type HydraEdge,
 } from "@/lib/hydra-api";
 import { fetchHydraNetwork, hydraNetAsset, type HydraNetGame } from "@/lib/hydra-network";
 import { lumin, luminImage, type LuminGame } from "@/lib/lumin";
@@ -114,26 +114,28 @@ function FilterTabs({ active, onChange }: { active: Filter; onChange: (f: Filter
 }
 
 /* ───────── PolarisFlix-style rotating hero (game cover + name only, no copy) ───────── */
+type HeroItem = { key: string; title: string; cover?: string; sourceLabel: string; onPlay: () => void };
+
 function HeroBillboard({
-  popular, idx, setIdx,
+  items, idx, setIdx,
 }: {
-  popular: HydraFeatured[] | null;
+  items: HeroItem[] | null;
   idx: number;
   setIdx: (n: number) => void;
 }) {
-  const len = popular?.length ?? 0;
-  const prev = len ? popular![(idx - 1 + len) % len] : null;
-  const next = len ? popular![(idx + 1) % len] : null;
-  const cur = len ? popular![idx] : null;
+  const len = items?.length ?? 0;
+  const prev = len ? items![(idx - 1 + len) % len] : null;
+  const next = len ? items![(idx + 1) % len] : null;
+  const cur = len ? items![idx] : null;
 
-  const Sliver = ({ item, side }: { item: HydraFeatured | null; side: "left" | "right" }) => (
+  const Sliver = ({ item, side }: { item: HeroItem | null; side: "left" | "right" }) => (
     <button
       onClick={() => len && setIdx(side === "left" ? (idx - 1 + len) % len : (idx + 1) % len)}
       className="group relative hidden w-14 shrink-0 overflow-hidden rounded-2xl border border-white/10 sm:block lg:w-20"
       aria-label={side === "left" ? "Previous" : "Next"}
     >
-      {item?.libraryHeroImageUrl && (
-        <img src={item.libraryHeroImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60 transition group-hover:opacity-90" />
+      {item?.cover && (
+        <img src={item.cover} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover opacity-60 transition group-hover:opacity-90" />
       )}
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/70" />
       <div className="absolute inset-0 grid place-items-center text-white/70 group-hover:text-white">
@@ -146,43 +148,46 @@ function HeroBillboard({
     <div className="flex h-[260px] gap-2 sm:h-[400px] sm:gap-3 lg:h-[480px]">
       <Sliver item={prev} side="left" />
       <div className="relative flex-1 overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_80px_-30px_rgba(0,112,255,0.55)]">
-        {popular?.map((f, i) => (
+        {items?.map((f, i) => (
           <div
-            key={f.objectId}
+            key={f.key}
             className={`absolute inset-0 transition-opacity duration-[900ms] ${i === idx ? "opacity-100" : "opacity-0"}`}
           >
-            {f.libraryHeroImageUrl && (
-              <img src={f.libraryHeroImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover scale-105" />
+            {f.cover && (
+              <img src={f.cover} alt="" loading={i === idx ? "eager" : "lazy"} decoding="async" className="absolute inset-0 h-full w-full object-cover scale-105" />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent" />
           </div>
         ))}
-        {!popular && (
+        {!items && (
           <div className="absolute inset-0 grid place-items-center" style={{ background: "linear-gradient(110deg, rgba(0,112,255,0.32), transparent 70%), #0a0d14" }}>
             <Loader2 className="h-6 w-6 animate-spin text-white/50" />
           </div>
         )}
         <div className="relative flex h-full flex-col justify-end p-5 sm:p-10">
-          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-white/70">
-            <Flame className="h-3 w-3" /> Most Popular
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-white/80">
+            <Crown className="h-3 w-3 text-amber-300" /> Most Popular on Polaris Play
           </div>
           <h1 className="mt-2 text-2xl font-black tracking-tight text-white drop-shadow sm:text-5xl lg:text-6xl">
             {cur?.title ?? ""}
           </h1>
           {cur && (
+            <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-white/55">
+              {cur.sourceLabel}
+            </div>
+          )}
+          {cur && (
             <div className="mt-4 flex items-center gap-3">
-              <a
-                href={`https://store.steampowered.com/app/${cur.objectId}/`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-bold text-black transition hover:bg-white/90 sm:px-6 sm:py-2.5"
+              <button
+                onClick={cur.onPlay}
+                className="flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-bold text-black transition hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] sm:px-6 sm:py-2.5"
               >
-                <Play className="h-4 w-4 fill-black" /> Play
-              </a>
+                <Play className="h-4 w-4 fill-black" /> Play Now
+              </button>
               {len > 1 && (
                 <div className="ml-1 flex gap-1.5">
-                  {popular!.map((_, i) => (
+                  {items!.map((_, i) => (
                     <button
                       key={i}
                       onClick={() => setIdx(i)}
@@ -216,22 +221,19 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [hydra, setHydra] = useState<HydraEdge[] | null>(null);
   const [gn, setGn] = useState<GnZone[] | null>(null);
-  const [popular, setPopular] = useState<HydraFeatured[] | null>(null);
   const [hydraNet, setHydraNet] = useState<HydraNetGame[] | null>(null);
   const [luminGames, setLuminGames] = useState<LuminGame[] | null>(null);
   const [luminRandom, setLuminRandom] = useState<LuminGame[] | null>(null);
   const [heroIdx, setHeroIdx] = useState(0);
   const recent = useContinuePlaying();
-  const [visible, setVisible] = useState(60);
+  const [visible, setVisible] = useState(36);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const ctrl = new AbortController();
     hydraSearch({ title: "", take: 30, signal: ctrl.signal })
       .then((r) => setHydra(r.edges))
       .catch(() => setHydra([]));
-    hydraFeatured(ctrl.signal)
-      .then((f) => setPopular(f.slice(0, 8)))
-      .catch(() => setPopular([]));
     fetch(GNMATH_ZONES, { signal: ctrl.signal })
       .then((r) => r.json())
       .then((z: GnZone[]) => setGn(z.filter((g) => g.id >= 0 && g.url?.startsWith("{HTML_URL}"))))
@@ -246,25 +248,6 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
       .catch(() => { setLuminGames([]); setLuminRandom([]); });
     return () => ctrl.abort();
   }, []);
-
-  // Hero billboard fallback — if /games/featured fails, synthesize popular
-  // entries from the hydra search results so the rotating board never sits empty.
-  const heroItems = useMemo<HydraFeatured[]>(() => {
-    if (popular && popular.length > 0) return popular;
-    if (!hydra) return [];
-    return hydra.slice(0, 8).map((g) => ({
-      shop: g.shop,
-      title: g.title,
-      objectId: g.objectId,
-      libraryHeroImageUrl: g.libraryImageUrl || steamHeader(g.objectId),
-    }));
-  }, [popular, hydra]);
-
-  useEffect(() => {
-    if (heroItems.length < 2) return;
-    const t = setInterval(() => setHeroIdx((i) => (i + 1) % heroItems.length), 6500);
-    return () => clearInterval(t);
-  }, [heroItems]);
 
   // Unified catalog — combine everything into one vertical, scrollable grid.
   const catalog = useMemo<CatalogItem[]>(() => {
@@ -339,23 +322,49 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
     return items;
   }, [gn, hydraNet, hydra, luminGames, luminRandom, onPlay]);
 
+  // Hero items — pick from playable sources (Hydra Network HTML5 + Gn-Math), so
+  // "Play Now" actually launches a game instead of opening Steam.
+  const heroItems = useMemo<HeroItem[]>(() => {
+    const playable = catalog.filter(
+      (c) => (c.source === "hydra" || c.source === "gnmath") && c.cover,
+    );
+    return playable.slice(0, 8).map((c) => ({
+      key: c.key,
+      title: c.title,
+      cover: c.cover,
+      sourceLabel: c.sourceLabel,
+      onPlay: c.onPlay,
+    }));
+  }, [catalog]);
+
+  useEffect(() => {
+    if (heroItems.length < 2) return;
+    const t = setInterval(() => setHeroIdx((i) => (i + 1) % heroItems.length), 6500);
+    return () => clearInterval(t);
+  }, [heroItems.length]);
+
   const filtered = useMemo(
     () => (filter === "all" ? catalog : catalog.filter((c) => c.source === filter)),
     [catalog, filter],
   );
 
   // Reset pagination on filter change
-  useEffect(() => { setVisible(60); }, [filter]);
+  useEffect(() => { setVisible(36); }, [filter]);
 
-  // Infinite scroll — bump visible count as user nears the bottom
+  // Infinite scroll via IntersectionObserver sentinel — no scroll-event spam.
   useEffect(() => {
-    const onScroll = () => {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 800) {
-        setVisible((v) => (v < filtered.length ? v + 60 : v));
-      }
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const el = sentinelRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisible((v) => (v < filtered.length ? Math.min(v + 36, filtered.length) : v));
+        }
+      },
+      { rootMargin: "1200px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, [filtered.length]);
 
   const loadingAll = gn === null && hydra === null && hydraNet === null && luminGames === null;
@@ -365,7 +374,7 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
       {showDiscord && <DiscordCallout />}
 
       {filter === "all" && (
-        <HeroBillboard popular={heroItems.length ? heroItems : null} idx={heroIdx} setIdx={setHeroIdx} />
+        <HeroBillboard items={heroItems.length ? heroItems : null} idx={heroIdx} setIdx={setHeroIdx} />
       )}
 
       {recent.length > 0 && filter === "all" && (
@@ -395,7 +404,10 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
         </div>
       ) : (
         <section>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div
+            className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+            style={{ contentVisibility: "auto", containIntrinsicSize: "1px 220px" } as React.CSSProperties}
+          >
             {filtered.slice(0, visible).map((c) =>
               c.lumin ? (
                 <LuminTile key={c.key} g={c.lumin} onLaunched={onPlay} />
@@ -411,8 +423,9 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
               ),
             )}
           </div>
+          <div ref={sentinelRef} className="h-10" />
           {visible < filtered.length && (
-            <div className="mt-6 flex justify-center text-white/40">
+            <div className="mt-2 flex justify-center text-white/40">
               <Loader2 className="h-4 w-4 animate-spin" />
             </div>
           )}
