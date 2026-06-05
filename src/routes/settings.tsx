@@ -5,7 +5,7 @@ import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
 import { useSidebarState } from "@/lib/sidebar-context";
-import { useShowDiscord, useShowAds } from "@/lib/ui-prefs";
+import { useShowDiscord, useShowAds, useAdProvider, type AdProvider } from "@/lib/ui-prefs";
 import { useTabCloak } from "@/lib/tab-cloaker";
 import { useAdmin } from "@/lib/admin-context";
 import { useAuth } from "@/lib/auth-context";
@@ -100,6 +100,7 @@ function SettingsPage() {
   const { orientation, setOrientation } = useSidebarState();
   const [showDiscord, setShowDiscord] = useShowDiscord();
   const [showAds, setShowAds] = useShowAds();
+  const [adProvider, setAdProvider] = useAdProvider();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
   const { isAdmin, isOwner, unlock, lock } = useAdmin();
   const { refreshProfile, user, profile, updateProfile } = useAuth();
@@ -248,6 +249,49 @@ function SettingsPage() {
             </div>
           )}
           {adminMsg && <div className="mt-3 text-xs text-white/65">{adminMsg}</div>}
+        </section>
+
+        {/* Ads provider — front-and-center, supports Polaris */}
+        <section className="liquid-glass-themed rounded-2xl p-5">
+          <SectionTitle
+            icon={Megaphone}
+            title="Ads"
+            subtitle="Pick the ad network that helps fund Polaris One — or turn ads off."
+          />
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {([
+              { id: "monetag", label: "Monetag", desc: "Default — lightest" },
+              { id: "adsterra", label: "Adsterra", desc: "Classic popunder" },
+              { id: "off", label: "Off", desc: "No ads at all" },
+            ] as { id: AdProvider; label: string; desc: string }[]).map((opt) => {
+              const active = (showAds ? adProvider : "off") === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => {
+                    if (opt.id === "off") {
+                      setShowAds(false);
+                    } else {
+                      setShowAds(true);
+                      setAdProvider(opt.id);
+                    }
+                  }}
+                  aria-pressed={active}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    active
+                      ? "border-white/30 bg-white/15 text-white"
+                      : "border-white/10 bg-white/[0.04] text-white/80 hover:border-white/20 hover:bg-white/[0.07]"
+                  }`}
+                >
+                  <div className="text-sm font-semibold">{opt.label}</div>
+                  <div className="mt-1 text-[11px] text-white/60">{opt.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-[11px] leading-relaxed text-amber-200/80">
+            Turning ads off stops Polaris from making money to stay free. If you can, please leave them on.
+          </p>
         </section>
 
         {/* Theme presets */}
