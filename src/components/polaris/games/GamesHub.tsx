@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Loader2, Play, MessageCircle, ExternalLink, ChevronLeft, ChevronRight,
-  Clock, Sparkles, Gamepad2, Globe2, Trophy, Layers, Flame,
+  Clock, Sparkles, Gamepad2, Globe2, Cloud, Layers, Flame,
 } from "lucide-react";
 import { EmbedFrame } from "./EmbedFrame";
 import { GameTile } from "./GameTile";
@@ -15,6 +15,7 @@ import { fetchHydraNetwork, hydraNetAsset, type HydraNetGame } from "@/lib/hydra
 import { lumin, luminImage, type LuminGame } from "@/lib/lumin";
 import { useShowDiscord } from "@/lib/ui-prefs";
 import { recordPlay, useContinuePlaying, type RecentGame } from "@/lib/continue-playing";
+import { AdsterraBanner } from "../ads/AdsterraBanner";
 
 const POLARIS_CDN = "https://cdn.jsdelivr.net/npm/ugs-singlefiles@1.0.6/";
 const GNMATH_HTML = "https://cdn.jsdelivr.net/gh/freebuisness/html@main";
@@ -24,18 +25,18 @@ const GNMATH_ZONES = "https://cdn.jsdelivr.net/gh/freebuisness/assets@latest/zon
 type GnZone = { id: number; name: string; cover: string; url: string };
 type PlayItem = { src: string; title: string; mode: "src" | "srcdoc" };
 type LaunchItem = PlayItem & { id?: string; cover?: string; source?: string };
-type Filter = "all" | "continue" | "gnmath" | "hydra" | "lumin" | "polaris" | "steam";
+type Filter = "all" | "continue" | "gnmath" | "hydra" | "lumin" | "polaris" | "cloud";
 
 const SPOTLIGHT_SLUGS = ["hollow-knight", "silksong", "celeste", "undertale", "minecraft"];
 
 const FILTERS: { id: Filter; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "all", label: "All", Icon: Sparkles },
-  { id: "continue", label: "Continue", Icon: Clock },
+  { id: "all", label: "Home", Icon: Sparkles },
+  { id: "continue", label: "Continue Playing", Icon: Clock },
   { id: "gnmath", label: "Gn-Math", Icon: Flame },
   { id: "hydra", label: "Hydra Network", Icon: Globe2 },
   { id: "lumin", label: "LuminSDK", Icon: Layers },
-  { id: "polaris", label: "Polaris", Icon: Gamepad2 },
-  { id: "steam", label: "Steam Vault", Icon: Trophy },
+  { id: "polaris", label: "Polaris Collection", Icon: Gamepad2 },
+  { id: "cloud", label: "Cine Cloud Gaming", Icon: Cloud },
 ];
 
 /* ───────── Lumin — open in new tab to luminsdk.com so their SDK runs on its own origin ───────── */
@@ -65,19 +66,33 @@ function LuminTile({ g, onLaunched }: { g: LuminGame; onLaunched: (p: LaunchItem
   );
 }
 
-/* ───────── Section row (no title, premium minimal spacing) ───────── */
-function Row({ loading, children }: { loading: boolean; children?: React.ReactNode }) {
+/* ───────── Horizontal-scroll section row (premium, no title) ───────── */
+function Row({
+  loading,
+  size = "md",
+  children,
+}: {
+  loading: boolean;
+  size?: "md" | "lg";
+  children?: React.ReactNode;
+}) {
+  if (loading) {
+    return (
+      <section className="flex h-32 items-center justify-center text-white/40">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </section>
+    );
+  }
+  const w = size === "lg" ? "w-44 sm:w-52" : "w-36 sm:w-40";
   return (
-    <section>
-      {loading ? (
-        <div className="flex h-32 items-center justify-center text-white/40">
-          <Loader2 className="h-5 w-5 animate-spin" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
-          {children}
-        </div>
-      )}
+    <section className="-mx-3 px-3 sm:mx-0 sm:px-0">
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {Array.isArray(children)
+          ? children.map((c, i) => (
+              <div key={i} className={`shrink-0 snap-start ${w}`}>{c}</div>
+            ))
+          : <div className={`shrink-0 snap-start ${w}`}>{children}</div>}
+      </div>
     </section>
   );
 }
@@ -105,25 +120,26 @@ function DiscordCallout() {
   );
 }
 
-/* ───────── Filter tab bar ───────── */
+/* ───────── Filter tab bar — icon only, tooltip on hover ───────── */
 function FilterTabs({ active, onChange }: { active: Filter; onChange: (f: Filter) => void }) {
   return (
     <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
-      <div className="flex w-max items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 backdrop-blur">
+      <div className="flex w-max items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 backdrop-blur">
         {FILTERS.map(({ id, label, Icon }) => {
           const on = active === id;
           return (
             <button
               key={id}
               onClick={() => onChange(id)}
-              className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
+              title={label}
+              aria-label={label}
+              className={`grid h-10 w-10 place-items-center rounded-xl transition sm:h-11 sm:w-11 ${
                 on
                   ? "bg-white text-black shadow-[0_6px_24px_-8px_rgba(255,255,255,0.55)]"
                   : "text-white/70 hover:bg-white/10 hover:text-white"
               }`}
             >
-              <Icon className="h-4 w-4" />
-              {label}
+              <Icon className="h-5 w-5" />
             </button>
           );
         })}
