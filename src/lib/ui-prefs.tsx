@@ -46,6 +46,9 @@ export const useShowDiscord = () => useLocalToggle(SHOW_DISCORD_KEY, true);
 export const SHOW_ADS_KEY = "polaris-show-ads";
 export const useShowAds = () => useLocalToggle(SHOW_ADS_KEY, true);
 
+export const MOVIE_ADBLOCK_KEY = "polaris-movie-adblock";
+export const useMovieAdblock = () => useLocalToggle(MOVIE_ADBLOCK_KEY, true);
+
 // Ad provider: "monetag" | "adsterra" | "off"
 export type AdProvider = "monetag" | "adsterra" | "off";
 export const AD_PROVIDER_KEY = "polaris-ad-provider";

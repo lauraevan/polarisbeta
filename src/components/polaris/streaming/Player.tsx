@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, List, Play, SkipForward, Users } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertCircle, MessageSquare, List, Play, SkipForward, Users, Shield, ShieldOff } from "lucide-react";
 import { PROVIDERS } from "@/lib/streaming-providers";
 import { tmdbApi, IMG, type MediaKind } from "@/lib/tmdb";
 import { useQuery } from "@tanstack/react-query";
 import { MovieChat } from "./MovieChat";
 import { WatchPartyPanel } from "./WatchPartyPanel";
+import { useMovieAdblock } from "@/lib/ui-prefs";
 
 type Props = {
   kind: MediaKind;
@@ -20,6 +21,7 @@ export function Player({ kind, id, title, onClose }: Props) {
   const [chatOpen, setChatOpen] = useState(false);
   const [episodesOpen, setEpisodesOpen] = useState(false);
   const [partyOpen, setPartyOpen] = useState(false);
+  const [adblock, setAdblock] = useMovieAdblock();
 
   const { data: details } = useQuery({
     queryKey: ["details", kind, id],
@@ -159,6 +161,18 @@ export function Player({ kind, id, title, onClose }: Props) {
           <span className="hidden sm:inline">Party</span>
         </button>
 
+        <button
+          onClick={() => setAdblock(!adblock)}
+          className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs transition ${
+            adblock ? "bg-emerald-500/25 text-emerald-200" : "text-white/70 hover:bg-white/10"
+          }`}
+          aria-label="Toggle ad blocker"
+          title={adblock ? "Ad blocker on — popups & redirects blocked" : "Ad blocker off"}
+        >
+          {adblock ? <Shield className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
+          <span className="hidden sm:inline">{adblock ? "Adblock" : "Unblocked"}</span>
+        </button>
+
       </div>
 
       <div className="relative flex flex-1 overflow-hidden bg-black">
@@ -170,6 +184,12 @@ export function Player({ kind, id, title, onClose }: Props) {
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
+            {...(adblock
+              ? {
+                  sandbox:
+                    "allow-scripts allow-same-origin allow-forms allow-presentation allow-orientation-lock allow-pointer-lock",
+                }
+              : {})}
           />
           <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-[10px] text-white/60 backdrop-blur">
             <AlertCircle className="mr-1 inline h-3 w-3" /> Source blocked? Try the next one →
