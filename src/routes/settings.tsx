@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package, PanelTop, MessageCircle } from "lucide-react";
+import { Palette, Image as ImageIcon, EyeOff, Eye, Type, VenetianMask, LayoutGrid, Shield, Pin, Sparkles, Sun, Moon, Droplets, Wand2, Package, PanelTop, MessageCircle, Megaphone } from "lucide-react";
 import { AppShell } from "@/components/polaris/AppShell";
 import { useTheme } from "@/lib/theme-context";
 import { useWallpaper } from "@/lib/wallpaper-context";
 import { useSidebarState } from "@/lib/sidebar-context";
-import { useShowDiscord } from "@/lib/ui-prefs";
+import { useShowDiscord, useShowAds } from "@/lib/ui-prefs";
 import { useTabCloak } from "@/lib/tab-cloaker";
 import { useAdmin } from "@/lib/admin-context";
 import { useAuth } from "@/lib/auth-context";
@@ -99,6 +99,7 @@ function SettingsPage() {
   const { cloak, setCloakId, cloaks } = useTabCloak();
   const { orientation, setOrientation } = useSidebarState();
   const [showDiscord, setShowDiscord] = useShowDiscord();
+  const [showAds, setShowAds] = useShowAds();
   const [pickerHex, setPickerHex] = useState("#ff9e55");
   const { isAdmin, isOwner, unlock, lock } = useAdmin();
   const { refreshProfile, user, profile, updateProfile } = useAuth();
@@ -680,6 +681,32 @@ function SettingsPage() {
               <span
                 className={`absolute top-0.5 h-6 w-6 rounded-full transition-all ${
                   showDiscord ? "left-5 bg-black" : "left-0.5 bg-white"
+                }`}
+              />
+            </button>
+          </div>
+        </section>
+
+        {/* Adsterra ads */}
+        <section className="liquid-glass-themed rounded-2xl p-5">
+          <SectionTitle icon={Megaphone} title="Support Polaris with ads" subtitle="Small Adsterra banners in non-intrusive spots help keep Polaris One free" />
+          <div className="mt-3 flex items-start justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-white">Show ads (Adsterra)</div>
+              <p className="mt-1 text-[11px] leading-relaxed text-amber-200/80">
+                Turning this off will stop us from making money to properly fund Polaris One. Please don't turn this off.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowAds(!showAds)}
+              aria-pressed={showAds}
+              className={`relative h-7 w-12 shrink-0 rounded-full border transition ${
+                showAds ? "border-white/20 bg-white" : "border-white/15 bg-white/10"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-6 w-6 rounded-full transition-all ${
+                  showAds ? "left-5 bg-black" : "left-0.5 bg-white"
                 }`}
               />
             </button>

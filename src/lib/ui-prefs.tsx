@@ -42,3 +42,6 @@ export function useLocalToggle(key: string, fallback = true) {
 
 export const SHOW_DISCORD_KEY = "polaris-show-discord";
 export const useShowDiscord = () => useLocalToggle(SHOW_DISCORD_KEY, true);
+
+export const SHOW_ADS_KEY = "polaris-show-ads";
+export const useShowAds = () => useLocalToggle(SHOW_ADS_KEY, true);
