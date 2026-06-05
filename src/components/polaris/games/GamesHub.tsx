@@ -307,28 +307,45 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
 
   useEffect(() => {
     const ctrl = new AbortController();
-    hydraSearch({ title: "", take: 12, signal: ctrl.signal }).then((r) => setHydra(r.edges)).catch(() => setHydra([]));
-    hydraFeatured(ctrl.signal).then((f) => setPopular(f.slice(0, 6))).catch(() => setPopular([]));
+    hydraSearch({ title: "", take: 30, signal: ctrl.signal })
+      .then((r) => setHydra(r.edges))
+      .catch(() => setHydra([]));
+    hydraFeatured(ctrl.signal)
+      .then((f) => setPopular(f.slice(0, 8)))
+      .catch(() => setPopular([]));
     fetch(GNMATH_ZONES, { signal: ctrl.signal })
       .then((r) => r.json())
       .then((z: GnZone[]) => setGn(z.filter((g) => g.id >= 0 && g.url?.startsWith("{HTML_URL}"))))
       .catch(() => setGn([]));
-    fetchHydraNetwork(ctrl.signal).then((list) => setHydraNet(list.slice(0, 21))).catch(() => setHydraNet([]));
+    fetchHydraNetwork(ctrl.signal).then((list) => setHydraNet(list.slice(0, 40))).catch(() => setHydraNet([]));
     lumin()
       .then((api) => Promise.all([
-        api.getGames({ page: 1, limit: 21 }).then((r) => r.games),
-        api.getRandomGames(14).then((r) => r.games),
+        api.getGames({ page: 1, limit: 30 }).then((r) => r.games),
+        api.getRandomGames(20).then((r) => r.games),
       ]))
       .then(([a, b]) => { setLuminGames(a); setLuminRandom(b); })
       .catch(() => { setLuminGames([]); setLuminRandom([]); });
     return () => ctrl.abort();
   }, []);
 
+  // Hero billboard fallback — if /games/featured fails, synthesize popular
+  // entries from the hydra search results so the rotating board never sits empty.
+  const heroItems = useMemo<HydraFeatured[]>(() => {
+    if (popular && popular.length > 0) return popular;
+    if (!hydra) return [];
+    return hydra.slice(0, 8).map((g) => ({
+      shop: g.shop,
+      title: g.title,
+      objectId: g.objectId,
+      libraryHeroImageUrl: g.libraryImageUrl || steamHeader(g.objectId),
+    }));
+  }, [popular, hydra]);
+
   useEffect(() => {
-    if (!popular || popular.length < 2) return;
-    const t = setInterval(() => setHeroIdx((i) => (i + 1) % popular.length), 6500);
+    if (heroItems.length < 2) return;
+    const t = setInterval(() => setHeroIdx((i) => (i + 1) % heroItems.length), 6500);
     return () => clearInterval(t);
-  }, [popular]);
+  }, [heroItems]);
 
   const spotlight = useMemo<GnZone[]>(() => {
     if (!gn) return [];
@@ -339,12 +356,8 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
   const gnFeatured = useMemo(() => gn?.slice(0, 24) ?? [], [gn]);
 
   const polarisPicks = useMemo(() => {
-    const picks = [
-      "1v1lol","slope","retrobowl","driftboss","tunnelrush","crossyroad",
-      "subwaysurfers","tombofthemask","tinyfishing","monkeymart","cookieclicker","2048",
-      "geometrydash","amongus","minecraftclassic","papasfreezeria","awesometanks","bittlife",
-    ];
-    return picks.map((s) => POLARIS_GAMES.find((g) => g.f.toLowerCase().includes(s))).filter(Boolean) as typeof POLARIS_GAMES;
+    // Show the whole curated catalog — the horizontal scroller handles overflow.
+    return POLARIS_GAMES.slice(0, 60);
   }, []);
 
   const continueItems = useMemo<RecentGame[]>(() => {
@@ -364,7 +377,7 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
 
   // —— Section primitives ——
   const HeroSection = (
-    <HeroBillboard popular={popular} idx={heroIdx} setIdx={setHeroIdx} />
+    <HeroBillboard popular={heroItems.length ? heroItems : null} idx={heroIdx} setIdx={setHeroIdx} />
   );
 
   const ContinueSection = (
@@ -392,7 +405,7 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
     </section>
   ) : null;
 
-  const SteamSection = (
+  const CloudSection = (
     <Row loading={hydra === null}>
       {hydra?.map((g) => (
         <GameTile
@@ -400,6 +413,7 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
           title={g.title}
           cover={g.libraryImageUrl || steamHeader(g.objectId)}
           autoCover={false}
+          source="Cine Cloud Gaming"
           onPlay={() => window.open(`https://store.steampowered.com/app/${g.objectId}/`, "_blank", "noopener")}
         />
       ))}
@@ -471,12 +485,14 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
 
       {filter === "all" && HeroSection}
       {(filter === "all" || filter === "continue") && ContinueSection}
+      <AdsterraBanner variant="banner" />
       {filter === "all" && SpotlightSection}
 
-      {show("steam") && SteamSection}
-      {show("lumin") && LuminSection}
       {show("gnmath") && GnSection}
+      {show("cloud") && CloudSection}
+      {filter === "all" && <AdsterraBanner variant="inline" />}
       {show("hydra") && HydraNetSection}
+      {show("lumin") && LuminSection}
       {show("polaris") && PolarisSection}
     </div>
   );
