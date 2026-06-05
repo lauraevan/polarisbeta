@@ -4,6 +4,9 @@ import { useShowAds, useAdProvider } from "@/lib/ui-prefs";
 const ADSTERRA_SRC =
   "https://pl29642623.effectivecpmnetwork.com/3f/f1/29/3ff129e02962c8507ea2a53ba82aaacd.js";
 const ADSTERRA_FLAG = "polaris-adsterra-popunder-loaded";
+const MONETAG_TAG_SRC = "https://quge5.com/88/tag.min.js";
+const MONETAG_TAG_ZONE = "246345";
+const MONETAG_TAG_FLAG = "polaris-monetag-tag-loaded";
 const MONETAG_FLAG = "polaris-monetag-sw-registered";
 
 /** Loads the configured ad provider (Monetag default, Adsterra, or off). */
@@ -30,6 +33,21 @@ export function AdsLoader() {
     }
 
     if (provider === "monetag") {
+      // Inject Monetag tag script (once per session)
+      try {
+        if (sessionStorage.getItem(MONETAG_TAG_FLAG) !== "1") {
+          if (!document.querySelector(`script[src="${MONETAG_TAG_SRC}"]`)) {
+            const tag = document.createElement("script");
+            tag.src = MONETAG_TAG_SRC;
+            tag.async = true;
+            tag.dataset.zone = MONETAG_TAG_ZONE;
+            tag.dataset.cfasync = "false";
+            document.body.appendChild(tag);
+          }
+          sessionStorage.setItem(MONETAG_TAG_FLAG, "1");
+        }
+      } catch {}
+
       try {
         if (sessionStorage.getItem(MONETAG_FLAG) === "1") return;
       } catch {}
