@@ -15,7 +15,6 @@ import { fetchHydraNetwork, hydraNetAsset, type HydraNetGame } from "@/lib/hydra
 import { lumin, luminImage, type LuminGame } from "@/lib/lumin";
 import { useShowDiscord } from "@/lib/ui-prefs";
 import { recordPlay, useContinuePlaying, type RecentGame } from "@/lib/continue-playing";
-import { AdsterraBanner } from "../ads/AdsterraBanner";
 
 const POLARIS_CDN = "https://cdn.jsdelivr.net/npm/ugs-singlefiles@1.0.6/";
 const GNMATH_HTML = "https://cdn.jsdelivr.net/gh/freebuisness/html@main";
