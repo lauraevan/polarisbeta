@@ -44,12 +44,17 @@ export function PolarisPlaySplash({ onDone }: { onDone?: () => void }) {
           alt=""
           className="h-28 w-28 object-contain drop-shadow-[0_0_28px_rgba(0,112,255,0.55)] sm:h-36 sm:w-36"
         />
-        <h1 className="text-3xl font-black tracking-[0.14em] text-white sm:text-4xl">
+        <h1 className="text-3xl font-black tracking-[0.14em] text-white sm:text-4xl animate-[pp-text_196ms_cubic-bezier(.2,.7,.2,1)_350ms_both] origin-top will-change-transform">
           POLARIS PLAY
         </h1>
       </div>
       <style>{`
         @keyframes pp-in { from { opacity: 0; transform: translateY(10px) scale(0.97) } to { opacity: 1; transform: none } }
+        @keyframes pp-text {
+          0%   { opacity: 0; transform: translateY(-18px) scaleY(0.4); filter: blur(6px); letter-spacing: 0.02em; }
+          60%  { opacity: 1; filter: blur(0); }
+          100% { opacity: 1; transform: translateY(0) scaleY(1); filter: blur(0); letter-spacing: 0.14em; }
+        }
       `}</style>
     </div>
   );
