@@ -147,7 +147,7 @@ export function Emulator() {
         </div>
         <div className="liquid-glass-themed w-full rounded-2xl px-5 py-3 text-center sm:text-left">
           <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-            <span className="italic" style={{ color: "rgb(var(--polaris-accent))" }}>Monoxide</span>{" "}
+            <span className="italic" style={{ color: "rgb(var(--polaris-accent))" }}>Polaris</span>{" "}
             <span className="text-white/85">Emulator</span>
           </h1>
           <p className="mt-0.5 text-xs text-white/55 sm:text-sm">
@@ -194,8 +194,8 @@ export function Emulator() {
         />
       </label>
 
-      {/* Monoxide library */}
-      <SectionLabel>Monoxide Library ({MONOXIDE_LIBRARY.length})</SectionLabel>
+      {/* Polaris library */}
+      <SectionLabel>Polaris Library ({MONOXIDE_LIBRARY.length})</SectionLabel>
       <div className="space-y-2">
         {MONOXIDE_LIBRARY.map((f) => (
           <FeaturedRow key={f.id} rom={f} onPlay={() => launchFeatured(f)} cached={userLib.some((u) => u.id === `rom:featured:${f.id}`)} />
