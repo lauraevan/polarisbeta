@@ -731,32 +731,6 @@ function SettingsPage() {
           </div>
         </section>
 
-        {/* Adsterra ads */}
-        <section className="liquid-glass-themed rounded-2xl p-5">
-          <SectionTitle icon={Megaphone} title="Support Polaris with ads" subtitle="Small Adsterra banners in non-intrusive spots help keep Polaris One free" />
-          <div className="mt-3 flex items-start justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.04] p-4">
-            <div className="min-w-0">
-              <div className="text-sm font-semibold text-white">Show ads (Adsterra)</div>
-              <p className="mt-1 text-[11px] leading-relaxed text-amber-200/80">
-                Turning this off will stop us from making money to properly fund Polaris One. Please don't turn this off.
-              </p>
-            </div>
-            <button
-              onClick={() => setShowAds(!showAds)}
-              aria-pressed={showAds}
-              className={`relative h-7 w-12 shrink-0 rounded-full border transition ${
-                showAds ? "border-white/20 bg-white" : "border-white/15 bg-white/10"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 h-6 w-6 rounded-full transition-all ${
-                  showAds ? "left-5 bg-black" : "left-0.5 bg-white"
-                }`}
-              />
-            </button>
-          </div>
-        </section>
-
         <ProCustomization />
 
       </div>
