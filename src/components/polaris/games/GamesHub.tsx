@@ -62,37 +62,6 @@ function LuminTile({ g, onLaunched }: { g: LuminGame; onLaunched: (p: LaunchItem
   );
 }
 
-/* ───────── Horizontal-scroll section row (premium, no title) ───────── */
-function Row({
-  loading,
-  size = "md",
-  children,
-}: {
-  loading: boolean;
-  size?: "md" | "lg";
-  children?: React.ReactNode;
-}) {
-  if (loading) {
-    return (
-      <section className="flex h-32 items-center justify-center text-white/40">
-        <Loader2 className="h-5 w-5 animate-spin" />
-      </section>
-    );
-  }
-  const w = size === "lg" ? "w-44 sm:w-52" : "w-36 sm:w-40";
-  return (
-    <section className="-mx-3 px-3 sm:mx-0 sm:px-0">
-      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {Array.isArray(children)
-          ? children.map((c, i) => (
-              <div key={i} className={`shrink-0 snap-start ${w}`}>{c}</div>
-            ))
-          : <div className={`shrink-0 snap-start ${w}`}>{children}</div>}
-      </div>
-    </section>
-  );
-}
-
 function DiscordCallout() {
   return (
     <a
