@@ -484,12 +484,10 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
 
       {filter === "all" && HeroSection}
       {(filter === "all" || filter === "continue") && ContinueSection}
-      <AdsterraBanner variant="banner" />
       {filter === "all" && SpotlightSection}
 
       {show("gnmath") && GnSection}
       {show("cloud") && CloudSection}
-      {filter === "all" && <AdsterraBanner variant="inline" />}
       {show("hydra") && HydraNetSection}
       {show("lumin") && LuminSection}
       {show("polaris") && PolarisSection}
