@@ -200,63 +200,16 @@ function HeroBillboard({
   );
 }
 
-/* ───────── Continue Playing — responsive, no title clutter ───────── */
-function ContinueRow({
-  items, onPlay,
-}: {
-  items: RecentGame[];
-  onPlay: (p: LaunchItem) => void;
-}) {
-  if (!items.length) {
-    return (
-      <section className="rounded-2xl border border-dashed border-white/15 px-5 py-6 text-center text-sm text-white/55">
-        Play a game and it'll show up here.
-      </section>
-    );
-  }
-
-  // Sliver bookends only on wide screens — they made mobile look broken.
-  const left = items[0];
-  const right = items[6];
-  const main = items.length > 1 ? items.slice(1, 6) : items;
-
-  const Card = ({ g }: { g: RecentGame }) => (
-    <button
-      onClick={() => onPlay({ src: g.src, title: g.title, mode: g.mode, id: g.id, cover: g.cover, source: g.source })}
-      className="group relative h-24 overflow-hidden rounded-xl border border-white/10 bg-white/5 text-left transition hover:-translate-y-0.5 hover:border-white/30 sm:h-28"
-    >
-      {g.cover && <img src={g.cover} alt="" className="absolute inset-0 h-full w-full object-cover transition group-hover:scale-105" />}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-      <div className="relative flex h-full items-end p-2.5 sm:p-3">
-        <div className="min-w-0">
-          <div className="line-clamp-1 text-xs font-bold text-white drop-shadow sm:text-sm">{g.title}</div>
-          {g.source && <div className="text-[9px] uppercase tracking-wider text-white/60 sm:text-[10px]">{g.source}</div>}
-        </div>
-      </div>
-    </button>
-  );
-
-  const Sliver = ({ g }: { g: RecentGame }) => (
-    <button
-      onClick={() => onPlay({ src: g.src, title: g.title, mode: g.mode, id: g.id, cover: g.cover, source: g.source })}
-      className="relative hidden h-28 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 transition hover:border-white/30 lg:block"
-      title={g.title}
-    >
-      {g.cover && <img src={g.cover} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/80" />
-    </button>
-  );
-
-  return (
-    <section className="flex items-stretch gap-2 sm:gap-3">
-      {left && <Sliver g={left} />}
-      <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
-        {main.map((g) => <Card key={g.id} g={g} />)}
-      </div>
-      {right && <Sliver g={right} />}
-    </section>
-  );
-}
+type CatalogItem = {
+  key: string;
+  title: string;
+  cover?: string;
+  source: Exclude<Filter, "all">;
+  sourceLabel: string;
+  onPlay: () => void;
+  // Lumin tiles need async cover resolution + their own launch flow
+  lumin?: LuminGame;
+};
 
 function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
   const [showDiscord] = useShowDiscord();
@@ -269,6 +222,7 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
   const [luminRandom, setLuminRandom] = useState<LuminGame[] | null>(null);
   const [heroIdx, setHeroIdx] = useState(0);
   const recent = useContinuePlaying();
+  const [visible, setVisible] = useState(60);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -312,151 +266,163 @@ function HomeFeed({ onPlay }: { onPlay: (p: LaunchItem) => void }) {
     return () => clearInterval(t);
   }, [heroItems]);
 
-  const spotlight = useMemo<GnZone[]>(() => {
-    if (!gn) return [];
-    const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    return SPOTLIGHT_SLUGS.map((needle) => gn.find((g) => slug(g.name).includes(needle))).filter(Boolean) as GnZone[];
-  }, [gn]);
+  // Unified catalog — combine everything into one vertical, scrollable grid.
+  const catalog = useMemo<CatalogItem[]>(() => {
+    const items: CatalogItem[] = [];
 
-  const gnFeatured = useMemo(() => gn?.slice(0, 24) ?? [], [gn]);
+    (gn ?? []).forEach((g) => {
+      const cover = g.cover.replace("{COVER_URL}", GNMATH_COVER);
+      const src = g.url.replace("{HTML_URL}", GNMATH_HTML);
+      items.push({
+        key: `gn-${g.id}`,
+        title: g.name,
+        cover,
+        source: "gnmath",
+        sourceLabel: "Gn-Math",
+        onPlay: () => onPlay({ src, title: g.name, mode: "srcdoc", id: `gn-${g.id}`, cover, source: "Gn-Math" }),
+      });
+    });
 
-  const polarisPicks = useMemo(() => {
-    // Show the whole curated catalog — the horizontal scroller handles overflow.
-    return POLARIS_GAMES.slice(0, 60);
-  }, []);
+    (hydraNet ?? []).forEach((g) => {
+      items.push({
+        key: `hn-${g.file_name}`,
+        title: g.title,
+        cover: hydraNetAsset(g.thumb),
+        source: "hydra",
+        sourceLabel: "Hydra Network",
+        onPlay: () => onPlay({
+          src: hydraNetAsset(g.file_name), title: g.title, mode: "src",
+          id: `hn-${g.file_name}`, cover: hydraNetAsset(g.thumb), source: "Hydra Network",
+        }),
+      });
+    });
 
-  const continueItems = useMemo<RecentGame[]>(() => {
-    if (recent.length > 0) return recent.slice(0, 7);
-    return spotlight.slice(0, 7).map((g) => ({
-      id: `gn-${g.id}`,
-      title: g.name,
-      cover: g.cover.replace("{COVER_URL}", GNMATH_COVER),
-      src: g.url.replace("{HTML_URL}", GNMATH_HTML),
-      mode: "srcdoc" as const,
-      source: "Gn-Math",
-      ts: 0,
-    }));
-  }, [recent, spotlight]);
+    POLARIS_GAMES.forEach((g) => {
+      items.push({
+        key: `pc-${g.f}`,
+        title: g.t,
+        source: "polaris",
+        sourceLabel: "Polaris Catalog",
+        onPlay: () => onPlay({
+          src: POLARIS_CDN + encodeURI(g.f), title: g.t, mode: "srcdoc",
+          id: `pc-${g.f}`, source: "Polaris Catalog",
+        }),
+      });
+    });
 
-  const show = (k: Filter) => filter === "all" || filter === k;
+    (hydra ?? []).forEach((g) => {
+      items.push({
+        key: `cloud-${g.id}`,
+        title: g.title,
+        cover: g.libraryImageUrl || steamHeader(g.objectId),
+        source: "cloud",
+        sourceLabel: "Cine Cloud Gaming",
+        onPlay: () => window.open(`https://store.steampowered.com/app/${g.objectId}/`, "_blank", "noopener"),
+      });
+    });
 
-  // —— Section primitives ——
-  const HeroSection = (
-    <HeroBillboard popular={heroItems.length ? heroItems : null} idx={heroIdx} setIdx={setHeroIdx} />
+    const luminAll = [...(luminGames ?? []), ...(luminRandom ?? [])];
+    const seenLumin = new Set<string>();
+    luminAll.forEach((g) => {
+      if (seenLumin.has(g.id)) return;
+      seenLumin.add(g.id);
+      items.push({
+        key: `lumin-${g.id}`,
+        title: g.name,
+        source: "lumin",
+        sourceLabel: "LuminSDK",
+        onPlay: () => {},
+        lumin: g,
+      });
+    });
+
+    return items;
+  }, [gn, hydraNet, hydra, luminGames, luminRandom, onPlay]);
+
+  const filtered = useMemo(
+    () => (filter === "all" ? catalog : catalog.filter((c) => c.source === filter)),
+    [catalog, filter],
   );
 
-  const ContinueSection = (
-    <ContinueRow items={continueItems} onPlay={onPlay} />
-  );
+  // Reset pagination on filter change
+  useEffect(() => { setVisible(60); }, [filter]);
 
-  const SpotlightSection = spotlight.length > 0 ? (
-    <section>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
-        {spotlight.map((g) => (
-          <GameTile
-            key={g.id}
-            title={g.name}
-            cover={g.cover.replace("{COVER_URL}", GNMATH_COVER)}
-            autoCover={false}
-            size="lg"
-            onPlay={() => onPlay({
-              src: g.url.replace("{HTML_URL}", GNMATH_HTML),
-              title: g.name, mode: "srcdoc",
-              id: `gn-${g.id}`, cover: g.cover.replace("{COVER_URL}", GNMATH_COVER), source: "Gn-Math",
-            })}
-          />
-        ))}
-      </div>
-    </section>
-  ) : null;
+  // Infinite scroll — bump visible count as user nears the bottom
+  useEffect(() => {
+    const onScroll = () => {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 800) {
+        setVisible((v) => (v < filtered.length ? v + 60 : v));
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [filtered.length]);
 
-  const CloudSection = (
-    <Row loading={hydra === null}>
-      {hydra?.map((g) => (
-        <GameTile
-          key={g.id}
-          title={g.title}
-          cover={g.libraryImageUrl || steamHeader(g.objectId)}
-          autoCover={false}
-          source="Cine Cloud Gaming"
-          onPlay={() => window.open(`https://store.steampowered.com/app/${g.objectId}/`, "_blank", "noopener")}
-        />
-      ))}
-    </Row>
-  );
-
-  const LuminSection = (
-    <Row loading={luminGames === null}>
-      {luminGames?.map((g) => <LuminTile key={g.id} g={g} onLaunched={onPlay} />)}
-      {luminRandom?.map((g) => <LuminTile key={`r-${g.id}`} g={g} onLaunched={onPlay} />)}
-    </Row>
-  );
-
-  const GnSection = (
-    <Row loading={gn === null}>
-      {gnFeatured.map((g) => (
-        <GameTile
-          key={g.id}
-          title={g.name}
-          cover={g.cover.replace("{COVER_URL}", GNMATH_COVER)}
-          autoCover={false}
-          onPlay={() => onPlay({
-            src: g.url.replace("{HTML_URL}", GNMATH_HTML),
-            title: g.name, mode: "srcdoc",
-            id: `gn-${g.id}`, cover: g.cover.replace("{COVER_URL}", GNMATH_COVER), source: "Gn-Math",
-          })}
-        />
-      ))}
-    </Row>
-  );
-
-  const HydraNetSection = (
-    <Row loading={hydraNet === null}>
-      {hydraNet?.map((g) => (
-        <GameTile
-          key={g.file_name}
-          title={g.title}
-          cover={hydraNetAsset(g.thumb)}
-          autoCover={false}
-          onPlay={() => onPlay({
-            src: hydraNetAsset(g.file_name), title: g.title, mode: "src",
-            id: `hn-${g.file_name}`, cover: hydraNetAsset(g.thumb), source: "Hydra Network",
-          })}
-        />
-      ))}
-    </Row>
-  );
-
-  const PolarisSection = (
-    <Row loading={false}>
-      {polarisPicks.map((g) => (
-        <GameTile
-          key={g.f}
-          title={g.t}
-          onPlay={() => onPlay({
-            src: POLARIS_CDN + encodeURI(g.f), title: g.t, mode: "srcdoc",
-            id: `pc-${g.f}`, source: "Polaris Catalog",
-          })}
-        />
-      ))}
-    </Row>
-  );
+  const loadingAll = gn === null && hydra === null && hydraNet === null && luminGames === null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {showDiscord && <DiscordCallout />}
+
+      {filter === "all" && (
+        <HeroBillboard popular={heroItems.length ? heroItems : null} idx={heroIdx} setIdx={setHeroIdx} />
+      )}
+
+      {recent.length > 0 && filter === "all" && (
+        <section>
+          <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-white/60">Continue Playing</h2>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 md:grid-cols-5 lg:grid-cols-7">
+            {recent.slice(0, 7).map((g) => (
+              <GameTile
+                key={g.id}
+                id={g.id}
+                title={g.title}
+                cover={g.cover}
+                autoCover={!g.cover}
+                source={g.source}
+                onPlay={() => onPlay({ src: g.src, title: g.title, mode: g.mode, id: g.id, cover: g.cover, source: g.source })}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       <FilterTabs active={filter} onChange={setFilter} />
 
-      {filter === "all" && HeroSection}
-      {(filter === "all" || filter === "continue") && ContinueSection}
-      {filter === "all" && SpotlightSection}
-
-      {show("gnmath") && GnSection}
-      {show("cloud") && CloudSection}
-      {show("hydra") && HydraNetSection}
-      {show("lumin") && LuminSection}
-      {show("polaris") && PolarisSection}
+      {loadingAll ? (
+        <div className="flex h-40 items-center justify-center text-white/40">
+          <Loader2 className="h-5 w-5 animate-spin" />
+        </div>
+      ) : (
+        <section>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {filtered.slice(0, visible).map((c) =>
+              c.lumin ? (
+                <LuminTile key={c.key} g={c.lumin} onLaunched={onPlay} />
+              ) : (
+                <GameTile
+                  key={c.key}
+                  title={c.title}
+                  cover={c.cover}
+                  autoCover={!c.cover}
+                  source={c.sourceLabel}
+                  onPlay={c.onPlay}
+                />
+              ),
+            )}
+          </div>
+          {visible < filtered.length && (
+            <div className="mt-6 flex justify-center text-white/40">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
+          )}
+          {filtered.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-white/15 px-5 py-10 text-center text-sm text-white/55">
+              No games in this category yet.
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }
