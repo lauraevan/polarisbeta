@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Loader2, Play, MessageCircle, ExternalLink, ChevronLeft, ChevronRight, Crown,
-  Sparkles, Gamepad2, Globe2, Cloud, Layers,
+  Sparkles, Gamepad2, Globe2, Cloud, Layers, Flame,
 } from "lucide-react";
 import { EmbedFrame } from "./EmbedFrame";
 import { GameTile } from "./GameTile";
